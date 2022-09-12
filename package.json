@@ -42,8 +42,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prepare": "npm run build",
-    "run": "node --inspect ./dist/bin.js",
-    "run-ts": "ts-node ./src/bin.ts",
+    "run": "node --experimental-vm-modules ./dist/bin.js",
+    "run-ts": "node --experimental-vm-modules node_modules/ts-node/dist/bin.js ./src/bin.ts",
     "test": "mocha",
     "test:coverage": "nyc mocha",
     "test:watch": "mocha --watch"

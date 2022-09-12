@@ -15,6 +15,7 @@ import * as _ from 'lodash'
 import ErrorProcessor from "./ErrorProcessor";
 // const Mocha = require('mocha')
 // const originalrequire = require("original-require");
+const vm = require('node:vm');
 
 export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
   protected suiteBuilder: JavaScriptSuiteBuilder;
@@ -49,19 +50,34 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     // const func = Function(decodedTestCase)
     // const error = await func() //eval(decodedTestCase)
 
-    const encodedJs = encodeURIComponent(decodedTestCase)
-    const dataUri = 'data:text/javascript;charset=utf-8,'
-      + encodedJs;
-    console.log(dataUri)
-    declare module "data:text/javascript;*" {
-      export const number: number;
-      export function fn(): string;
+    // const encodedJs = encodeURIComponent(decodedTestCase)
+    // const dataUri = 'data:text/javascript;charset=utf-8,'
+    //   + encodedJs;
+    // console.log(dataUri)
+    // declare module "data:text/javascript;*" {
+    //   export const number: number;
+    //   export function fn(): string;
+    // }
+    //
+    // const module = await import(dataUri)
+    // console.log(module)
+    // const error = await module.default()
+
+    const context = vm.createContext({})
+
+    const sourceTextModule = new vm.SourceTextModule(decodedTestCase, { context: context})
+    console.log(sourceTextModule)
+
+    async function linker(specifier, referencingModule) {
+      return import(specifier)
     }
+    await sourceTextModule.link(linker);
 
-    const module = await import(dataUri)
+    const module = await sourceTextModule.evaluate()
     console.log(module)
-    const error = await module.default()
 
+
+    const error = eval('')
     // await Object.getPrototypeOf(async function() {}).constructor(decodedTestCase)();
 
     // TODO make this running in memory
