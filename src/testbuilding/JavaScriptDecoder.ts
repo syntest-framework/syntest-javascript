@@ -19,7 +19,7 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
     targetPool: JavaScriptTargetPool,
     dependencies: Map<string, Export[]>,
     exports: Export[],
-    folder = '../instrumented'
+    folder = '../../../.syntest/instrumented'
   ) {
     this.targetPool = targetPool
     this.dependencies = dependencies;
@@ -80,7 +80,7 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
         );
         testString.push("}");
       }
-      imports.push(`export {}`);
+      // imports.push(`export {}`);
 
       const importsOfTest = this.gatherImports(testString, importableGenes);
       imports.push(...importsOfTest);
@@ -104,17 +104,31 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
       }
 
       // TODO instead of using the targetName use the function call or a better description of the test
+      // tests.push(
+      //   `\tit('test for ${targetName}', async () => {\n` +
+      //   `${body.join("\n\n")}` +
+      //   `\n\t});`
+      // );
+
       tests.push(
-        `\tit('test for ${targetName}', async () => {\n` +
-        `${body.join("\n\n")}` +
-        `\n\t});`
+        `export default function () { return new Promise(async (resolve) => {` +
+        `\n\tconst timeout = setTimeout(() => {resolve('timed_out')}, 1000)` +
+        `\n\ttry {` +
+        `\n${body.join("\n\n")}` +
+        `\n\t\tclearTimeout(timeout)` +
+        `\n\t\tresolve()` +
+        `\n\t} catch (e) {` +
+        `\n\t\tclearTimeout(timeout)` +
+        `\n\t\tresolve(e)` +
+        `\n\t}` +
+        `\n});}`
       );
     }
 
     let test =
-      `describe('${targetName}', () => {\n` +
-      tests.join("\n\n") +
-      `\n})`;
+      // `describe('${targetName}', () => {\n` +
+      tests.join("\n\n")// +
+      // `\n})`;
 
     // Add the imports
     test =
@@ -192,9 +206,10 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
 
     let folder = '../..'
 
-    if (this.targetPool.targets.find((t) => t.canonicalPath === dependency.filePath)) {
-      folder = this.folder
-    }
+    folder = this.folder
+
+    // if (this.targetPool.targets.find((t) => t.canonicalPath === dependency.filePath)) {
+    // }
 
     if (dependency.module) {
       if (dependency.default) {

@@ -111,7 +111,7 @@ export class ObjectStatement extends Statement {
     const childStatements: Decoding[] = this._values
       .flatMap((a) => a.decode(addLogs))
 
-    let decoded = `const ${this.varName} = {\n${children}\n\t}`
+    let decoded = `const ${this.varName} = {\n${children}\n\t\t}`
 
     if (addLogs) {
       const logDir = path.join(

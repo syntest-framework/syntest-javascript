@@ -19,6 +19,7 @@
 import * as chalk from "chalk";
 import {textSync} from "figlet";
 
+
 /**
  * This class contains standardized functions that create colored and formatted messages to be used by the user-interface.
  * @author Dimitri

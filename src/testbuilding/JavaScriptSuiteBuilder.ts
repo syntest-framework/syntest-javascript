@@ -27,10 +27,10 @@ const Mocha = require('mocha')
 const originalrequire = require("original-require");
 
 export class JavaScriptSuiteBuilder {
-  private decoder: JavaScriptDecoder;
+  private _decoder: JavaScriptDecoder;
 
   constructor(decoder: JavaScriptDecoder) {
-    this.decoder = decoder
+    this._decoder = decoder
   }
 
 
@@ -135,7 +135,7 @@ export class JavaScriptSuiteBuilder {
       finalPaths.push(testPath)
       await writeFileSync(
         testPath,
-        this.decoder.decode(reducedArchive.get(key), `${key}`, false)
+        this._decoder.decode(reducedArchive.get(key), `${key}`, false)
       );
     }
 
@@ -208,7 +208,7 @@ export class JavaScriptSuiteBuilder {
   }
 
   async writeTestCase(filePath: string, testCase: JavaScriptTestCase, targetName: string, addLogs = false): Promise<void> {
-    const decodedTestCase = this.decoder.decode(
+    const decodedTestCase = this._decoder.decode(
       testCase,
       targetName,
       addLogs
@@ -236,4 +236,7 @@ export class JavaScriptSuiteBuilder {
     }
   }
 
+  get decoder(): JavaScriptDecoder {
+    return this._decoder;
+  }
 }

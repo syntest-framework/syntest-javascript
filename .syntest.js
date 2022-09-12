@@ -10,7 +10,7 @@ module.exports = {
     explore_illegal_values: false,
 
     algorithm: "DynaMOSA",
-    search_time: 120,
+    search_time: 5,
     total_time: 60000,
     iteration_budget: 1000000,
 
@@ -32,9 +32,9 @@ module.exports = {
     // target_root_directory: "./benchmark/custom/simple",
 
     // target_root_directory: "./benchmark/top10npm/axios",
-    target_root_directory: "./benchmark/top10npm/commanderjs",
+    // target_root_directory: "./benchmark/top10npm/commanderjs",
     // target_root_directory: "./benchmark/top10npm/express",
-    // target_root_directory: "./benchmark/top10npm/lodash",
+    target_root_directory: "./benchmark/top10npm/lodash",
     // target_root_directory: "./benchmark/top10npm/moment/src",
 
     // target_root_directory: "./benchmark/large_projects/javascript-algorithms",
@@ -49,22 +49,22 @@ module.exports = {
 
         // "./benchmark/top10npm/commanderjs/lib/help.js",
 
-        // "./benchmark/top10npm/lodash/.internal/equalArrays.js",
-        // "./benchmark/top10npm/lodash/hasPath.js",
-        // "./benchmark/top10npm/lodash/random.js",
-        // "./benchmark/top10npm/lodash/result.js",
-        // "./benchmark/top10npm/lodash/slice.js",
-        // "./benchmark/top10npm/lodash/split.js",
-        // "./benchmark/top10npm/lodash/toNumber.js",
-        // "./benchmark/top10npm/lodash/transform.js",
-        // "./benchmark/top10npm/lodash/truncate.js",
-        // "./benchmark/top10npm/lodash/unzip.js",
+        "./benchmark/top10npm/lodash/.internal/equalArrays.js",
+        "./benchmark/top10npm/lodash/hasPath.js",
+        "./benchmark/top10npm/lodash/random.js",
+        "./benchmark/top10npm/lodash/result.js",
+        "./benchmark/top10npm/lodash/slice.js",
+        "./benchmark/top10npm/lodash/split.js",
+        "./benchmark/top10npm/lodash/toNumber.js",
+        "./benchmark/top10npm/lodash/transform.js",
+        "./benchmark/top10npm/lodash/truncate.js",
+        "./benchmark/top10npm/lodash/unzip.js",
 
 
         // "./benchmark/top10npm/express/lib/view.js",
 
         // "./benchmark/top10npm/axios/lib/core/*.js",
-        "./benchmark/top10npm/commanderjs/lib/**/*.js",
+        // "./benchmark/top10npm/commanderjs/lib/**/*.js",
 
         // "./benchmark/top10npm/express/lib/**/*.js",
         // "./benchmark/top10npm/lodash/**/*.js",
@@ -96,8 +96,10 @@ module.exports = {
         "./benchmark/top10npm/commanderjs/lib/command.js",
         "./benchmark/top10npm/commanderjs/lib/error.js",
 
-        "./benchmark/top10npm/express/lib/router/index.js",
         "./benchmark/top10npm/express/lib/express.js",
+        "./benchmark/top10npm/express/lib/router/index.js",
+        "./benchmark/top10npm/express/lib/router/layer.js",
+        "./benchmark/top10npm/express/lib/router/route.js",
 
         "./benchmark/top10npm/moment/src/lib/create/local.js",
         "./benchmark/top10npm/moment/src/lib/create/utc.js",

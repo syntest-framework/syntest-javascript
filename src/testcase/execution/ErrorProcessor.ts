@@ -3,7 +3,7 @@ import { Statement } from "../statements/Statement";
 
 
 export default class ErrorProcessor {
-  processSuccess(testCase: JavaScriptTestCase, testResult: any) {
+  processSuccess(testCase: JavaScriptTestCase) {
 
     // const queue: Statement[] = [testCase.root]
     //
@@ -18,7 +18,7 @@ export default class ErrorProcessor {
     // }
   }
 
-  processError(testCase: JavaScriptTestCase, testResult: any) {
+  processError(testCase: JavaScriptTestCase, testResult: Error) {
 
     // console.log(testResult.err.name)
     // console.log(testResult.err.message)
@@ -43,7 +43,7 @@ export default class ErrorProcessor {
       const children = root.getChildren()
 
       for (const child of children) {
-        if (testResult.err.message.includes(child.identifierDescription.name)) {
+        if (testResult.message.includes(child.identifierDescription.name)) {
           // console.log(child.identifierDescription.typeProbabilityMap)
           // console.log(testResult.err)
           child.identifierDescription.typeProbabilityMap.addExecutionScore(child.type, -1)

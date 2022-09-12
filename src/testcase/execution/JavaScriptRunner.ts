@@ -8,13 +8,13 @@ import { JavaScriptTestCase } from "../JavaScriptTestCase";
 import { JavaScriptSubject } from "../../search/JavaScriptSubject";
 import * as path from "path";
 import { JavaScriptExecutionResult, JavaScriptExecutionStatus } from "../../search/JavaScriptExecutionResult";
-import { Runner } from "mocha";
+// import { Runner } from "mocha";
 import { JavaScriptSuiteBuilder } from "../../testbuilding/JavaScriptSuiteBuilder";
 import * as _ from 'lodash'
-import { SilentMochaReporter } from "./SilentMochaReporter";
+// import { SilentMochaReporter } from "./SilentMochaReporter";
 import ErrorProcessor from "./ErrorProcessor";
-const Mocha = require('mocha')
-const originalrequire = require("original-require");
+// const Mocha = require('mocha')
+// const originalrequire = require("original-require");
 
 export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
   protected suiteBuilder: JavaScriptSuiteBuilder;
@@ -24,12 +24,12 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     this.suiteBuilder = suiteBuilder
     this.errorProcessor = new ErrorProcessor()
 
-    process.on("uncaughtException", reason => {
-      throw reason;
-    });
-    process.on("unhandledRejection", reason => {
-      throw reason;
-    });
+    // process.on("uncaughtException", reason => {
+    //   throw reason;
+    // });
+    // process.on("unhandledRejection", reason => {
+    //   throw reason;
+    // });
   }
 
   async execute(
@@ -38,44 +38,72 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
   ): Promise<ExecutionResult> {
     const testPath = path.resolve(path.join(Properties.temp_test_directory, "tempTest.spec.js"))
 
-    await this.suiteBuilder.writeTestCase(testPath, testCase, subject.name);
+
+    const decodedTestCase = this.suiteBuilder.decoder.decode(
+      testCase,
+      subject.name,
+      false
+    );
+    console.log(decodedTestCase)
+
+    // const func = Function(decodedTestCase)
+    // const error = await func() //eval(decodedTestCase)
+
+    const encodedJs = encodeURIComponent(decodedTestCase)
+    const dataUri = 'data:text/javascript;charset=utf-8,'
+      + encodedJs;
+    console.log(dataUri)
+    declare module "data:text/javascript;*" {
+      export const number: number;
+      export function fn(): string;
+    }
+
+    const module = await import(dataUri)
+    console.log(module)
+    const error = await module.default()
+
+    // await Object.getPrototypeOf(async function() {}).constructor(decodedTestCase)();
 
     // TODO make this running in memory
 
-    const argv = {
-      spec: testPath,
-      reporter: SilentMochaReporter
-    }
-
-    const mocha = new Mocha(argv)// require('ts-node/register')
-
-    require("regenerator-runtime/runtime");
-    require('@babel/register')({
-      presets: [
-        "@babel/preset-env"
-      ]
-    })
-
-    delete originalrequire.cache[testPath];
-    mocha.addFile(testPath);
-
-    let runner: Runner = null
-
-    // Finally, run mocha.
-    await new Promise((resolve) => {
-      runner = mocha.run((failures) => resolve(failures))
-    })
-
-    const stats = runner.stats
-
-    const test = runner.suite.suites[0].tests[0];
+    // await this.suiteBuilder.writeTestCase(testPath, testCase, subject.name);
+    //
+    // const argv = {
+    //   spec: testPath,
+    //   reporter: SilentMochaReporter
+    // }
+    //
+    // const mocha = new Mocha(argv)// require('ts-node/register')
+    //
+    // require("regenerator-runtime/runtime");
+    // require('@babel/register')({
+    //   presets: [
+    //     "@babel/preset-env"
+    //   ]
+    // })
+    //
+    // delete originalrequire.cache[testPath];
+    // mocha.addFile(testPath);
+    //
+    // let runner: Runner = null
+    //
+    // // Finally, run mocha.
+    // await new Promise((resolve) => {
+    //   runner = mocha.run((failures) => resolve(failures))
+    // })
+    //
+    // const stats = runner.stats
+    //
+    // const test = runner.suite.suites[0].tests[0];
 
     // If one of the executions failed, log it
-    if (stats.failures > 0) {
-      this.errorProcessor.processError(testCase, test)
+    if (error === 'timed_out') {
+      getUserInterface().error("Test case has timed out!");
+    } else if (error) {
+      this.errorProcessor.processError(testCase, error)
       getUserInterface().error("Test case has failed!");
     } else {
-      this.errorProcessor.processSuccess(testCase, test)
+      this.errorProcessor.processSuccess(testCase)
     }
 
     // Retrieve execution traces
@@ -162,48 +190,47 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     }
 
     // Retrieve execution information
-    let executionResult: JavaScriptExecutionResult;
-    if (
-      runner.suite.suites.length > 0 &&
-      runner.suite.suites[0].tests.length > 0
-    ) {
-      const test = runner.suite.suites[0].tests[0];
+    // if (
+    //   runner.suite.suites.length > 0 &&
+    //   runner.suite.suites[0].tests.length > 0
+    // ) {
+    //   const test = runner.suite.suites[0].tests[0];
 
       let status: JavaScriptExecutionStatus;
       let exception: string = null;
 
-      if (test.isPassed()) {
+      if (!error) {
         status = JavaScriptExecutionStatus.PASSED;
-      } else if (test.timedOut) {
+      } else if (error === 'timed_out') {
         status = JavaScriptExecutionStatus.TIMED_OUT;
       } else {
         status = JavaScriptExecutionStatus.FAILED;
-        exception = test.err.message;
+        exception = error.message;
       }
 
-      const duration = test.duration;
+      const duration = 0//test.duration; // TODO
 
-      executionResult = new JavaScriptExecutionResult(
+    const executionResult: JavaScriptExecutionResult = new JavaScriptExecutionResult(
         status,
         traces,
         duration,
         exception
       );
-    } else {
-      executionResult = new JavaScriptExecutionResult(
-        JavaScriptExecutionStatus.FAILED,
-        traces,
-        stats.duration
-      );
-    }
+    // } else {
+    //   executionResult = new JavaScriptExecutionResult(
+    //     JavaScriptExecutionStatus.FAILED,
+    //     traces,
+    //     stats.duration
+    //   );
+    // }
 
     // Reset instrumentation data (no hits)
     this.resetInstrumentationData();
 
     // Remove test file
-    await this.suiteBuilder.deleteTestCase(testPath);
+    // await this.suiteBuilder.deleteTestCase(testPath);
 
-    await mocha.dispose()
+    // await mocha.dispose()
 
     return executionResult;
   }
