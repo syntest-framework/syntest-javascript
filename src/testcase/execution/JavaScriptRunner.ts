@@ -68,10 +68,17 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     const sourceTextModule = new vm.SourceTextModule(decodedTestCase, { context: context})
     console.log(sourceTextModule)
 
-    async function linker(specifier, referencingModule) {
-      return import(specifier)
-    }
-    await sourceTextModule.link(linker);
+    await sourceTextModule.link( function( spec ) {
+
+      return new Promise( async function( resolve, reject ) {
+
+        const mod = await import( spec );
+        resolve( new vm.SyntheticModule( [ 'default' ], function() {
+
+          this.setExport( 'default', mod.default );
+        } ) );
+      } )
+    } );
 
     const module = await sourceTextModule.evaluate()
     console.log(module)
