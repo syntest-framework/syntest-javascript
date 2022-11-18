@@ -10,7 +10,7 @@ import * as path from "path";
 import { JavaScriptExecutionResult, JavaScriptExecutionStatus } from "../../search/JavaScriptExecutionResult";
 import * as _ from 'lodash'
 import { SilentMochaReporter } from "./SilentMochaReporter";
-import ExecutionInformationIntegrator from "./ExecutionInformationIntegrator";
+import ExecutionInformationIntegrator from "../../analysis/dynamic/types/ExecutionInformationIntegrator";
 
 import { Runner } from "mocha";
 import { unlinkSync, writeFileSync } from "fs";

@@ -190,6 +190,42 @@ export class JavaScriptTargetPool extends TargetPool {
 
     if (!this._targetMap.has(absoluteTargetPath)) {
       const targetAST = this.getAST(absoluteTargetPath);
+
+      const targetMap = this.targetMapGenerator.generate(absoluteTargetPath, targetAST);
+      const exports = this.getExports(targetPath)
+      const finalTargetMap = new Map<string, JavaScriptTargetMetaData>()
+
+      for (const key of targetMap.keys()) {
+        const name = targetMap.get(key).name
+        const export_ = exports.find((e) => e.name === name)
+
+        if (!export_) {
+          // No export found, so we cannot import it and thus not test it
+          continue
+        }
+
+        // threat everything as a function if we don't know
+        finalTargetMap.set(key, {
+          name: name,
+          type: export_.type === ExportType.class
+            ? SubjectType.class
+            : (export_.type === ExportType.const ? SubjectType.object : SubjectType.function),
+          export: export_
+        })
+      }
+
+      this._targetMap.set(absoluteTargetPath, finalTargetMap);
+    }
+
+    return this._targetMap.get(absoluteTargetPath);
+  }
+
+
+  getTargetMap(targetPath: string): Map<string, JavaScriptTargetMetaData> {
+    const absoluteTargetPath = path.resolve(targetPath);
+
+    if (!this._targetMap.has(absoluteTargetPath)) {
+      const targetAST = this.getAST(absoluteTargetPath);
       const { targetMap, functionMap } =
         this.targetMapGenerator.generate(absoluteTargetPath, targetAST);
 
@@ -424,7 +460,6 @@ export class JavaScriptTargetPool extends TargetPool {
         finalObjects.push(o)
       }
     })
-
 
     const generator = new VariableGenerator()
     const elements: Element[] = []

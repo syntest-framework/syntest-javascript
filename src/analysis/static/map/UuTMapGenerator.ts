@@ -26,18 +26,24 @@ import { ActionDescription } from "../parsing/ActionDescription";
  *
  * @author Dimitri Stallenberg
  */
-export class TargetMapGenerator {
+export class UuTMapGenerator {
   /**
    * Generate function map for specified target.
    *
    * @param filePath The filePath of the target
    * @param targetAST The AST of the target
    */
-  generate(filePath: string, targetAST: any): Map<string, TargetMetaData> {
-    const visitor = new TargetVisitor(filePath);
+  generate(filePath: string, targetAST: any): {
+    targetMap: Map<string, TargetMetaData>;
+    functionMap: Map<string, Map<string, ActionDescription>>;
+  } {
+    const visitor = new UuTMapGenerator(filePath);
 
     traverse(targetAST, visitor);
 
-    return visitor.targetMap
+    const targetMap = visitor.targetMap;
+    const functionMap = visitor.functionMap;
+
+    return { targetMap, functionMap };
   }
 }

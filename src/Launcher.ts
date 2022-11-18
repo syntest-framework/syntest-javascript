@@ -41,7 +41,7 @@ import {
   setUserInterface,
   StatisticsCollector,
   StatisticsSearchListener,
-  SummaryWriter,
+  SummaryWriter, Target,
   TotalTimeBudget,
 } from "@syntest/framework";
 
@@ -196,17 +196,12 @@ export class Launcher {
       await this.exit();
     }
 
-    let names: string[] = [];
+    const names: string[] = targetPool.targets.map((target) => {
+      return `${path.basename(target.canonicalPath)} -> ${target.targetName}`
+    });
 
-    targetPool.targets.forEach((target) =>
-      names.push(
-        `${path.basename(target.canonicalPath)} -> ${target.targetName}`
-      )
-    );
     getUserInterface().report("targets", names);
-
     getUserInterface().report("header", ["CONFIGURATION"]);
-
     getUserInterface().report("single-property", ["Seed", getSeed()]);
     getUserInterface().report("property-set", [
       "Budgets",
@@ -283,8 +278,7 @@ export class Launcher {
     for (const target of targetPool.targets) {
       const archive = await this.testTarget(
         targetPool,
-        target.canonicalPath,
-        targetPool.getTargetMap(target.canonicalPath).get(target.targetName)
+        target
       );
 
       const dependencies = targetPool.getDependencies(target.canonicalPath);
@@ -302,9 +296,12 @@ export class Launcher {
 
   private async testTarget(
     targetPool: JavaScriptTargetPool,
-    targetPath: string,
-    targetMeta: JavaScriptTargetMetaData
+    target: Target
   ): Promise<Archive<JavaScriptTestCase>> {
+    const targetPath = target.canonicalPath
+    const targetMap = targetPool.getTargetMap(targetPath)
+    const targetMeta = targetMap.get(target.targetName)
+
     const cfg = targetPool.getCFG(targetPath, targetMeta.name);
 
     if (Properties.draw_cfg) {
