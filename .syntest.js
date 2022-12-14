@@ -48,18 +48,6 @@ module.exports = {
 
         "../syntest-javascript-benchmark/commanderjs/lib/help.js",
 
-<<<<<<< HEAD
-        "./benchmark/top10npm/lodash/.internal/equalArrays.js",
-        "./benchmark/top10npm/lodash/hasPath.js",
-        "./benchmark/top10npm/lodash/random.js",
-        "./benchmark/top10npm/lodash/result.js",
-        "./benchmark/top10npm/lodash/slice.js",
-        "./benchmark/top10npm/lodash/split.js",
-        "./benchmark/top10npm/lodash/toNumber.js",
-        "./benchmark/top10npm/lodash/transform.js",
-        "./benchmark/top10npm/lodash/truncate.js",
-        "./benchmark/top10npm/lodash/unzip.js",
-=======
         // "../syntest-javascript-benchmark/lodash/.internal/equalArrays.js",
         // "../syntest-javascript-benchmark/lodash/hasPath.js",
         // "../syntest-javascript-benchmark/lodash/random.js",
@@ -70,18 +58,12 @@ module.exports = {
         // "../syntest-javascript-benchmark/lodash/transform.js",
         // "../syntest-javascript-benchmark/lodash/truncate.js",
         // "../syntest-javascript-benchmark/lodash/unzip.js",
->>>>>>> main
 
 
         // "../syntest-javascript-benchmark/express/lib/view.js",
 
-<<<<<<< HEAD
-        // "./benchmark/top10npm/axios/lib/core/*.js",
-        // "./benchmark/top10npm/commanderjs/lib/**/*.js",
-=======
         // "../syntest-javascript-benchmark/axios/lib/core/*.js",
         // "../syntest-javascript-benchmark/commanderjs/lib/**/*.js",
->>>>>>> main
 
         // "../syntest-javascript-benchmark/express/lib/**/*.js",
         // "../syntest-javascript-benchmark/lodash/**/*.js",
@@ -111,15 +93,8 @@ module.exports = {
         "../syntest-javascript-benchmark/commanderjs/lib/command.js",
         "../syntest-javascript-benchmark/commanderjs/lib/error.js",
 
-<<<<<<< HEAD
-        "./benchmark/top10npm/express/lib/express.js",
-        "./benchmark/top10npm/express/lib/router/index.js",
-        "./benchmark/top10npm/express/lib/router/layer.js",
-        "./benchmark/top10npm/express/lib/router/route.js",
-=======
         "../syntest-javascript-benchmark/express/lib/router/index.js",
         "../syntest-javascript-benchmark/express/lib/express.js",
->>>>>>> main
 
         "../syntest-javascript-benchmark/moment/src/lib/create/local.js",
         "../syntest-javascript-benchmark/moment/src/lib/create/utc.js",
