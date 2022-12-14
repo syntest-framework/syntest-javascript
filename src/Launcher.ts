@@ -34,7 +34,7 @@ import {
   IterationBudget,
   loadConfig,
   processConfig,
-  Properties,
+  Properties, RuntimeVariable,
   SearchTimeBudget,
   setupLogger,
   setupOptions,
@@ -63,20 +63,17 @@ import { ControlFlowGraphGenerator } from "./analysis/static/cfg/ControlFlowGrap
 import { ImportGenerator } from "./analysis/static/dependency/ImportGenerator";
 import { ExportGenerator } from "./analysis/static/dependency/ExportGenerator";
 import { Export } from "./analysis/static/dependency/ExportVisitor";
-import { Runner } from "mocha";
 import { TypeResolverInference } from "./analysis/static/types/resolving/logic/TypeResolverInference";
 import { TypeResolverUnknown } from "./analysis/static/types/resolving/TypeResolverUnknown";
 import { TypeResolver } from "./analysis/static/types/resolving/TypeResolver";
 import { ActionType } from "./analysis/static/parsing/ActionType";
 import { existsSync } from "fs";
 
-const originalrequire = require("original-require");
-const Mocha = require('mocha')
-
 export class Launcher {
   private readonly _program = "syntest-javascript";
 
   private coveredInPath = new Map<string, Archive<JavaScriptTestCase>>()
+  private timings = []
 
   public async run() {
     try {
@@ -93,6 +90,7 @@ export class Launcher {
   }
 
   private async setup(): Promise<JavaScriptTargetPool> {
+    this.timings.push({ time: Date.now(), what: 'start setup' })
     // Filesystem & Compiler Re-configuration
     const additionalOptions = {
       incorporate_execution_information: {
@@ -100,11 +98,10 @@ export class Launcher {
         type: "boolean",
         default: true,
       },
-      // TODO maybe remove the first one and add a identifierDescription inference mode called "none"
       type_inference_mode: {
-        description: "The type inference mode: [roulette, elitist, dynamic]",
+        description: "The type inference mode: [proportional, ranked, none]",
         type: "string",
-        default: "roulette",
+        default: "proportional",
       },
       random_type_probability: {
         description: "The probability we use a random type regardless of the inferred type",
@@ -186,7 +183,11 @@ export class Launcher {
       ],
     ]);
 
+    this.timings.push({ time: Date.now(), what: 'start load targets' })
+
     await targetPool.loadTargets();
+
+    this.timings.push({ time: Date.now(), what: 'end load targets' })
 
     if (!targetPool.targets.length) {
       getUserInterface().error(
@@ -254,7 +255,7 @@ export class Launcher {
         ["Random Type Probability", Properties['random_type_probability']],
       ],
     ]);
-
+    this.timings.push({ time: Date.now(), what: 'end setup' })
     return targetPool;
   }
 
@@ -263,13 +264,21 @@ export class Launcher {
   ): Promise<
     [Archive<JavaScriptTestCase>, Map<string, Export[]>, Export[]]
   > {
-    await targetPool.prepareAndInstrument()
+    this.timings.push({ time: Date.now(), what: 'start search' })
 
+    this.timings.push({ time: Date.now(), what: 'start instrumenting' })
+    await targetPool.prepareAndInstrument()
+    this.timings.push({ time: Date.now(), what: 'end instrumenting' })
+
+    this.timings.push({ time: Date.now(), what: 'start type resolving' })
     targetPool.scanTargetRootDirectory()
+    this.timings.push({ time: Date.now(), what: 'end type resolving' })
 
     const finalArchive = new Archive<JavaScriptTestCase>();
     const finalDependencies: Map<string, Export[]> = new Map();
     const finalExports: Export[] = []
+
+    this.timings.push({ time: Date.now(), what: 'start testing targets' })
 
     for (const target of targetPool.targets) {
       const archive = await this.testTarget(
@@ -284,6 +293,9 @@ export class Launcher {
       finalDependencies.set(target.targetName, dependencies)
       finalExports.push(...targetPool.getExports(target.canonicalPath))
     }
+    this.timings.push({ time: Date.now(), what: 'end testing targets' })
+
+    this.timings.push({ time: Date.now(), what: 'end search' })
 
     return [finalArchive, finalDependencies, finalExports];
   }
@@ -309,6 +321,7 @@ export class Launcher {
     const functionMap = targetPool.getFunctionMap(targetPath, targetMeta.name)
 
     // couple types to parameters
+    // TODO do this type matching already in the target visitor
     for (const func of functionMap.values()) {
       for (const param of func.parameters) {
         if (func.type === ActionType.FUNCTION) {
@@ -341,8 +354,9 @@ export class Launcher {
     const exports = targetPool.getExports(targetPath)
 
     const decoder = new JavaScriptDecoder(targetPool, dependencyMap, exports)
-    const suiteBuilder = new JavaScriptSuiteBuilder(decoder)
-    const runner = new JavaScriptRunner(suiteBuilder)
+    const runner = new JavaScriptRunner(decoder)
+
+    const suiteBuilder = new JavaScriptSuiteBuilder(decoder, runner)
 
     // TODO constant pool
 
@@ -400,6 +414,16 @@ export class Launcher {
       evaluationBudget
     );
 
+    collector.recordVariable(
+      RuntimeVariable.INSTRUMENTATION_TIME,
+      (this.timings.find((x) => x.what === 'end instrumenting').time - this.timings.find((x) => x.what === 'start instrumenting').time) / 1000
+    );
+
+    collector.recordVariable(
+      RuntimeVariable.TYPE_RESOLVING_TIME,
+      (this.timings.find((x) => x.what === 'end type resolving').time - this.timings.find((x) => x.what === 'start type resolving').time) / 1000
+    );
+
     collectCoverageData(collector, archive, "branch");
     collectCoverageData(collector, archive, "statement");
     collectCoverageData(collector, archive, "function");
@@ -432,126 +456,43 @@ export class Launcher {
       targetPool,
       dependencies,
       exports,
-      '../../.syntest/instrumented'
     );
+    const runner = new JavaScriptRunner(decoder)
 
-    const suiteBuilder = new JavaScriptSuiteBuilder(decoder);
+    const suiteBuilder = new JavaScriptSuiteBuilder(decoder, runner)
 
-    const paths = await suiteBuilder.createSuite(archive);
+    // TODO fix hardcoded paths
 
-    const mocha = new Mocha()
+    const reducedArchive = suiteBuilder.reduceArchive(archive);
 
-    // require('ts-node/register')
+    let paths = await suiteBuilder.createSuite(reducedArchive, '../instrumented', Properties.temp_test_directory, true, false);
+    await suiteBuilder.runSuite(paths, false, targetPool)
 
-    require("regenerator-runtime/runtime");
-    require('@babel/register')({
-      presets: [
-        "@babel/preset-env"
-      ]
-    })
+    // reset states
+    await suiteBuilder.clearDirectory(Properties.temp_test_directory);
 
-    for (const _path of paths) {
-      delete originalrequire.cache[_path];
-      mocha.addFile(_path);
+    // run with assertions and report results
+    for (const key of reducedArchive.keys()) {
+      await suiteBuilder.gatherAssertions(reducedArchive.get(key));
     }
+    paths = await suiteBuilder.createSuite(reducedArchive, '../instrumented', Properties.temp_test_directory, false, true);
+    await suiteBuilder.runSuite(paths, true, targetPool)
 
-    // // By replacing the global log function we disable the output of the truffle test framework
-    // const levels = ['log', 'debug', 'info', 'warn', 'error'];
-    // const originalFunctions = levels.map(level => console[level]);
-    // levels.forEach((level) => {
-    //   // eslint-disable-next-line @typescript-eslint/no-empty-function
-    //   console[level] = () => {}
-    // })
+    const originalSourceDir = path
+      .join('../../', path.relative(
+        process.cwd(),
+        Properties.target_root_directory
+        ))
+      .replace(path.basename(Properties.target_root_directory), '')
 
-
-    // Finally, run mocha.
-    process.on("unhandledRejection", reason => {
-      throw reason;
-    });
-
-    await new Promise((resolve) => {
-      mocha.run((failures: number) => {
-        resolve(failures)
-      })
-    })
-
-    // levels.forEach((level, index) => {
-    //   console[level] = originalFunctions[index]
-    // })
-
-    getUserInterface().report("header", ["SEARCH RESULTS"]);
-    const instrumentationData = global.__coverage__
-
-    // Run Istanbul
-    // TODO
-
-    getUserInterface().report("report-coverage", ['Coverage report', { branch: 'Branch', statement: 'Statement', function: 'Function' }, true])
-
-    const overall = {
-      branch: 0,
-      statement: 0,
-      function: 0
-    }
-    let totalBranches = 0
-    let totalStatements = 0
-    let totalFunctions = 0
-    for (const file of Object.keys(instrumentationData)) {
-      if (!targetPool.targets.find((t) => t.canonicalPath === file)) {
-        continue
-      }
-
-      const data = instrumentationData[file]
-
-      const summary = {
-        branch: 0,
-        statement: 0,
-        function: 0
-      }
-
-      for (const statementKey of Object.keys(data.s)) {
-        summary['statement'] += data.s[statementKey] ? 1 : 0
-        overall['statement'] += data.s[statementKey] ? 1 : 0
-      }
-
-      for (const branchKey of Object.keys(data.b)) {
-        summary['branch'] += data.b[branchKey][0] ? 1 : 0
-        overall['branch'] += data.b[branchKey][0] ? 1 : 0
-        summary['branch'] += data.b[branchKey][1] ? 1 : 0
-        overall['branch'] += data.b[branchKey][1] ? 1 : 0
-      }
-
-      for (const functionKey of Object.keys(data.f)) {
-        summary['function'] += data.f[functionKey] ? 1 : 0
-        overall['function'] += data.f[functionKey] ? 1 : 0
-      }
-
-      totalStatements += Object.keys(data.s).length
-      totalBranches += (Object.keys(data.b).length * 2)
-      totalFunctions += Object.keys(data.f).length
-
-      getUserInterface().report("report-coverage", [file, {
-        'statement': summary['statement'] + ' / ' + Object.keys(data.s).length,
-        'branch': summary['branch'] + ' / ' + (Object.keys(data.b).length * 2),
-        'function': summary['function'] + ' / ' + Object.keys(data.f).length
-      }, false])
-
-      // console.log(data.b)
-      // console.log(Object.keys(data.s).filter((x) => data.s[x] === 0).map((x) => data.statementMap[x].start.line))
-      // console.log(data.f)
-      // console.log()
-    }
-
-    overall['statement'] /= totalStatements
-    overall['branch'] /= totalBranches
-    overall['function'] /= totalFunctions
-
-    getUserInterface().report("report-coverage", ['Total', {
-      'statement': (overall['statement'] * 100) + ' %',
-      'branch': (overall['branch'] * 100) + ' %',
-      'function': (overall['function'] * 100) + ' %'
-    }, true])
-
-
+    // create final suite
+    await suiteBuilder.createSuite(
+      reducedArchive,
+      originalSourceDir,
+      Properties.final_suite_directory,
+      false,
+      true
+    );
   }
 
   async exit(): Promise<void> {

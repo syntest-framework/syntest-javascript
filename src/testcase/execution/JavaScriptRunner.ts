@@ -12,18 +12,25 @@ import { JavaScriptExecutionResult, JavaScriptExecutionStatus } from "../../sear
 import { JavaScriptSuiteBuilder } from "../../testbuilding/JavaScriptSuiteBuilder";
 import * as _ from 'lodash'
 // import { SilentMochaReporter } from "./SilentMochaReporter";
-import ErrorProcessor from "./ErrorProcessor";
 // const Mocha = require('mocha')
 // const originalrequire = require("original-require");
 const vm = require('node:vm');
+import * as _ from 'lodash'
+import { SilentMochaReporter } from "./SilentMochaReporter";
+
+import { Runner } from "mocha";
+import { unlinkSync, writeFileSync } from "fs";
+import { JavaScriptDecoder } from "../../testbuilding/JavaScriptDecoder";
+const Mocha = require('mocha')
+const originalrequire = require("original-require");
 
 export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
-  protected suiteBuilder: JavaScriptSuiteBuilder;
-  protected errorProcessor: ErrorProcessor
+  protected decoder: JavaScriptDecoder;
+  protected errorProcessor: ExecutionInformationIntegrator
 
-  constructor(suiteBuilder: JavaScriptSuiteBuilder) {
-    this.suiteBuilder = suiteBuilder
-    this.errorProcessor = new ErrorProcessor()
+  constructor(decoder: JavaScriptDecoder) {
+    this.decoder = decoder
+    this.errorProcessor = new ExecutionInformationIntegrator()
 
     // process.on("uncaughtException", reason => {
     //   throw reason;
@@ -33,12 +40,14 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     // });
   }
 
-  async execute(
-    subject: JavaScriptSubject,
-    testCase: JavaScriptTestCase
-  ): Promise<ExecutionResult> {
-    const testPath = path.resolve(path.join(Properties.temp_test_directory, "tempTest.spec.js"))
+  async writeTestCase(filePath: string, testCase: JavaScriptTestCase, targetName: string, addLogs = false): Promise<void> {
+    const decodedTestCase = this.decoder.decode(
+      testCase,
+      targetName,
+      addLogs
+    );
 
+<<<<<<< HEAD
 
     const decodedTestCase = this.suiteBuilder.decoder.decode(
       testCase,
@@ -86,9 +95,35 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
 
     const error = eval('')
     // await Object.getPrototypeOf(async function() {}).constructor(decodedTestCase)();
+=======
+    // const transpiledTestCase = ts.transpileModule(decodedTestCase, { compilerOptions: { module: ts.ModuleKind.CommonJS }}).outputText
+    // await writeFileSync(filePath, transpiledTestCase);
+>>>>>>> main
 
-    // TODO make this running in memory
+    await writeFileSync(filePath, decodedTestCase);
+  }
 
+  /**
+   * Deletes a certain file.
+   *
+   * @param filepath  the filepath of the file to delete
+   */
+  async deleteTestCase(filepath: string) {
+    try {
+      await unlinkSync(filepath);
+    } catch (error) {
+      getUserInterface().debug(error);
+    }
+  }
+
+  async createSuite() {
+
+  }
+
+  async run(paths: string[]): Promise<Runner> {
+    paths = paths.map((p) => path.resolve(p))
+
+<<<<<<< HEAD
     // await this.suiteBuilder.writeTestCase(testPath, testCase, subject.name);
     //
     // const argv = {
@@ -125,6 +160,55 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     } else if (error) {
       this.errorProcessor.processError(testCase, error)
       getUserInterface().error("Test case has failed!");
+=======
+    const argv = {
+      spec: paths,
+      reporter: SilentMochaReporter
+    }
+
+    const mocha = new Mocha(argv)// require('ts-node/register')
+
+    require("regenerator-runtime/runtime");
+    require('@babel/register')({
+      presets: [
+        require.resolve("@babel/preset-env")
+      ]
+    })
+
+    for (const _path of paths) {
+      delete originalrequire.cache[_path];
+      mocha.addFile(_path);
+    }
+
+    let runner: Runner = null
+
+    // Finally, run mocha.
+    await new Promise((resolve) => {
+      runner = mocha.run((failures) => resolve(failures))
+    })
+
+    await mocha.dispose()
+    return runner
+  }
+
+  async execute(
+    subject: JavaScriptSubject,
+    testCase: JavaScriptTestCase
+  ): Promise<ExecutionResult> {
+    const testPath = path.resolve(path.join(Properties.temp_test_directory, "tempTest.spec.js"))
+
+    await this.writeTestCase(testPath, testCase, subject.name);
+
+    const runner = await this.run([testPath])
+
+    const stats = runner.stats
+
+    const test = runner.suite.suites[0].tests[0];
+
+    // If one of the executions failed, log it
+    if (stats.failures > 0) {
+      this.errorProcessor.processError(testCase, test)
+>>>>>>> main
     } else {
       this.errorProcessor.processSuccess(testCase)
     }
@@ -251,9 +335,13 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     this.resetInstrumentationData();
 
     // Remove test file
+<<<<<<< HEAD
     // await this.suiteBuilder.deleteTestCase(testPath);
 
     // await mocha.dispose()
+=======
+    await this.deleteTestCase(testPath);
+>>>>>>> main
 
     return executionResult;
   }

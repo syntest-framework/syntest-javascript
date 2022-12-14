@@ -16,21 +16,24 @@
  * limitations under the License.
  */
 
-import { Archive, getUserInterface, Properties } from "@syntest/framework";
+import { Archive, ExecutionResult, getUserInterface, Properties, TargetPool } from "@syntest/framework";
 import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
 import { readdirSync, readFileSync, rmdirSync, unlinkSync, writeFileSync } from "fs";
 import * as path from "path";
 import { JavaScriptDecoder } from "./JavaScriptDecoder";
+import * as _ from 'lodash'
+
 import { Runner } from "mocha";
-import { SilentMochaReporter } from "../testcase/execution/SilentMochaReporter";
-const Mocha = require('mocha')
+import { JavaScriptRunner } from "../testcase/execution/JavaScriptRunner";
 const originalrequire = require("original-require");
 
 export class JavaScriptSuiteBuilder {
   private _decoder: JavaScriptDecoder;
+  private runner: JavaScriptRunner
 
-  constructor(decoder: JavaScriptDecoder) {
+  constructor(decoder: JavaScriptDecoder, runner: JavaScriptRunner) {
     this._decoder = decoder
+    this.runner = runner
   }
 
 
@@ -60,37 +63,123 @@ export class JavaScriptSuiteBuilder {
     }
   }
 
-  async createSuite(archive: Archive<JavaScriptTestCase>): Promise<string[]> {
-    const reducedArchive = this.reduceArchive(archive);
-
+  async createSuite(archive: Map<string, JavaScriptTestCase[]>, sourceDir: string, testDir: string, addLogs: boolean, compact: boolean): Promise<string[]> {
     const paths: string[] = []
     // write the test cases with logs to know what to assert
-    for (const key of reducedArchive.keys()) {
-      for (const testCase of reducedArchive.get(key)!) {
+    if (!compact) {
+      for (const key of archive.keys()) {
+        for (const testCase of archive.get(key)!) {
+          const testPath = path.join(
+            testDir,
+            `test${key}${testCase.id}.spec.js`
+          );
+          paths.push(testPath)
+          await writeFileSync(
+            testPath,
+            this.decoder.decode(
+              testCase,
+              "",
+              addLogs,
+              sourceDir
+            )
+          )
+        }
+      }
+    } else {
+      for (const key of archive.keys()) {
         const testPath = path.join(
-          Properties.temp_test_directory,
-          `test${key}${testCase.id}.spec.ts`
+          testDir,
+          `test-${key}.spec.js`
         );
         paths.push(testPath)
-        await this.writeTestCase(testPath, testCase, "", true);
+        await writeFileSync(
+          testPath,
+          this.decoder.decode(
+            archive.get(key),
+            `${key}`,
+            addLogs,
+            sourceDir
+          )
+        );
       }
     }
 
-    let argv = {
-      // package: require('../../../package.json'),
-      // _: [],
-      require: [ 'ts-node/register' ], // , '@babel/register'
-      // config: false,
-      // diff: true,
-      // extension: [ 'js', 'cjs', 'mjs', 'ts' ],
-      // reporter: 'spec',
-      // slow: 75,
-      // timeout: 2000,
-      // ui: 'bdd',
-      // 'watch-ignore': [ 'node_modules', '.git' ],
-      // watchIgnore: [ 'node_modules', '.git' ]
-      spec: paths,
-      reporter: SilentMochaReporter
+    return paths
+  }
+
+  async runSuite(paths: string[], report: boolean, targetPool: TargetPool) {
+    const runner: Runner = await this.runner.run(paths)
+
+    const stats = runner.stats
+
+    if (report) {
+      if (stats.failures > 0) {
+        getUserInterface().error("Test case has failed!");
+      }
+
+      getUserInterface().report("header", ["SEARCH RESULTS"]);
+      const instrumentationData = _.cloneDeep(global.__coverage__)
+
+      getUserInterface().report("report-coverage", ['Coverage report', { branch: 'Branch', statement: 'Statement', function: 'Function' }, true])
+
+      const overall = {
+        branch: 0,
+        statement: 0,
+        function: 0
+      }
+      let totalBranches = 0
+      let totalStatements = 0
+      let totalFunctions = 0
+      for (const file of Object.keys(instrumentationData)) {
+        if (!targetPool.targets.find((t) => t.canonicalPath === file)) {
+          continue
+        }
+
+        const data = instrumentationData[file]
+
+        const summary = {
+          branch: 0,
+          statement: 0,
+          function: 0
+        }
+
+        for (const statementKey of Object.keys(data.s)) {
+          summary['statement'] += data.s[statementKey] ? 1 : 0
+          overall['statement'] += data.s[statementKey] ? 1 : 0
+        }
+
+        for (const branchKey of Object.keys(data.b)) {
+          summary['branch'] += data.b[branchKey][0] ? 1 : 0
+          overall['branch'] += data.b[branchKey][0] ? 1 : 0
+          summary['branch'] += data.b[branchKey][1] ? 1 : 0
+          overall['branch'] += data.b[branchKey][1] ? 1 : 0
+        }
+
+        for (const functionKey of Object.keys(data.f)) {
+          summary['function'] += data.f[functionKey] ? 1 : 0
+          overall['function'] += data.f[functionKey] ? 1 : 0
+        }
+
+        totalStatements += Object.keys(data.s).length
+        totalBranches += (Object.keys(data.b).length * 2)
+        totalFunctions += Object.keys(data.f).length
+
+        getUserInterface().report("report-coverage", [file, {
+          'statement': summary['statement'] + ' / ' + Object.keys(data.s).length,
+          'branch': summary['branch'] + ' / ' + (Object.keys(data.b).length * 2),
+          'function': summary['function'] + ' / ' + Object.keys(data.f).length
+        }, false])
+      }
+
+      overall['statement'] /= totalStatements
+      overall['branch'] /= totalBranches
+      overall['function'] /= totalFunctions
+
+      getUserInterface().report("report-coverage", ['Total', {
+        'statement': (overall['statement'] * 100) + ' %',
+        'branch': (overall['branch'] * 100) + ' %',
+        'function': (overall['function'] * 100) + ' %'
+      }, true])
     }
 
     for (const testPath of paths) {
