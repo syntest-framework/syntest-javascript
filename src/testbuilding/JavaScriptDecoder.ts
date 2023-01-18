@@ -1,4 +1,4 @@
-import { Decoder, Properties } from "@syntest/framework";
+import { Decoder, Properties } from "@syntest/core";
 import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
 import * as path from "path";
 import { ConstructorCall } from "../testcase/statements/root/ConstructorCall";

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { prng, Crossover, Properties } from "@syntest/framework";
+import { prng, Crossover, Properties } from "@syntest/core";
 
 import { JavaScriptTestCase } from "../../testcase/JavaScriptTestCase";
 import { RootStatement } from "../../testcase/statements/root/RootStatement";

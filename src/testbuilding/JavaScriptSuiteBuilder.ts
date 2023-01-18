@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { Archive, ExecutionResult, getUserInterface, Properties, TargetPool } from "@syntest/framework";
+import { Archive, ExecutionResult, getUserInterface, Properties, TargetPool } from "@syntest/core";
 import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
 import { readdirSync, readFileSync, rmdirSync, unlinkSync, writeFileSync } from "fs";
 import * as path from "path";
@@ -105,7 +105,7 @@ export class JavaScriptSuiteBuilder {
       getUserInterface().report("header", ["SEARCH RESULTS"]);
       const instrumentationData = _.cloneDeep(global.__coverage__)
 
-      getUserInterface().report("report-coverage", ['Coverage report', { branch: 'Branch', statement: 'Statement', function: 'Function' }, true])
+      getUserInterface().report("report-coverage", ['Coverage report', <string><unknown>{ branch: 'Branch', statement: 'Statement', function: 'Function' }, 'true'])
 
       const overall = {
         branch: 0,
@@ -149,22 +149,22 @@ export class JavaScriptSuiteBuilder {
         totalBranches += (Object.keys(data.b).length * 2)
         totalFunctions += Object.keys(data.f).length
 
-        getUserInterface().report("report-coverage", [file, {
+        getUserInterface().report("report-coverage", [file, <string><unknown>{
           'statement': summary['statement'] + ' / ' + Object.keys(data.s).length,
           'branch': summary['branch'] + ' / ' + (Object.keys(data.b).length * 2),
           'function': summary['function'] + ' / ' + Object.keys(data.f).length
-        }, false])
+        }, 'false'])
       }
 
       overall['statement'] /= totalStatements
       overall['branch'] /= totalBranches
       overall['function'] /= totalFunctions
 
-      getUserInterface().report("report-coverage", ['Total', {
+      getUserInterface().report("report-coverage", ['Total', <string><unknown>{
         'statement': (overall['statement'] * 100) + ' %',
         'branch': (overall['branch'] * 100) + ' %',
         'function': (overall['function'] * 100) + ' %'
-      }, true])
+      }, 'true'])
     }
 
     this.runner.resetInstrumentationData();

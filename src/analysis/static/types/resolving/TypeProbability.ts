@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 import { TypeEnum } from "./TypeEnum";
-import { prng, Properties } from "@syntest/framework";
+import { prng, Properties } from "@syntest/core";
 import { ComplexObject } from "../discovery/object/ComplexObject";
 
 /**

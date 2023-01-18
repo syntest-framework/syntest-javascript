@@ -3,7 +3,7 @@ import {
   EncodingRunner,
   ExecutionResult, getUserInterface,
   Properties,
-} from "@syntest/framework";
+} from "@syntest/core";
 import { JavaScriptTestCase } from "../JavaScriptTestCase";
 import { JavaScriptSubject } from "../../search/JavaScriptSubject";
 import * as path from "path";

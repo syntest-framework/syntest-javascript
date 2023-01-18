@@ -18,7 +18,7 @@
 
 import {
   EncodingSampler, Properties,
-} from "@syntest/framework";
+} from "@syntest/core";
 
 import { JavaScriptTestCase } from "../JavaScriptTestCase";
 import { ConstructorCall } from "../statements/root/ConstructorCall";

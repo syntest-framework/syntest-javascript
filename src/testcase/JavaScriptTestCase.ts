@@ -20,7 +20,7 @@ import {
   getUserInterface,
   Encoding,
   Decoder, Properties,
-} from "@syntest/framework";
+} from "@syntest/core";
 import { JavaScriptTestCaseSampler } from "./sampling/JavaScriptTestCaseSampler";
 import { RootStatement } from "./statements/root/RootStatement";
 
