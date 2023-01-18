@@ -62,6 +62,7 @@
     "eslint": "8.2.0",
     "eslint-config-prettier": "8.3.0",
     "husky": "^8.0.3",
+    "lint-staged": "^13.1.0",
     "prettier": "2.4.1",
     "typescript": "4.4.4"
   },
@@ -87,5 +88,11 @@
     "regenerator-runtime": "0.13.9",
     "ts-babel-node": "^1.1.1",
     "ts-node": "10.4.0"
+  },
+  "lint-staged": {
+    "**/*": [
+      "npx prettier --config .prettierrc.json --ignore-path .prettierignore --write .",
+      "npx eslint --config .eslintrc.json --ignore-path .eslintignore --fix ."
+    ]
   }
 }
