@@ -25,10 +25,16 @@ export function readFile(absolutePath: string): string {
   return readFileSync(absolutePath).toString("utf-8");
 }
 
-export function getAllFiles(dir: string, extn: string, files: string[] = null, result: string[] = null, regex: RegExp = null) {
+export function getAllFiles(
+  dir: string,
+  extn: string,
+  files: string[] = null,
+  result: string[] = null,
+  regex: RegExp = null
+) {
   files = files || readdirSync(dir);
   result = result || [];
-  regex = regex || new RegExp(`\\${extn}$`)
+  regex = regex || new RegExp(`\\${extn}$`);
 
   for (let i = 0; i < files.length; i++) {
     const file = path.join(dir, files[i]);
@@ -46,4 +52,3 @@ export function getAllFiles(dir: string, extn: string, files: string[] = null, r
   }
   return result;
 }
-

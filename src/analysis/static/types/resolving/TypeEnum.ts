@@ -18,33 +18,35 @@
 import { ElementType } from "../discovery/Element";
 
 export enum TypeEnum {
-  ANY='any',
-  NUMERIC='numeric',
-  STRING='string',
-  BOOLEAN='boolean',
-  NULL='null',
-  UNDEFINED='undefined',
-  REGEX='regex',
+  ANY = "any",
+  NUMERIC = "numeric",
+  STRING = "string",
+  BOOLEAN = "boolean",
+  NULL = "null",
+  UNDEFINED = "undefined",
+  REGEX = "regex",
 
-  ARRAY='array',
-  OBJECT='object',
+  ARRAY = "array",
+  OBJECT = "object",
 
-  FUNCTION='function'
+  FUNCTION = "function",
 }
 
-export function elementTypeToTypingType(elementType: ElementType): TypeEnum | void {
+export function elementTypeToTypingType(
+  elementType: ElementType
+): TypeEnum | void {
   switch (elementType) {
-  case ElementType.BooleanConstant:
-    return TypeEnum.BOOLEAN
-  case ElementType.StringConstant:
-    return TypeEnum.STRING
-  case ElementType.NumericalConstant:
-    return TypeEnum.NUMERIC
-  case ElementType.NullConstant:
-    return TypeEnum.NULL
+    case ElementType.BooleanConstant:
+      return TypeEnum.BOOLEAN;
+    case ElementType.StringConstant:
+      return TypeEnum.STRING;
+    case ElementType.NumericalConstant:
+      return TypeEnum.NUMERIC;
+    case ElementType.NullConstant:
+      return TypeEnum.NULL;
     case ElementType.UndefinedConstant:
-      return TypeEnum.UNDEFINED
-  case ElementType.RegexConstant:
-    return TypeEnum.REGEX
+      return TypeEnum.UNDEFINED;
+    case ElementType.RegexConstant:
+      return TypeEnum.REGEX;
   }
 }

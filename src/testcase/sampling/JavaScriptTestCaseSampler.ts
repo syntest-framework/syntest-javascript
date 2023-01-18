@@ -16,9 +16,7 @@
  * limitations under the License.
  */
 
-import {
-  EncodingSampler, Properties,
-} from "@syntest/core";
+import { EncodingSampler } from "@syntest/core";
 
 import { JavaScriptTestCase } from "../JavaScriptTestCase";
 import { ConstructorCall } from "../statements/root/ConstructorCall";
@@ -54,15 +52,15 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
     type?: string,
     alphabet?: string,
     maxlength?: number
-  ): StringStatement
+  ): StringStatement;
 
   abstract sampleBool(
     identifierDescription?: IdentifierDescription,
-    type?: string,
-  )
+    type?: string
+  );
 
   abstract sampleNumber(
     identifierDescription?: IdentifierDescription,
-    type?: string,
-  )
+    type?: string
+  );
 }

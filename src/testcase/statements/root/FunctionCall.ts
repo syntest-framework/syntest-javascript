@@ -16,10 +16,7 @@
  * limitations under the License.
  */
 
-import {
-  prng,
-  Properties,
-} from "@syntest/core";
+import { prng, Properties } from "@syntest/core";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";
 import { RootStatement } from "./RootStatement";
@@ -47,7 +44,7 @@ export class FunctionCall extends RootStatement {
     args: Statement[]
   ) {
     super(identifierDescription, type, uniqueId, args, []);
-    this._classType = 'FunctionCall'
+    this._classType = "FunctionCall";
 
     this._functionName = functionName;
   }
@@ -57,8 +54,12 @@ export class FunctionCall extends RootStatement {
 
     if (args.length !== 0) {
       const index = prng.nextInt(0, args.length - 1);
-      if (prng.nextBoolean(Properties.resample_gene_probability)) { // TODO should be different property
-        args[index] = sampler.sampleArgument(depth + 1, args[index].identifierDescription)
+      if (prng.nextBoolean(Properties.resample_gene_probability)) {
+        // TODO should be different property
+        args[index] = sampler.sampleArgument(
+          depth + 1,
+          args[index].identifierDescription
+        );
       } else {
         args[index] = args[index].mutate(sampler, depth + 1);
       }
@@ -89,38 +90,34 @@ export class FunctionCall extends RootStatement {
     return this._functionName;
   }
 
-  decode(id: string, options: { addLogs: boolean, exception: boolean }): Decoding[] {
-    const args = this.args
-      .map((a) => a.varName)
-      .join(', ')
+  decode(
+    id: string,
+    options: { addLogs: boolean; exception: boolean }
+  ): Decoding[] {
+    const args = this.args.map((a) => a.varName).join(", ");
 
-    const argStatements: Decoding[] = this.args
-      .flatMap((a) => a.decode(id, options))
+    const argStatements: Decoding[] = this.args.flatMap((a) =>
+      a.decode(id, options)
+    );
 
-    let decoded = `const ${this.varName} = await ${this.functionName}(${args})`
+    let decoded = `const ${this.varName} = await ${this.functionName}(${args})`;
 
     if (options.addLogs) {
-      const logDir = path.join(
-        Properties.temp_log_directory,
-        id,
-        this.varName
-      )
-      decoded += `\nawait fs.writeFileSync('${logDir}', '' + ${this.varName} + ';sep;' + JSON.stringify(${this.varName}))`
+      const logDir = path.join(Properties.temp_log_directory, id, this.varName);
+      decoded += `\nawait fs.writeFileSync('${logDir}', '' + ${this.varName} + ';sep;' + JSON.stringify(${this.varName}))`;
     }
 
     return [
       ...argStatements,
       {
         decoded: decoded,
-        reference: this
-      }
-    ]
+        reference: this,
+      },
+    ];
   }
 
   decodeErroring(): string {
-    const args = this.args.map((a) => a.varName).join(', ')
+    const args = this.args.map((a) => a.varName).join(", ");
     return `await expect(${this.functionName}(${args})).to.be.rejectedWith(Error);`;
   }
-
-
 }

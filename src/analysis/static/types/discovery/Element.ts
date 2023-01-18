@@ -18,29 +18,30 @@
 import { Scope } from "./Scope";
 
 export interface Element {
-  scope: Scope
-  type: ElementType
-  value: string
+  scope: Scope;
+  type: ElementType;
+  value: string;
 }
 
+// eslint-disable-next-line
 export function isInstanceOfElement(object: any): object is Element {
-  return 'scope' in object && 'type' in object && 'value' in object
+  return "scope" in object && "type" in object && "value" in object;
 }
 
 export enum ElementType {
-  StringConstant='stringConstant',
-  NumericalConstant='numericalConstant',
-  BooleanConstant='booleanConstant',
-  NullConstant='nullConstant',
-  UndefinedConstant='undefinedConstant',
-  RegexConstant='regexConstant',
-  Identifier='identifier',
-  Relation='relation'
+  StringConstant = "stringConstant",
+  NumericalConstant = "numericalConstant",
+  BooleanConstant = "booleanConstant",
+  NullConstant = "nullConstant",
+  UndefinedConstant = "undefinedConstant",
+  RegexConstant = "regexConstant",
+  Identifier = "identifier",
+  Relation = "relation",
 }
 
 export function getElementId(element: Element): string {
   if (!element.scope) {
-    return `scope=null,type=${element.type},value=${element.value}`
+    return `scope=null,type=${element.type},value=${element.value}`;
   }
-  return `scope=(id=${element.scope.uid},filePath=${element.scope.filePath}),type=${element.type},value=${element.value}`
+  return `scope=(id=${element.scope.uid},filePath=${element.scope.filePath}),type=${element.type},value=${element.value}`;
 }

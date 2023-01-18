@@ -20,7 +20,7 @@ import { CommandLineInterface, yargs } from "@syntest/core";
 
 import Messages from "./Messages";
 
-import * as clear from "clear"
+import * as clear from "clear";
 
 /**
  * A javascript specific command line interface.
@@ -62,7 +62,9 @@ export class JavaScriptCommandLineInterface extends CommandLineInterface {
           `Skipping '${args[0]}' no possible function calls found!`
         );
       case "report-coverage":
-        return console.log(this.messages.reportCoverage(args[0], args[1], args[2]))
+        return console.log(
+          this.messages.reportCoverage(args[0], args[1], args[2])
+        );
     }
 
     throw new Error(`Message not supported by UI: "${text}"`);

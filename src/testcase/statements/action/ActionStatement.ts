@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { Decoding, Statement } from "../Statement";
+import { Statement } from "../Statement";
 import { Encoding, EncodingSampler } from "@syntest/core";
 import { IdentifierDescription } from "../../../analysis/static/parsing/IdentifierDescription";
 
@@ -60,8 +60,6 @@ export abstract class ActionStatement extends Statement {
   }
 
   getFlatTypes(): string[] {
-    return [
-      ...this.args.flatMap((a) => a.getFlatTypes())
-    ]
+    return [...this.args.flatMap((a) => a.getFlatTypes())];
   }
 }

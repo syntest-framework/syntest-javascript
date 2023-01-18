@@ -18,6 +18,7 @@
 
 import { traverse } from "@babel/core";
 import { ImportVisitor } from "./ImportVisitor";
+import * as t from "@babel/types";
 
 /**
  * Imports generator for targets.
@@ -30,7 +31,7 @@ export class ImportGenerator {
    *
    * @param targetAST The AST of the target
    */
-  generate(filePath: string, targetAST: any): Set<string> {
+  generate(filePath: string, targetAST: t.Node): Set<string> {
     const visitor = new ImportVisitor(filePath);
 
     traverse(targetAST, visitor);

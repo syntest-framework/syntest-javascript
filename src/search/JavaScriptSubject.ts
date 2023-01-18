@@ -16,22 +16,19 @@ import { JavaScriptBranchObjectiveFunction } from "../criterion/JavaScriptBranch
 export enum SubjectType {
   class,
   function,
-  object
+  object,
 }
 
 export interface TypeScore {
-  types: string[],
-  failed: boolean
+  types: string[];
+  failed: boolean;
 }
 
 export class JavaScriptSubject extends SearchSubject<JavaScriptTestCase> {
+  private _functions: ActionDescription[];
+  private _type: SubjectType;
 
-  private _functions: ActionDescription[]
-  private _type: SubjectType
-
-  private _typeScores: Map<string, TypeScore[]>
-
-
+  private _typeScores: Map<string, TypeScore[]>;
 
   reevaluateTypes() {
     // TODO find correlations
@@ -46,46 +43,44 @@ export class JavaScriptSubject extends SearchSubject<JavaScriptTestCase> {
     path: string,
     targetMeta: JavaScriptTargetMetaData,
     cfg: CFG,
-    functions: ActionDescription[],
+    functions: ActionDescription[]
   ) {
     super(path, targetMeta.name, cfg);
     // TODO SearchSubject should just use the targetMetaData
-    this._type = targetMeta.type
-    this._functions = functions
-    this._typeScores = new Map()
+    this._type = targetMeta.type;
+    this._functions = functions;
+    this._typeScores = new Map();
   }
 
   protected _extractObjectives(): void {
     // Branch objectives
     // Find all branch nodes
-    const branches = this._cfg.nodes
-      .filter(
-        (node) => node.type === NodeType.Branch
-      )
+    const branches = this._cfg.nodes.filter(
+      (node) => node.type === NodeType.Branch
+    );
 
-    branches
-      .forEach((branchNode) => {
-        this._cfg.edges
-          // Find all edges from the branch node
-          .filter((edge) => edge.from === branchNode.id)
-          .forEach((edge) => {
-            this._cfg.nodes
-              // Find nodes with incoming edge from branch node
-              .filter((node) => node.id === edge.to)
-              .forEach((childNode) => {
-                // Add objective function
-                this._objectives.set(
-                  new JavaScriptBranchObjectiveFunction(
-                    this,
-                    childNode.id,
-                    branchNode.lines[0],
-                    edge.branchType
-                  ),
-                  []
-                );
-              });
-          });
-      });
+    branches.forEach((branchNode) => {
+      this._cfg.edges
+        // Find all edges from the branch node
+        .filter((edge) => edge.from === branchNode.id)
+        .forEach((edge) => {
+          this._cfg.nodes
+            // Find nodes with incoming edge from branch node
+            .filter((node) => node.id === edge.to)
+            .forEach((childNode) => {
+              // Add objective function
+              this._objectives.set(
+                new JavaScriptBranchObjectiveFunction(
+                  this,
+                  childNode.id,
+                  branchNode.lines[0],
+                  edge.branchType
+                ),
+                []
+              );
+            });
+        });
+    });
 
     for (const objective of this._objectives.keys()) {
       const childrenObj = this.findChildren(objective);
@@ -150,13 +145,16 @@ export class JavaScriptSubject extends SearchSubject<JavaScriptTestCase> {
     return this.functions.filter((f) => {
       if (returnType) {
         // TODO this will not work (comparing typeprobability maps)
-        if (returnType.typeProbabilityMap !== f.returnParameter.typeProbabilityMap) {
+        if (
+          returnType.typeProbabilityMap !== f.returnParameter.typeProbabilityMap
+        ) {
           return false;
         }
       }
 
-      return ((type === undefined || f.type === type) &&
-        (f.visibility === ActionVisibility.PUBLIC) &&
+      return (
+        (type === undefined || f.type === type) &&
+        f.visibility === ActionVisibility.PUBLIC &&
         f.name !== "" // fallback function has no name
       );
     });

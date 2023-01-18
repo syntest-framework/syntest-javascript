@@ -20,6 +20,7 @@ import { traverse } from "@babel/core";
 import { TargetVisitor } from "./TargetVisitor";
 import { TargetMetaData } from "@syntest/core";
 import { ActionDescription } from "../parsing/ActionDescription";
+import * as t from "@babel/types";
 
 /**
  * FUNCTION map generator for targets.
@@ -33,7 +34,10 @@ export class TargetMapGenerator {
    * @param filePath The filePath of the target
    * @param targetAST The AST of the target
    */
-  generate(filePath: string, targetAST: any): {
+  generate(
+    filePath: string,
+    targetAST: t.Node
+  ): {
     targetMap: Map<string, TargetMetaData>;
     functionMap: Map<string, Map<string, ActionDescription>>;
   } {

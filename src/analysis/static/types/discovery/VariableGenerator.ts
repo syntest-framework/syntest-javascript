@@ -18,7 +18,9 @@
 
 import { traverse } from "@babel/core";
 import { VariableVisitor } from "./VariableVisitor";
-
+import * as t from "@babel/types";
+import { Element } from "./Element";
+import { Relation } from "./Relation";
 /**
  * Typing generator for targets.
  *
@@ -31,11 +33,18 @@ export class VariableGenerator {
    * @param filePath the path of the current file
    * @param targetAST The AST of the target
    */
-  generate(filePath: string, targetAST: any): any {
+  generate(
+    filePath: string,
+    targetAST: t.Node
+  ): [Element[], Relation[], Map<string, Relation>] {
     const visitor = new VariableVisitor(filePath);
 
     traverse(targetAST, visitor);
 
-    return [visitor.elements, visitor.relations, visitor.wrapperElementIsRelation];
+    return [
+      visitor.elements,
+      visitor.relations,
+      visitor.wrapperElementIsRelation,
+    ];
   }
 }

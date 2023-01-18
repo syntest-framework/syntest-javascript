@@ -16,17 +16,13 @@
  * limitations under the License.
  */
 import { TypeResolver } from "./TypeResolver";
-import { Element } from "../discovery/Element";
-import { Relation } from "../discovery/Relation";
 import { TypeProbability } from "./TypeProbability";
-import { Scope } from "../discovery/Scope";
 
-export class TypeResolverUnknown extends TypeResolver{
-
-  getTyping(scope: Scope, variableName: string): TypeProbability {
-    return new TypeProbability()
+export class TypeResolverUnknown extends TypeResolver {
+  getTyping(): TypeProbability {
+    return new TypeProbability();
   }
 
-  resolveTypes(elements: Element[], relations: Relation[], wrapperElementIsRelation: Map<string, Relation>) {
-  }
+  // eslint-disable-next-line
+  resolveTypes() {}
 }

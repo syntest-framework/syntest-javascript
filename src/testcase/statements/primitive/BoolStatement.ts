@@ -16,10 +16,7 @@
  * limitations under the License.
  */
 
-import {
-  prng,
-  Properties,
-} from "@syntest/core";
+import { prng, Properties } from "@syntest/core";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { PrimitiveStatement } from "./PrimitiveStatement";
 import { IdentifierDescription } from "../../../analysis/static/parsing/IdentifierDescription";
@@ -28,24 +25,39 @@ import { IdentifierDescription } from "../../../analysis/static/parsing/Identifi
  * @author Dimitri Stallenberg
  */
 export class BoolStatement extends PrimitiveStatement<boolean> {
-  constructor(identifierDescription: IdentifierDescription, type: string, uniqueId: string, value: boolean) {
+  constructor(
+    identifierDescription: IdentifierDescription,
+    type: string,
+    uniqueId: string,
+    value: boolean
+  ) {
     super(identifierDescription, type, uniqueId, value);
-    this._classType = 'BoolStatement'
+    this._classType = "BoolStatement";
   }
 
-  mutate(sampler: JavaScriptTestCaseSampler, depth: number): BoolStatement {
+  mutate(sampler: JavaScriptTestCaseSampler): BoolStatement {
     if (prng.nextBoolean(Properties.resample_gene_probability)) {
       return sampler.sampleBool(this.identifierDescription, this.type);
     }
 
-    return new BoolStatement(this.identifierDescription, this.type, prng.uniqueId(), !this.value);
+    return new BoolStatement(
+      this.identifierDescription,
+      this.type,
+      prng.uniqueId(),
+      !this.value
+    );
   }
 
   copy(): BoolStatement {
-    return new BoolStatement(this.identifierDescription, this.type, this.id, this.value);
+    return new BoolStatement(
+      this.identifierDescription,
+      this.type,
+      this.id,
+      this.value
+    );
   }
 
   getFlatTypes(): string[] {
-    return ["bool"]
+    return ["bool"];
   }
 }

@@ -1,10 +1,11 @@
 import { JavaScriptTestCase } from "../JavaScriptTestCase";
 import { Statement } from "../statements/Statement";
-
+import Mocha = require("mocha");
 
 export default class ExecutionInformationIntegrator {
-  processSuccess(testCase: JavaScriptTestCase, testResult: any) {
-
+  // eslint-disable-next-line
+  processSuccess(testCase: JavaScriptTestCase, testResult: Mocha.Test) {
+    // TODO
     // const queue: Statement[] = [testCase.root]
     //
     // while (queue.length) {
@@ -18,8 +19,7 @@ export default class ExecutionInformationIntegrator {
     // }
   }
 
-  processError(testCase: JavaScriptTestCase, testResult: any) {
-
+  processError(testCase: JavaScriptTestCase, testResult: Mocha.Test) {
     // console.log(testResult.err.name)
     // console.log(testResult.err.message)
     // console.log()
@@ -36,19 +36,22 @@ export default class ExecutionInformationIntegrator {
 
     // console.log(testResult.err)
 
-    const queue: Statement[] = [testCase.root]
+    const queue: Statement[] = [testCase.root];
 
     while (queue.length) {
-      const root = queue.pop()
-      const children = root.getChildren()
+      const root = queue.pop();
+      const children = root.getChildren();
 
       for (const child of children) {
         if (testResult.err.message.includes(child.identifierDescription.name)) {
           // console.log(child.identifierDescription.typeProbabilityMap)
           // console.log(testResult.err)
-          child.identifierDescription.typeProbabilityMap.addExecutionScore(child.type, -1)
+          child.identifierDescription.typeProbabilityMap.addExecutionScore(
+            child.type,
+            -1
+          );
         }
-        queue.push(child)
+        queue.push(child);
       }
     }
   }

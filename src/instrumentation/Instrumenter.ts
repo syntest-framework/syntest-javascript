@@ -1,4 +1,4 @@
-import { TransformOptions, transform } from "@babel/core";
+import { TransformOptions, transformSync } from "@babel/core";
 import { Visitor } from "./Visitor";
 import { defaultBabelOptions } from "../configs/DefaultBabelConfig";
 
@@ -8,8 +8,8 @@ export interface OutputObject {
 }
 
 export class Instrumenter {
-  instrument(code: string, filename: string) {
-    const options = JSON.parse(JSON.stringify(defaultBabelOptions)) ;
+  async instrument(code: string, filename: string) {
+    const options = JSON.parse(JSON.stringify(defaultBabelOptions));
 
     let output: OutputObject = {};
 
@@ -38,7 +38,7 @@ export class Instrumenter {
       },
     ]);
 
-    const codeMap = transform(code, options);
+    const codeMap = await transformSync(code, options);
 
     if (!output || !output.fileCoverage) {
       return code;

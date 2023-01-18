@@ -20,9 +20,9 @@ import { TypeProbability } from "../../resolving/TypeProbability";
 import { Export } from "../../../dependency/ExportVisitor";
 
 export interface ComplexObject {
-  export?: Export,
-  name: string,
-  properties: Set<string>
-  functions: Set<string>
-  propertyType?: Map<string, TypeProbability>
+  export?: Export;
+  name: string;
+  properties: Set<string>;
+  functions: Set<string>;
+  propertyType?: Map<string, TypeProbability>;
 }

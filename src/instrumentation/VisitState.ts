@@ -40,7 +40,7 @@ export class VisitState {
     reportLogic = false
   ) {
     this.varName = genVar(sourceFilePath);
-    this.metaVarName = this.varName.replace('cov_', 'meta_')
+    this.metaVarName = this.varName.replace("cov_", "meta_");
     this.attrs = {};
     this.nextIgnore = null;
     this.cov = new SourceCoverage(sourceFilePath);
@@ -254,7 +254,10 @@ export class VisitState {
     } /* istanbul ignore else: not expected */ else if (path.isExpression()) {
       path.replaceWith(T.sequenceExpression([increment, path.node]));
     } else {
-      console.error("Unable to insert counter for node identifierDescription:", path.node.type);
+      console.error(
+        "Unable to insert counter for node identifierDescription:",
+        path.node.type
+      );
     }
   }
 
@@ -314,41 +317,53 @@ export class VisitState {
     return this.increase("b", branchName, index);
   }
 
-  getBranchMetaTracker(branchName, testAsAst, testAsCode: string, variables: string[]) {
-
-    const T = this.types
+  getBranchMetaTracker(
+    branchName,
+    testAsAst,
+    testAsCode: string,
+    variables: string[]
+  ) {
+    const T = this.types;
 
     const metaTracker = T.callExpression(T.identifier(this.metaVarName), [
       T.numericLiteral(branchName),
       T.objectExpression([
         T.objectProperty(
-          T.stringLiteral('condition_ast'),
+          T.stringLiteral("condition_ast"),
           T.stringLiteral(JSON.stringify(testAsAst))
         ),
         T.objectProperty(
-          T.stringLiteral('condition'),
+          T.stringLiteral("condition"),
           T.stringLiteral(testAsCode)
         ),
         T.ObjectProperty(
-          T.stringLiteral('variables'),
+          T.stringLiteral("variables"),
           T.ObjectExpression([
             ...variables
               .filter((v, i, a) => a.indexOf(v) === i)
               .map((v) => {
                 if (v.includes(".")) {
-                  const split = v.split(".")
+                  const split = v.split(".");
 
-                  return T.objectProperty(T.stringLiteral(v), T.optionalMemberExpression(T.identifier(split[0]), T.identifier(split[1]), false, true))
+                  return T.objectProperty(
+                    T.stringLiteral(v),
+                    T.optionalMemberExpression(
+                      T.identifier(split[0]),
+                      T.identifier(split[1]),
+                      false,
+                      true
+                    )
+                  );
                 } else {
-                  return T.objectProperty(T.stringLiteral(v), T.identifier(v))
+                  return T.objectProperty(T.stringLiteral(v), T.identifier(v));
                 }
-              })
+              }),
           ])
-        )
-      ])
-    ])
+        ),
+      ]),
+    ]);
 
-    return metaTracker
+    return metaTracker;
   }
 
   getBranchLogicIncrement(path, branchName, loc) {

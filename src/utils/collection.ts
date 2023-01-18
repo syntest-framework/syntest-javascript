@@ -29,15 +29,16 @@ import {
   SearchTimeBudget,
   StatisticsCollector,
   TotalTimeBudget,
+  Encoding,
 } from "@syntest/core";
 import { JavaScriptSubject } from "../search/JavaScriptSubject";
 
-export function collectInitialVariables(
-  collector: StatisticsCollector<any>,
+export function collectInitialVariables<T extends Encoding>(
+  collector: StatisticsCollector<T>,
   currentSubject: JavaScriptSubject,
   targetPath: string
 ) {
-  collector.recordVariable(RuntimeVariable.VERSION, '1');
+  collector.recordVariable(RuntimeVariable.VERSION, "1");
   collector.recordVariable(
     RuntimeVariable.CONFIGURATION,
     Properties.configuration
@@ -55,14 +56,14 @@ export function collectInitialVariables(
   );
 }
 
-export function collectStatistics(
-  collector: StatisticsCollector<any>,
+export function collectStatistics<T extends Encoding>(
+  collector: StatisticsCollector<T>,
   currentSubject: JavaScriptSubject,
-  archive: Archive<any>,
-  totalTimeBudget: TotalTimeBudget<any>,
-  searchBudget: SearchTimeBudget<any>,
-  iterationBudget: IterationBudget<any>,
-  evaluationBudget: EvaluationBudget<any>
+  archive: Archive<T>,
+  totalTimeBudget: TotalTimeBudget<T>,
+  searchBudget: SearchTimeBudget<T>,
+  iterationBudget: IterationBudget<T>,
+  evaluationBudget: EvaluationBudget<T>
 ) {
   collector.recordVariable(
     RuntimeVariable.COVERED_OBJECTIVES,
@@ -96,18 +97,23 @@ export function collectStatistics(
       (objective) => objective instanceof ExceptionObjectiveFunction
     ).length;
 
-  collector.recordVariable(RuntimeVariable.COVERED_EXCEPTIONS, `${numOfExceptions}`);
+  collector.recordVariable(
+    RuntimeVariable.COVERED_EXCEPTIONS,
+    `${numOfExceptions}`
+  );
 
   collector.recordVariable(
     RuntimeVariable.COVERAGE,
-    `${(archive.getObjectives().length - numOfExceptions) /
-      currentSubject.getObjectives().length}`
+    `${
+      (archive.getObjectives().length - numOfExceptions) /
+      currentSubject.getObjectives().length
+    }`
   );
 }
 
-export function collectCoverageData(
-  collector: StatisticsCollector<any>,
-  archive: Archive<any>,
+export function collectCoverageData<T extends Encoding>(
+  collector: StatisticsCollector<T>,
+  archive: Archive<T>,
   objectiveType: string
 ): void {
   const total = new Set();
@@ -118,21 +124,17 @@ export function collectCoverageData(
     const result: ExecutionResult = test.getExecutionResult();
     // TODO this does not work when there are files with the same name in different directories!!
     const paths = key.getSubject().path.split("/");
-    const fileName = paths[paths.length - 1]
+    const fileName = paths[paths.length - 1];
 
     result
       .getTraces()
       .filter((element) => element.type.includes(objectiveType))
       .filter((element) => element.path.includes(fileName))
       .forEach((current) => {
-        total.add(
-          current.id + "_" + current.branchType
-        );
+        total.add(current.id + "_" + current.branchType);
 
         if (current.hits > 0)
-          covered.add(
-            current.id + "_" + current.branchType
-          );
+          covered.add(current.id + "_" + current.branchType);
       });
   }
 
@@ -143,7 +145,10 @@ export function collectCoverageData(
           RuntimeVariable.COVERED_BRANCHES,
           `${covered.size}`
         );
-        collector.recordVariable(RuntimeVariable.TOTAL_BRANCHES, `${total.size}`);
+        collector.recordVariable(
+          RuntimeVariable.TOTAL_BRANCHES,
+          `${total.size}`
+        );
 
         if (total.size > 0.0) {
           collector.recordVariable(
@@ -151,13 +156,16 @@ export function collectCoverageData(
             `${covered.size / total.size}`
           );
         } else {
-          collector.recordVariable(RuntimeVariable.BRANCH_COVERAGE, '0');
+          collector.recordVariable(RuntimeVariable.BRANCH_COVERAGE, "0");
         }
       }
       break;
     case "statement":
       {
-        collector.recordVariable(RuntimeVariable.COVERED_LINES, `${covered.size}`);
+        collector.recordVariable(
+          RuntimeVariable.COVERED_LINES,
+          `${covered.size}`
+        );
         collector.recordVariable(RuntimeVariable.TOTAL_LINES, `${total.size}`);
 
         if (total.size > 0.0) {
@@ -166,7 +174,7 @@ export function collectCoverageData(
             `${covered.size / total.size}`
           );
         } else {
-          collector.recordVariable(RuntimeVariable.LINE_COVERAGE, '0');
+          collector.recordVariable(RuntimeVariable.LINE_COVERAGE, "0");
         }
       }
       break;
@@ -176,7 +184,10 @@ export function collectCoverageData(
           RuntimeVariable.COVERED_FUNCTIONS,
           `${covered.size}`
         );
-        collector.recordVariable(RuntimeVariable.TOTAL_FUNCTIONS, `${total.size}`);
+        collector.recordVariable(
+          RuntimeVariable.TOTAL_FUNCTIONS,
+          `${total.size}`
+        );
 
         if (total.size > 0.0) {
           collector.recordVariable(
@@ -184,7 +195,7 @@ export function collectCoverageData(
             `${covered.size / total.size}`
           );
         } else {
-          collector.recordVariable(RuntimeVariable.FUNCTION_COVERAGE, '0');
+          collector.recordVariable(RuntimeVariable.FUNCTION_COVERAGE, "0");
         }
       }
       break;

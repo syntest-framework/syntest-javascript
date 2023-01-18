@@ -22,7 +22,7 @@
  * @author Dimitri Stallenberg
  */
 export enum ActionVisibility {
-  PUBLIC= "public",
-  PRIVATE= "private",
-  PROTECTED= "protected",
+  PUBLIC = "public",
+  PRIVATE = "private",
+  PROTECTED = "protected",
 }

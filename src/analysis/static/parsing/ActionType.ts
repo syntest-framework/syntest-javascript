@@ -22,7 +22,7 @@
  * @author Dimitri Stallenberg
  */
 export enum ActionType {
-  METHOD= "method",
-  CONSTRUCTOR="constructor",
-  FUNCTION="function",
+  METHOD = "method",
+  CONSTRUCTOR = "constructor",
+  FUNCTION = "function",
 }

@@ -27,12 +27,17 @@ import { IdentifierDescription } from "../../../analysis/static/parsing/Identifi
  * @author Dimitri Stallenberg
  */
 export class NumericStatement extends PrimitiveStatement<number> {
-  constructor(identifierDescription: IdentifierDescription, type: string, uniqueId: string, value: number) {
+  constructor(
+    identifierDescription: IdentifierDescription,
+    type: string,
+    uniqueId: string,
+    value: number
+  ) {
     super(identifierDescription, type, uniqueId, value);
-    this._classType = 'NumericStatement'
+    this._classType = "NumericStatement";
   }
 
-  mutate(sampler: JavaScriptTestCaseSampler, depth: number): NumericStatement {
+  mutate(sampler: JavaScriptTestCaseSampler): NumericStatement {
     if (prng.nextBoolean(Properties.resample_gene_probability)) {
       return sampler.sampleNumber(this.identifierDescription, this.type);
     }
@@ -41,10 +46,7 @@ export class NumericStatement extends PrimitiveStatement<number> {
       return this.deltaMutation();
     }
 
-    return sampler.sampleNumber(
-      this.identifierDescription,
-      this.type
-    );
+    return sampler.sampleNumber(this.identifierDescription, this.type);
   }
 
   deltaMutation(): NumericStatement {
@@ -83,6 +85,6 @@ export class NumericStatement extends PrimitiveStatement<number> {
   }
 
   getFlatTypes(): string[] {
-    return ["number"]
+    return ["number"];
   }
 }
