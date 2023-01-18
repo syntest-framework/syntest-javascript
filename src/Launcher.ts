@@ -109,7 +109,7 @@ export class Launcher {
         default: 0.1,
       },
     };
-    setupOptions(this._program, additionalOptions);
+    setupOptions(this._program, <Record<string, unknown>[]>(<unknown>additionalOptions));
 
     const programArgs = process.argv.filter(
       (a) => a.includes(this._program) || a.includes("bin.ts")
@@ -178,7 +178,7 @@ export class Launcher {
 
     getUserInterface().report("property-set", [
       "Target Settings",
-      [
+      <string><unknown>[
         ["Target Root Directory", Properties.target_root_directory],
       ],
     ]);
@@ -210,7 +210,7 @@ export class Launcher {
     getUserInterface().report("single-property", ["Seed", getSeed()]);
     getUserInterface().report("property-set", [
       "Budgets",
-      [
+      <string><unknown>[
         ["Iteration Budget", `${Properties.iteration_budget} iterations`],
         ["Evaluation Budget", `${Properties.evaluation_budget} evaluations`],
         ["Search Time Budget", `${Properties.search_time} seconds`],
@@ -219,14 +219,14 @@ export class Launcher {
     ]);
     getUserInterface().report("property-set", [
       "Algorithm",
-      [
+      <string><unknown>[
         ["Algorithm", Properties.algorithm],
         ["Population Size", Properties.population_size],
       ],
     ]);
     getUserInterface().report("property-set", [
       "Variation Probabilities",
-      [
+      <string><unknown>[
         ["Resampling", Properties.resample_gene_probability],
         ["Delta mutation", Properties.delta_mutation_probability],
         [
@@ -239,7 +239,7 @@ export class Launcher {
 
     getUserInterface().report("property-set", [
       "Sampling",
-      [
+      <string><unknown>[
         ["Max Depth", Properties.max_depth],
         ["Explore Illegal Values", Properties.explore_illegal_values],
         ["Sample FUNCTION Result as Argument", Properties.sample_func_as_arg],
@@ -249,7 +249,7 @@ export class Launcher {
 
     getUserInterface().report("property-set", [
       "Type Inference",
-      [
+      <string><unknown>[
         ["Incorporate Execution Information", Properties['incorporate_execution_information']],
         ["Type Inference Mode", Properties['type_inference_mode']],
         ["Random Type Probability", Properties['random_type_probability']],
@@ -318,7 +318,7 @@ export class Launcher {
       );
     }
 
-    const functionMap = targetPool.getFunctionMap(targetPath, targetMeta.name)
+    const functionMap = targetPool.getFunctionMapSpecific(targetPath, targetMeta.name)
 
     // couple types to parameters
     // TODO do this type matching already in the target visitor
@@ -416,12 +416,12 @@ export class Launcher {
 
     collector.recordVariable(
       RuntimeVariable.INSTRUMENTATION_TIME,
-      (this.timings.find((x) => x.what === 'end instrumenting').time - this.timings.find((x) => x.what === 'start instrumenting').time) / 1000
+      `${(this.timings.find((x) => x.what === 'end instrumenting').time - this.timings.find((x) => x.what === 'start instrumenting').time) / 1000}`
     );
 
     collector.recordVariable(
       RuntimeVariable.TYPE_RESOLVING_TIME,
-      (this.timings.find((x) => x.what === 'end type resolving').time - this.timings.find((x) => x.what === 'start type resolving').time) / 1000
+      `${(this.timings.find((x) => x.what === 'end type resolving').time - this.timings.find((x) => x.what === 'start type resolving').time) / 1000}`
     );
 
     collectCoverageData(collector, archive, "branch");

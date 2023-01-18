@@ -240,7 +240,7 @@ export class JavaScriptTargetPool extends TargetPool {
     return this._targetMap.get(absoluteTargetPath);
   }
 
-  getFunctionMap(
+  getFunctionMapSpecific(
     targetPath: string,
     targetName: string
   ): Map<string, ActionDescription> {
@@ -259,6 +259,18 @@ export class JavaScriptTargetPool extends TargetPool {
     }
   }
 
+  getFunctionMap(
+    targetPath: string,
+  ): Map<string, Map<string, ActionDescription>> {
+    const absoluteTargetPath = path.resolve(targetPath);
+
+    if (!this._functionMaps.has(absoluteTargetPath)) {
+      this.getTargetMap(absoluteTargetPath)
+    }
+
+    return this._functionMaps.get(absoluteTargetPath);
+  }
+  
   getExports(targetPath: string): Export[] {
     const absoluteTargetPath = path.resolve(targetPath);
 

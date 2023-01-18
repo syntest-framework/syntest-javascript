@@ -268,7 +268,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     //  TODO WIP
 
       if (object.export) {
-        const functionMap = this.targetPool.getFunctionMap(object.export.filePath, object.name)
+        const functionMap = this.targetPool.getFunctionMapSpecific(object.export.filePath, object.name)
 
         for (const key of functionMap.keys()) {
           const func = functionMap.get(key)
@@ -412,7 +412,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     let value = "";
 
     for (let i = 0; i < valueLength; i++) {
-      value += prng.pickOne(alphabet);
+      value += prng.pickOne(alphabet.split(''));
     }
 
     return new StringStatement(
