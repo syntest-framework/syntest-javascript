@@ -461,20 +461,41 @@ export class ControlFlowGraphGenerator implements CFGFactory {
   }
 
   private visitProgram(ast: any): ReturnValue {
+    let nodes = [];
+    const totalBreakNodes = [];
     for (const child of ast.body) {
-      // TODO add more probably
-      // if (!['FunctionDeclaration', 'ClassDeclaration', 'ExpressionStatement'].includes(child.type)) {
-
-      // if (['ImportDeclaration', 'ClassDeclaration', 'ExpressionStatement'].includes(child.type)) {
-      //   continue
-      // }
-      this.visitChild(child, []);
+      const { childNodes, breakNodes } = this.visitChild(child, nodes);
+      nodes = childNodes;
+      totalBreakNodes.push(...breakNodes);
     }
 
     return {
-      childNodes: [],
-      breakNodes: [],
+      childNodes: nodes,
+      breakNodes: totalBreakNodes,
     };
+
+    
+    // let parents = []
+    // for (const child of ast.body) {
+    //   // TODO add more probably
+    //   // if (!['FunctionDeclaration', 'ClassDeclaration', 'ExpressionStatement'].includes(child.type)) {
+
+    //   // if (['ImportDeclaration', 'ClassDeclaration', 'ExpressionStatement'].includes(child.type)) {
+    //   //   continue
+    //   // }
+    //   const result = this.visitChild(child, []);
+    //   // console.log(result)
+    //   // if (parents) {
+    //   //   this.connectParents(parents, result.childNodes)
+    //   // }
+      
+    //   parents = result.childNodes
+    // }
+
+    // return {
+    //   childNodes: [],
+    //   breakNodes: [],
+    // };
   }
 
   private visitFunctionDeclaration(ast: any): ReturnValue {
@@ -616,6 +637,13 @@ export class ControlFlowGraphGenerator implements CFGFactory {
   }
 
   private visitBlockStatement(ast: any, parents: Node[]): ReturnValue {
+    if (ast.body.length === 0) {
+      return {
+        childNodes: [],
+        breakNodes: [],
+      };
+    }
+
     let nodes = parents;
     const totalBreakNodes = [];
     for (const child of ast.body) {
@@ -741,6 +769,7 @@ export class ControlFlowGraphGenerator implements CFGFactory {
       node,
     ]);
     const trueNodes = childNodes;
+    console.log(childNodes)
 
     totalBreakNodes.push(...breakNodes);
 

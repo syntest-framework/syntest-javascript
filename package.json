@@ -44,7 +44,7 @@
     "prepare": "npm run build",
     "run": "node ./dist/bin.js",
     "run-ts": "ts-node ./src/bin.ts",
-    "test": "mocha",
+    "test": "mocha --require ts-node/register test/**/Statements.spec.ts",
     "test:coverage": "nyc mocha",
     "test:watch": "mocha --watch"
   },
