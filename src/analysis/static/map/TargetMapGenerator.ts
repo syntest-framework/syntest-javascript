@@ -18,7 +18,7 @@
 
 import { traverse } from "@babel/core";
 import { TargetVisitor } from "./TargetVisitor";
-import { TargetMetaData } from "@syntest/framework";
+import { TargetMetaData } from "@syntest/core";
 import { ActionDescription } from "../parsing/ActionDescription";
 
 /**

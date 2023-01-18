@@ -18,7 +18,7 @@
 import * as path from "path";
 import { getAllFiles, readFile } from "../../utils/fileSystem";
 import { AbstractSyntaxTreeGenerator } from "./ast/AbstractSyntaxTreeGenerator";
-import { CFG, Properties, TargetMetaData, TargetPool } from "@syntest/framework";
+import { CFG, Properties, TargetMetaData, TargetPool } from "@syntest/core";
 import { TargetMapGenerator } from "./map/TargetMapGenerator";
 import { ControlFlowGraphGenerator } from "./cfg/ControlFlowGraphGenerator";
 import { ImportGenerator } from "./dependency/ImportGenerator";

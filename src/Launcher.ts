@@ -43,7 +43,7 @@ import {
   StatisticsSearchListener,
   SummaryWriter,
   TotalTimeBudget,
-} from "@syntest/framework";
+} from "@syntest/core";
 
 import { JavaScriptTestCase } from "./testcase/JavaScriptTestCase";
 import { JavaScriptTargetMetaData, JavaScriptTargetPool } from "./analysis/static/JavaScriptTargetPool";

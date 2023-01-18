@@ -4,7 +4,7 @@ import {
   NodeType,
   ObjectiveFunction,
   SearchSubject,
-} from "@syntest/framework";
+} from "@syntest/core";
 import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
 import { JavaScriptTargetMetaData } from "../analysis/static/JavaScriptTargetPool";
 import { ActionDescription } from "../analysis/static/parsing/ActionDescription";

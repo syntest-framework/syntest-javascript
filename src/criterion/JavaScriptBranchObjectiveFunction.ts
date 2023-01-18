@@ -1,6 +1,6 @@
 import { BranchObjectiveFunction, Encoding } from "../../../syntest-framework";
 import { BranchDistance } from "./BranchDistance";
-import { Node, NodeType } from "@syntest/framework";
+import { Node, NodeType } from "@syntest/core";
 
 export class JavaScriptBranchObjectiveFunction<T extends Encoding> extends BranchObjectiveFunction<T> {
 

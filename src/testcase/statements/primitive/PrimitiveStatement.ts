@@ -18,7 +18,7 @@
 
 
 import { Decoding, Statement } from "../Statement";
-import { EncodingSampler } from "@syntest/framework";
+import { EncodingSampler } from "@syntest/core";
 import { IdentifierDescription } from "../../../analysis/static/parsing/IdentifierDescription";
 
 /**

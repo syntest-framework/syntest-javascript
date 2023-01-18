@@ -17,7 +17,7 @@
  */
 
 
-import { Encoding, EncodingSampler, prng } from "@syntest/framework";
+import { Encoding, EncodingSampler, prng } from "@syntest/core";
 import { IdentifierDescription } from "../../analysis/static/parsing/IdentifierDescription";
 import { isNumber } from "util";
 

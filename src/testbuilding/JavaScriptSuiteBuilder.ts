@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { Archive, ExecutionResult, getUserInterface, Properties, TargetPool } from "@syntest/framework";
+import { Archive, ExecutionResult, getUserInterface, Properties, TargetPool } from "@syntest/core";
 import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
 import { readdirSync, readFileSync, rmdirSync, unlinkSync, writeFileSync } from "fs";
 import * as path from "path";

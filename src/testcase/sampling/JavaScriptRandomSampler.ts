@@ -1,6 +1,6 @@
 import { JavaScriptTestCaseSampler } from "./JavaScriptTestCaseSampler";
 import { JavaScriptTestCase } from "../JavaScriptTestCase";
-import { prng, Properties } from "@syntest/framework";
+import { prng, Properties } from "@syntest/core";
 import { ConstructorCall } from "../statements/root/ConstructorCall";
 import { MethodCall } from "../statements/action/MethodCall";
 import { BoolStatement } from "../statements/primitive/BoolStatement";

@@ -29,7 +29,7 @@ import {
   SearchTimeBudget,
   StatisticsCollector,
   TotalTimeBudget,
-} from "@syntest/framework";
+} from "@syntest/core";
 import { JavaScriptSubject } from "../search/JavaScriptSubject";
 
 export function collectInitialVariables(

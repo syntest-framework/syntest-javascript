@@ -19,7 +19,7 @@
 import {
   prng,
   Properties,
-} from "@syntest/framework";
+} from "@syntest/core";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";
 import { RootStatement } from "./RootStatement";

@@ -23,7 +23,7 @@ import {
   NodeType, Operation,
   PlaceholderNode, prng,
   RootNode,
-} from "@syntest/framework";
+} from "@syntest/core";
 
 interface ReturnValue {
   childNodes: Node[];

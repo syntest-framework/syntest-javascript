@@ -18,7 +18,7 @@
 
 import {
   prng, Properties,
-} from "@syntest/framework";
+} from "@syntest/core";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { ActionStatement } from "./ActionStatement";
 import { Decoding, Statement } from "../Statement";
