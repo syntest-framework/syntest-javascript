@@ -32,7 +32,7 @@ import {
 } from "fs";
 import * as path from "path";
 import { JavaScriptDecoder } from "./JavaScriptDecoder";
-import * as _ from "lodash";
+import cloneDeep = require("lodash.clonedeep");
 
 import { Runner } from "mocha";
 import { JavaScriptRunner } from "../testcase/execution/JavaScriptRunner";
@@ -107,7 +107,7 @@ export class JavaScriptSuiteBuilder {
       }
 
       getUserInterface().report("header", ["SEARCH RESULTS"]);
-      const instrumentationData = _.cloneDeep(global.__coverage__);
+      const instrumentationData = cloneDeep(global.__coverage__);
 
       getUserInterface().report("report-coverage", [
         "Coverage report",

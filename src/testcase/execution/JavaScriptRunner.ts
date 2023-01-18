@@ -12,7 +12,7 @@ import {
   JavaScriptExecutionResult,
   JavaScriptExecutionStatus,
 } from "../../search/JavaScriptExecutionResult";
-import * as _ from "lodash";
+import cloneDeep = require("lodash.clonedeep");
 import { SilentMochaReporter } from "./SilentMochaReporter";
 import ExecutionInformationIntegrator from "./ExecutionInformationIntegrator";
 
@@ -122,8 +122,8 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     }
 
     // Retrieve execution traces
-    const instrumentationData = _.cloneDeep(global.__coverage__);
-    const metaData = _.cloneDeep(global.__meta__);
+    const instrumentationData = cloneDeep(global.__coverage__);
+    const metaData = cloneDeep(global.__meta__);
 
     const traces: Datapoint[] = [];
     for (const key of Object.keys(instrumentationData)) {
