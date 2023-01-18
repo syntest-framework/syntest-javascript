@@ -1,4 +1,4 @@
-import { BranchObjectiveFunction, Encoding } from "../../../syntest-framework";
+import { BranchObjectiveFunction, Encoding } from "@syntest/core";
 import { BranchDistance } from "./BranchDistance";
 import { Node, NodeType } from "@syntest/core";
 
