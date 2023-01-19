@@ -56,10 +56,10 @@ export class BranchDistance {
     return distance;
   }
 
-  // eslint-disable-next-line
   evaluate(
     ast: t.Node,
     variables: Record<string, unknown>
+    // eslint-disable-next-line
   ): { value: any; direct: boolean } {
     if (!this[ast.type]) {
       throw new Error(`Unimplemented ast type ${ast.type}`);
@@ -68,10 +68,10 @@ export class BranchDistance {
     return this[ast.type](ast, variables);
   }
 
-  // eslint-disable-next-line
   resolve(
     ast: t.Node,
     variables: Record<string, unknown>
+    // eslint-disable-next-line
   ): { value: any; direct: boolean } {
     switch (ast.type) {
       case "StringLiteral":
@@ -128,10 +128,10 @@ export class BranchDistance {
     );
   }
 
-  // eslint-disable-next-line
   UnaryExpression(
     ast: t.UnaryExpression,
     variables: Record<string, unknown>
+    // eslint-disable-next-line
   ): { value: any; direct: boolean } {
     const { value, direct } = this.resolve(ast.argument, variables);
 
@@ -167,10 +167,10 @@ export class BranchDistance {
     );
   }
 
-  // eslint-disable-next-line
   BinaryExpression(
     ast: t.BinaryExpression,
     variables: Record<string, unknown>
+    // eslint-disable-next-line
   ): { value: any; direct: boolean } {
     // eslint-disable-next-line
     const { value: left, direct: lDirect } = this.resolve(ast.left, variables);
@@ -269,10 +269,10 @@ export class BranchDistance {
     throw new Error(`Unknown binary operator: ${ast.operator}`);
   }
 
-  // eslint-disable-next-line
   LogicalExpression(
     ast: t.LogicalExpression,
     variables: Record<string, unknown>
+    // eslint-disable-next-line
   ): { value: any; direct: boolean } {
     // eslint-disable-next-line
     let { value: left, direct: lDirect } = this.resolve(ast.left, variables);
