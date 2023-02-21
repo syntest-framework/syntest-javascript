@@ -156,7 +156,7 @@ export class JavaScriptSubject extends SearchSubject<JavaScriptTestCase> {
   }
 
   getPossibleActions(
-    type?: ActionType,
+    type?: ActionType | ActionType[],
     returnType?: IdentifierDescription
   ): ActionDescription[] {
     return this.functions.filter((f) => {
