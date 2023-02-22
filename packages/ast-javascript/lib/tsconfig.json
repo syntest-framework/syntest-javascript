@@ -5,8 +5,5 @@
     "rootDir": ".",
     "composite": true
   },
-  "include": [
-    "**/*.ts",
-    "../../ast-javascript/lib/AbstractSyntaxTreeGenerator.ts"
-  ]
+  "include": ["**/*.ts"]
 }
