@@ -7,7 +7,7 @@ const expect = chai.expect;
 /**
  * This test is only added such that the github action does not fail.
  */
-describe("example test", () => {
+describe("visitor test", () => {
   it("test", async () => {
     const source = `
     export class Example {

@@ -67,8 +67,8 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
     },
   };
 
-  Scope = {
-    enter: (path: NodePath<t.Node>) => {
+  Scopable = {
+    enter: (path: NodePath<t.Scopable>) => {
       if (!this._thisScopes.has(path.node.type)) {
         return;
       }
@@ -77,7 +77,7 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
       this._thisScopeStack.push(path.scope["uid"]);
       this._thisScopeStackNames.push(id);
     },
-    exit: (path: NodePath<t.Node>) => {
+    exit: (path: NodePath<t.Scopable>) => {
       if (!this._thisScopes.has(path.node.type)) {
         return;
       }
