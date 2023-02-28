@@ -40,8 +40,9 @@
     "postinstall": "husky install"
   },
   "workspaces": [
-    "packages/*",
-    "plugins/*"
+    "libraries/*",
+    "plugins/*",
+    "tools/*"
   ],
   "devDependencies": {
     "@commitlint/cli": "17.4.2",
