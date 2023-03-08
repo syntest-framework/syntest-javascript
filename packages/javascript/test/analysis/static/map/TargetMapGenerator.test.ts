@@ -1,4 +1,4 @@
-import { AbstractSyntaxTreeGenerator } from "../../../../lib/analysis/static/ast/AbstractSyntaxTreeGenerator";
+import { AbstractSyntaxTreeGenerator } from "@syntest/ast-javascript";
 import { TargetMapGenerator } from "../../../../lib/analysis/static/map/TargetMapGenerator";
 
 describe("Temp", () => {
@@ -16,7 +16,7 @@ describe("Temp", () => {
         }
     }
     `;
-    const ast = new AbstractSyntaxTreeGenerator().generate(code, target);
+    const ast = new AbstractSyntaxTreeGenerator().generate(code);
 
     const targetMapGenerator = new TargetMapGenerator();
     const { targetMap, functionMap } = targetMapGenerator.generate(target, ast);
