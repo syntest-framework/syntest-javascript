@@ -116,6 +116,7 @@ dist
 .vscode-test
 
 ### Syntest Javascript ###
+test-results.json
 
 # End of https://www.toptal.com/developers/gitignore/api/node
 
