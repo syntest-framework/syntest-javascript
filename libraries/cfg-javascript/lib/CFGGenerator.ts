@@ -18,7 +18,7 @@
 
 import { traverse } from "@babel/core";
 import { ControlFlowGraphVisitor } from "./ControlFlowGraphVisitor";
-import { CFG } from "@syntest/cfg-core";
+import { ControlFlowGraph } from "@syntest/cfg-core";
 import * as t from "@babel/types";
 
 /**
@@ -32,7 +32,7 @@ export class CFGGenerator {
    *
    * @param targetAST The AST of the target
    */
-  generate(targetAST: t.Node): CFG {
+  generate(targetAST: t.Node): ControlFlowGraph {
     const visitor = new ControlFlowGraphVisitor();
     traverse(targetAST, visitor);
 

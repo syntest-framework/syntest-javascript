@@ -17,6 +17,7 @@
  */
 import * as chai from "chai";
 import { CFGGenerator } from "../lib";
+
 const expect = chai.expect;
 
 /**

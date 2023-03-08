@@ -1,7 +1,7 @@
 /*
  * Copyright 2020-2023 Delft University of Technology and SynTest contributors
  *
- * This file is part of SynTest Framework - SynTest Javascript.
+ * This file is part of SynTest Framework - SynTest JavaScript.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { Configuration, ArgumentsObject } from "@syntest/core";
+// globals
 
-/**
- * Enum for a Action Types.
- *
- * @author Dimitri Stallenberg
- */
-export enum ActionType {
-  METHOD = "method",
-  GET = "get",
-  SET = "set",
-  CONSTRUCTOR = "constructor",
-  FUNCTION = "function",
-}
+// setup
+// This will run before all test cases.
+before(() => {
+  // This will set the configuration singleton for all test cases.
+  // The configuration singleton is required for running certain parts of the code.
+  const configuration = new Configuration();
+  configuration.initialize(<ArgumentsObject>(<unknown>{
+    seed: "0.1",
+  }));
+});

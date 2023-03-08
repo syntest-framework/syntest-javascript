@@ -20,15 +20,15 @@ import { IdentifierDescription } from "./IdentifierDescription";
 import { ActionType } from "./ActionType";
 import { ActionVisibility } from "./ActionVisibility";
 import { Scope } from "@syntest/ast-javascript";
+import { ActionDescription as CoreActionDescription } from "@syntest/core/dist/analysis/static/ActionDescription";
 
 /**
  * Interface for a Action Description.
  *
  * @author Dimitri Stallenberg
  */
-export interface ActionDescription {
+export interface ActionDescription extends CoreActionDescription {
   scope: Scope;
-  name: string;
   type: ActionType;
 
   visibility: ActionVisibility;
