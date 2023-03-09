@@ -20,6 +20,7 @@ import {
   BranchNode,
   ControlFlowGraph,
   Node,
+  Edge,
   NodeType,
   Operation,
   PlaceholderNode,
@@ -27,7 +28,8 @@ import {
 } from "@syntest/cfg-core";
 
 export class ControlFlowGraphVisitor {
-  private _cfg: ControlFlowGraph;
+  private _nodes: Node[];
+  private _edges: Edge[];
 
   // private _nodeStack: Node[][]
   //
@@ -42,7 +44,8 @@ export class ControlFlowGraphVisitor {
   private _nodeStack: Node[];
 
   constructor() {
-    this._cfg = new ControlFlowGraph();
+    this._nodes = [];
+    this._edges = [];
 
     this._trackingLeaves = [];
     this._firstExit = true;
@@ -407,7 +410,7 @@ export class ControlFlowGraphVisitor {
       description: description,
     };
 
-    this._cfg.nodes.push(node);
+    this._nodes.push(node);
 
     return node;
   }
@@ -430,7 +433,7 @@ export class ControlFlowGraphVisitor {
       statements: statements,
     };
 
-    this._cfg.nodes.push(node);
+    this._nodes.push(node);
 
     return node;
   }
@@ -446,7 +449,7 @@ export class ControlFlowGraphVisitor {
       statements: statements,
     };
 
-    this._cfg.nodes.push(node);
+    this._nodes.push(node);
 
     return node;
   }
@@ -465,7 +468,7 @@ export class ControlFlowGraphVisitor {
       probe: false,
     };
 
-    this._cfg.nodes.push(node);
+    this._nodes.push(node);
 
     return node;
   }
@@ -476,7 +479,7 @@ export class ControlFlowGraphVisitor {
     }
     for (const parent of parents) {
       for (const child of children) {
-        this._cfg.edges.push({
+        this._edges.push({
           from: parent.id,
           to: child.id,
         });
@@ -485,6 +488,6 @@ export class ControlFlowGraphVisitor {
   }
 
   get cfg(): ControlFlowGraph {
-    return this._cfg;
+    return new ControlFlowGraph(this._nodes, this._edges);
   }
 }

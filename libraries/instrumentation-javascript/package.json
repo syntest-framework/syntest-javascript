@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "@babel/core": "7.20.12",
-    "@syntest/ast-javascript": "*"
+    "@syntest/ast-javascript": "^0.1.0-beta.3"
   },
   "devDependencies": {
     "@types/babel__core": "7.20.0"

@@ -37,10 +37,13 @@ interface ReturnValue {
 
 export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
   private cfg: ControlFlowGraph;
+  private nodes: Node[];
+  private edges: Edge[];
 
   convertAST(ast: t.Node): ControlFlowGraph {
+    this.nodes = [];
+    this.edges = [];
     // TODO the imported stuff should also be resolved...
-    this.cfg = new ControlFlowGraph();
 
     this.visitChild(ast, []);
 
@@ -52,22 +55,22 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
     //   this.compress();
     // }
 
-    return this.cfg;
+    return new ControlFlowGraph(this.nodes, this.edges);
   }
 
   removePlaceholder(): void {
     const removableEdges = [];
     const removableNodes = [];
-    this.cfg.nodes
+    this.nodes
       // Find all placeholder nodes
       .filter((n) => n.type === NodeType.Placeholder)
       .forEach((placeholderNode) => {
-        this.cfg.edges
+        this.edges
           // Find all placeholder nodes that are not end nodes
           .filter((edge) => edge.from === placeholderNode.id)
           .forEach((outgoingEdge) => {
             const targetNode = outgoingEdge.to;
-            this.cfg.edges
+            this.edges
               // Find all incoming edges from the current placeholder node
               .filter((edge) => edge.to === placeholderNode.id)
               // Connect the incoming and outgoing nodes together
@@ -85,25 +88,25 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
 
     // Delete unneeded placeholder elements
     removableEdges.forEach((edge) => {
-      this.cfg.edges.splice(this.cfg.edges.indexOf(edge), 1);
+      this.edges.splice(this.edges.indexOf(edge), 1);
     });
     removableNodes.forEach((node) => {
-      this.cfg.nodes.splice(this.cfg.nodes.indexOf(node), 1);
+      this.nodes.splice(this.nodes.indexOf(node), 1);
     });
   }
 
   compress(): void {
-    const roots = this.cfg.nodes.filter((n) => n.type === NodeType.Root);
+    const roots = this.nodes.filter((n) => n.type === NodeType.Root);
 
     // create  node map for easy lookup
     const nodeMap = new Map<string, Node>();
-    for (const node of this.cfg.nodes) {
+    for (const node of this.nodes) {
       nodeMap[node.id] = node;
     }
 
     // create outgoing edge map for easy lookup
     const outEdgeMap = new Map<string, string[]>();
-    for (const edge of this.cfg.edges) {
+    for (const edge of this.edges) {
       if (!outEdgeMap[edge.from]) {
         outEdgeMap[edge.from] = [];
       }
@@ -141,7 +144,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
             removedNodes.push(node);
             description.push(node.line);
 
-            incomingEdges.push(this.cfg.edges.filter((e) => e.to === node.id));
+            incomingEdges.push(this.edges.filter((e) => e.to === node.id));
           }
 
           if (possibleCompression.length > 0) {
@@ -156,12 +159,12 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
                 description.push(lastNode.line);
 
                 incomingEdges.push(
-                  this.cfg.edges.filter((e) => e.to === lastNode.id)
+                  this.edges.filter((e) => e.to === lastNode.id)
                 );
               }
 
               // change the current node to be the compressed version of all previous nodes
-              currentNode.description = description.join(", ");
+              // currentNode.description = description.join(", ");
             } else {
               // change the current node to be the compressed version of all previous nodes
               possibleCompression[possibleCompression.length - 1].description =
@@ -193,9 +196,9 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
       possibleCompression = [];
     }
 
-    this.cfg.nodes = this.cfg.nodes.filter((n) => !removedNodes.includes(n));
+    this.nodes = this.nodes.filter((n) => !removedNodes.includes(n));
     // remove edges of which the to/from has been removed
-    this.cfg.edges = this.cfg.edges.filter(
+    this.edges = this.edges.filter(
       (e) => !removedNodes.find((n) => n.id === e.to || n.id === e.from)
     );
 
@@ -215,7 +218,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
       description: description,
     };
 
-    this.cfg.nodes.push(node);
+    this.nodes.push(node);
 
     return node;
   }
@@ -238,7 +241,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
       statements: statements,
     };
 
-    this.cfg.nodes.push(node);
+    this.nodes.push(node);
 
     return node;
   }
@@ -254,7 +257,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
       statements: statements,
     };
 
-    this.cfg.nodes.push(node);
+    this.nodes.push(node);
 
     return node;
   }
@@ -273,7 +276,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
       probe: false,
     };
 
-    this.cfg.nodes.push(node);
+    this.nodes.push(node);
 
     return node;
   }
@@ -288,7 +291,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
   private connectParents(parents: Node[], children: Node[]) {
     for (const parent of parents) {
       for (const child of children) {
-        this.cfg.edges.push({
+        this.edges.push({
           from: parent.id,
           to: child.id,
         });
@@ -631,13 +634,13 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
     ast: t.ReturnStatement,
     parents: Node[]
   ): ReturnValue {
-    const count = this.cfg.edges.length;
+    const count = this.edges.length;
 
     if (ast.argument) {
       this.visitChild(ast.argument, parents);
     }
 
-    if (!this.cfg.edges[count]) {
+    if (!this.edges[count]) {
       // if no nodes are created we add one
       const node: Node = this.createNode([ast.loc.start.line], []);
       this.connectParents(parents, [node]);
@@ -732,14 +735,14 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
     const totalBreakNodes = [];
 
     // Visit true flow
-    let count = this.cfg.edges.length;
+    let count = this.edges.length;
     const { childNodes, breakNodes } = this.visitChild(ast.consequent, [node]);
     const trueNodes = childNodes;
 
     totalBreakNodes.push(...breakNodes);
 
     // Check if a child node was created
-    if (!this.cfg.edges[count]) {
+    if (!this.edges[count]) {
       // Add empty placeholder node
       const emptyChildNode = this.createPlaceholderNode(
         [ast.consequent.loc.start.line],
@@ -748,28 +751,28 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
       this.connectParents([node], [emptyChildNode]);
       trueNodes.push(emptyChildNode);
 
-      this.cfg.edges[count].branchType = true;
+      this.edges[count].branchType = true;
 
-      // this.cfg.edges.push({
+      // this.edges.push({
       //   from: node.id,
       //   to: emptyChildNode.id,
       //   branchType: true,
       // });
     }
     // Add edge identifierDescription to first added edge
-    this.cfg.edges[count].branchType = true;
+    this.edges[count].branchType = true;
 
     // Visit false flow
     if (ast.alternate) {
-      count = this.cfg.edges.length;
+      count = this.edges.length;
       const { childNodes, breakNodes } = this.visitChild(ast.alternate, [node]);
       const falseNodes = childNodes;
       totalBreakNodes.push(...breakNodes);
 
       // Check if a child node was created
-      if (this.cfg.edges[count]) {
+      if (this.edges[count]) {
         // Add edge identifierDescription to first added edge
-        this.cfg.edges[count].branchType = false;
+        this.edges[count].branchType = false;
       } else {
         // Add empty placeholder node
         const emptyChildNode = this.createPlaceholderNode(
@@ -778,7 +781,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
         );
         falseNodes.push(emptyChildNode);
 
-        this.cfg.edges.push({
+        this.edges.push({
           from: node.id,
           to: emptyChildNode.id,
           branchType: false,
@@ -796,7 +799,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
         []
       );
 
-      this.cfg.edges.push({
+      this.edges.push({
         from: node.id,
         to: falseNode.id,
         branchType: false,
@@ -824,15 +827,15 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
     const totalBreakNodes = [];
 
     // Visit true flow
-    let count = this.cfg.edges.length;
+    let count = this.edges.length;
     const { childNodes, breakNodes } = this.visitChild(ast.consequent, [node]);
     const trueNodes = childNodes;
     totalBreakNodes.push(...breakNodes);
 
     // Check if a child node was created
-    if (this.cfg.edges[count]) {
+    if (this.edges[count]) {
       // Add edge type to first added edge
-      this.cfg.edges[count].branchType = true;
+      this.edges[count].branchType = true;
     } else {
       // Add empty placeholder node
       const emptyChildNode = this.createPlaceholderNode(
@@ -841,7 +844,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
       );
       trueNodes.push(emptyChildNode);
 
-      this.cfg.edges.push({
+      this.edges.push({
         from: node.id,
         to: emptyChildNode.id,
         branchType: true,
@@ -850,15 +853,15 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
 
     // Visit false flow
     if (ast.alternate) {
-      count = this.cfg.edges.length;
+      count = this.edges.length;
       const { childNodes, breakNodes } = this.visitChild(ast.alternate, [node]);
       const falseNodes = childNodes;
       totalBreakNodes.push(...breakNodes);
 
       // Check if a child node was created
-      if (this.cfg.edges[count]) {
+      if (this.edges[count]) {
         // Add edge type to first added edge
-        this.cfg.edges[count].branchType = false;
+        this.edges[count].branchType = false;
       } else {
         // Add empty placeholder node
         const emptyChildNode = this.createPlaceholderNode(
@@ -867,7 +870,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
         );
         falseNodes.push(emptyChildNode);
 
-        this.cfg.edges.push({
+        this.edges.push({
           from: node.id,
           to: emptyChildNode.id,
           branchType: false,
@@ -882,7 +885,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
       // Add empty placeholder node
       const falseNode = this.createPlaceholderNode([ast.loc.end.line], []);
 
-      this.cfg.edges.push({
+      this.edges.push({
         from: node.id,
         to: falseNode.id,
         branchType: false,
@@ -908,15 +911,15 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
     const totalBreakNodes = [];
 
     // Visit try flow
-    let count = this.cfg.edges.length;
+    let count = this.edges.length;
     const tryNodes = this.visitChild(ast.block, [node]);
     const tryChildNodes = tryNodes.childNodes;
     totalBreakNodes.push(...tryNodes.breakNodes);
 
     // Check if a child node was created
-    if (this.cfg.edges[count]) {
+    if (this.edges[count]) {
       // Add edge identifierDescription to first added edge
-      this.cfg.edges[count].branchType = true;
+      this.edges[count].branchType = true;
     } else {
       // Add empty placeholder node
       const emptyChildNode = this.createPlaceholderNode(
@@ -925,7 +928,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
       );
       tryChildNodes.push(emptyChildNode);
 
-      this.cfg.edges.push({
+      this.edges.push({
         from: node.id,
         to: emptyChildNode.id,
         branchType: true,
@@ -933,15 +936,15 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
     }
 
     // Visit catch flow
-    count = this.cfg.edges.length;
+    count = this.edges.length;
     const catchNodes = this.visitChild(ast.handler, [node]);
     const catchChildNodes = catchNodes.childNodes;
     totalBreakNodes.push(...catchNodes.breakNodes);
 
     // Check if a child node was created
-    if (this.cfg.edges[count]) {
+    if (this.edges[count]) {
       // Add edge identifierDescription to first added edge
-      this.cfg.edges[count].branchType = false;
+      this.edges[count].branchType = false;
     } else {
       // Add empty placeholder node
       const emptyChildNode = this.createPlaceholderNode(
@@ -950,7 +953,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
       );
       catchChildNodes.push(emptyChildNode);
 
-      this.cfg.edges.push({
+      this.edges.push({
         from: node.id,
         to: emptyChildNode.id,
         branchType: false,
@@ -987,14 +990,14 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
     });
     this.connectParents(parents, [node]);
 
-    const count = this.cfg.edges.length;
+    const count = this.edges.length;
     const { childNodes, breakNodes } = this.visitChild(ast.body, [node]);
     const trueNodes = childNodes;
 
     // Check if a child node was created
-    if (this.cfg.edges[count]) {
+    if (this.edges[count]) {
       // Add edge identifierDescription to first added edge
-      this.cfg.edges[count].branchType = true;
+      this.edges[count].branchType = true;
     } else {
       // Add empty placeholder node
       const emptyChildNode = this.createPlaceholderNode(
@@ -1003,7 +1006,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
       );
       trueNodes.push(emptyChildNode);
 
-      this.cfg.edges.push({
+      this.edges.push({
         from: node.id,
         to: emptyChildNode.id,
         branchType: true,
@@ -1012,7 +1015,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
 
     // Add empty placeholder node for the false flow
     const falseNode = this.createPlaceholderNode([ast.loc.end.line], []);
-    this.cfg.edges.push({
+    this.edges.push({
       from: node.id,
       to: falseNode.id,
       branchType: false,
@@ -1020,7 +1023,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
 
     // Connect break points
     for (const breakNode of breakNodes) {
-      this.cfg.edges.push({
+      this.edges.push({
         from: breakNode.id,
         to: falseNode.id,
       });
@@ -1045,14 +1048,14 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
     });
     this.connectParents(parents, [node]);
 
-    const count = this.cfg.edges.length;
+    const count = this.edges.length;
     const { childNodes, breakNodes } = this.visitChild(ast.body, [node]);
     const loopNodes = childNodes;
 
     // Check if a child node was created
-    if (this.cfg.edges[count]) {
+    if (this.edges[count]) {
       // Add edge identifierDescription to first added edge
-      this.cfg.edges[count].branchType = true;
+      this.edges[count].branchType = true;
     } else {
       // Add empty placeholder node
       const emptyChildNode = this.createPlaceholderNode(
@@ -1061,7 +1064,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
       );
       loopNodes.push(emptyChildNode);
 
-      this.cfg.edges.push({
+      this.edges.push({
         from: node.id,
         to: emptyChildNode.id,
         branchType: true,
@@ -1070,7 +1073,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
 
     // Add empty placeholder node for the false flow
     const falseNode = this.createPlaceholderNode([ast.loc.end.line], []);
-    this.cfg.edges.push({
+    this.edges.push({
       from: node.id,
       to: falseNode.id,
       branchType: false,
@@ -1078,7 +1081,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
 
     // Connect break points
     for (const breakNode of breakNodes) {
-      this.cfg.edges.push({
+      this.edges.push({
         from: breakNode.id,
         to: falseNode.id,
       });
@@ -1159,7 +1162,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
     this.connectParents(trueNodes, [whileNode]);
 
     // Connect back to the entry node and mark as true branch
-    this.cfg.edges.push({
+    this.edges.push({
       from: whileNode.id,
       to: entryNode.id,
       branchType: true,
@@ -1167,7 +1170,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
 
     // Add empty placeholder node for the false flow
     const falseNode: Node = this.createPlaceholderNode([ast.loc.end.line], []);
-    this.cfg.edges.push({
+    this.edges.push({
       from: whileNode.id,
       to: falseNode.id,
       branchType: false,
@@ -1175,7 +1178,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
 
     // Connect break points
     for (const breakNode of breakNodes) {
-      this.cfg.edges.push({
+      this.edges.push({
         from: breakNode.id,
         to: falseNode.id,
       });
@@ -1208,7 +1211,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
 
       // Connect break points
       for (const breakNode of breakNodes) {
-        this.cfg.edges.push({
+        this.edges.push({
           from: breakNode.id,
           to: falseNode.id,
         });
@@ -1216,7 +1219,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
     }
 
     for (const breakNode of nodes) {
-      this.cfg.edges.push({
+      this.edges.push({
         from: breakNode.id,
         to: falseNode.id,
       });
@@ -1235,7 +1238,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
     });
     this.connectParents(parents, [node]);
 
-    const count = this.cfg.edges.length;
+    const count = this.edges.length;
 
     let nodes = [node];
     const totalBreakNodes = [];
@@ -1249,9 +1252,9 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
     const childNodes = [];
 
     // Check if a child node was created
-    if (this.cfg.edges[count]) {
+    if (this.edges[count]) {
       // Add edge identifierDescription to first added edge
-      this.cfg.edges[count].branchType = true;
+      this.edges[count].branchType = true;
     } else {
       // Add empty placeholder node
       const emptyChildNode = this.createPlaceholderNode(
@@ -1260,7 +1263,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
       );
       trueNodes.push(emptyChildNode);
 
-      this.cfg.edges.push({
+      this.edges.push({
         from: node.id,
         to: emptyChildNode.id,
         branchType: true,
@@ -1271,7 +1274,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
 
     // Add empty placeholder node for the false flow
     const falseNode = this.createPlaceholderNode([ast.loc.start.line], []);
-    this.cfg.edges.push({
+    this.edges.push({
       from: node.id,
       to: falseNode.id,
       branchType: false,
@@ -1299,14 +1302,14 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
     // TODO condition expression
     // TODO loopExpression
 
-    const count = this.cfg.edges.length;
+    const count = this.edges.length;
     const { childNodes, breakNodes } = this.visitChild(ast.body, [node]);
     const trueNodes = childNodes;
 
     // Check if a child node was created
-    if (this.cfg.edges[count]) {
+    if (this.edges[count]) {
       // Add edge identifierDescription to first added edge
-      this.cfg.edges[count].branchType = true;
+      this.edges[count].branchType = true;
     } else {
       // Add empty placeholder node
       const emptyChildNode = this.createPlaceholderNode(
@@ -1315,7 +1318,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
       );
       trueNodes.push(emptyChildNode);
 
-      this.cfg.edges.push({
+      this.edges.push({
         from: node.id,
         to: emptyChildNode.id,
         branchType: true,
@@ -1324,7 +1327,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
 
     // Add empty placeholder node for the false flow
     const falseNode = this.createPlaceholderNode([ast.loc.end.line], []);
-    this.cfg.edges.push({
+    this.edges.push({
       from: node.id,
       to: falseNode.id,
       branchType: false,
@@ -1332,7 +1335,7 @@ export class ControlFlowGraphGenerator implements ControlFlowGraphFactory {
 
     // Connect break points
     for (const breakNode of breakNodes) {
-      this.cfg.edges.push({
+      this.edges.push({
         from: breakNode.id,
         to: falseNode.id,
       });
