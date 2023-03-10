@@ -28,7 +28,7 @@ import { ExportGenerator } from "./dependency/ExportGenerator";
 import { existsSync, lstatSync } from "fs";
 import { Export } from "./dependency/ExportVisitor";
 import { SubjectType } from "../../search/JavaScriptSubject";
-import { TypeResolver } from "./types/resolving/TypeResolver";
+import { StaticTypeResolver } from "./types/resolving/StaticTypeResolver";
 import { VariableGenerator } from "./types/discovery/VariableGenerator";
 import { ObjectGenerator } from "./types/discovery/object/ObjectGenerator";
 import { ComplexObject } from "./types/discovery/object/ComplexObject";
@@ -57,7 +57,7 @@ export class JavaScriptTargetPool extends TargetPool<JavaScriptTestCase> {
   protected controlFlowGraphGenerator: ControlFlowGraphGenerator;
   protected importGenerator: ImportGenerator;
   protected exportGenerator: ExportGenerator;
-  private _typeResolver: TypeResolver;
+  private _typeResolver: StaticTypeResolver;
 
   // Mapping: filepath -> source code
   protected _sources: Map<string, string>;
@@ -89,7 +89,7 @@ export class JavaScriptTargetPool extends TargetPool<JavaScriptTestCase> {
     controlFlowGraphGenerator: ControlFlowGraphGenerator,
     importGenerator: ImportGenerator,
     exportGenerator: ExportGenerator,
-    typeResolver: TypeResolver
+    typeResolver: StaticTypeResolver
   ) {
     super();
     this.abstractSyntaxTreeGenerator = abstractSyntaxTreeGenerator;
@@ -580,7 +580,7 @@ export class JavaScriptTargetPool extends TargetPool<JavaScriptTestCase> {
     );
   }
 
-  get typeResolver(): TypeResolver {
+  get typeResolver(): StaticTypeResolver {
     return this._typeResolver;
   }
 }

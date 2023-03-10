@@ -26,7 +26,7 @@ import { TypeProbability } from "../TypeProbability";
  *
  * @author Dimitri Stallenberg
  */
-export abstract class TypeResolver {
+export abstract class StaticTypeResolver {
   private _relationTyping: Map<Relation, TypeProbability>;
   private _elementTyping: Map<Element, TypeProbability>;
 

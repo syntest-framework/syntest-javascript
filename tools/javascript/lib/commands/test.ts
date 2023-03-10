@@ -26,15 +26,6 @@ export function getTestCommand(
 ): Command {
   const options = new Map<string, Yargs.Options>();
 
-  options.set("incorporate-execution-information", {
-    alias: [],
-    default: true,
-    description: "Incorporate execution information.",
-    group: "Type Inference Options:",
-    hidden: false,
-    type: "boolean",
-  });
-
   options.set("static-type-resolver", {
     alias: [],
     choices: [],

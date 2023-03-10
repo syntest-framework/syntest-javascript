@@ -33,4 +33,17 @@ export abstract class DynamicTypeResolverPlugin<
   abstract createDynamicTypeResolver<O extends DynamicTypeResolverOptions<T>>(
     options: O
   ): DynamicTypeResolver;
+
+  getCommandOptionChoices(
+    tool: string,
+    labels: string[],
+    command: string,
+    option: string
+  ): string[] {
+    if (option === "dynamic-type-resolver") {
+      return [this.name];
+    }
+
+    return [];
+  }
 }

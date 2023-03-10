@@ -1,7 +1,7 @@
 /*
  * Copyright 2020-2023 Delft University of Technology and SynTest contributors
  *
- * This file is part of SynTest Framework - SynTest Javascript.
+ * This file is part of SynTest Framework - SynTest JavaScript.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { Encoding } from "@syntest/core";
+import { DynamicTypeResolverPlugin } from "../DynamicTypeResolverPlugin";
+import { DynamicTypeResolver } from "@syntest/core-javascript";
+import { SimpleDynamicTypeResolver } from "@syntest/core-javascript";
 
-import { TypeResolver } from "./TypeResolver";
-import { TypeProbability } from "../TypeProbability";
-
-export class RandomTypeResolver extends TypeResolver {
-  getTyping(): TypeProbability {
-    return new TypeProbability();
+export class SimpleDynamicTypeResolverPlugin<
+  T extends Encoding
+> extends DynamicTypeResolverPlugin<T> {
+  constructor() {
+    super("simple", "A simple dynamic type resolver.");
   }
 
-  // eslint-disable-next-line
-  resolveTypes() {}
+  createDynamicTypeResolver(): DynamicTypeResolver {
+    return new SimpleDynamicTypeResolver();
+  }
 }

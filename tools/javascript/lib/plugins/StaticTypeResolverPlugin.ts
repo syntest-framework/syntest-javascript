@@ -33,4 +33,17 @@ export abstract class StaticTypeResolverPlugin<
   abstract createStaticTypeResolver<O extends StaticTypeResolverOptions<T>>(
     options: O
   ): StaticTypeResolver;
+
+  getCommandOptionChoices(
+    tool: string,
+    labels: string[],
+    command: string,
+    option: string
+  ): string[] {
+    if (option === "static-type-resolver") {
+      return [this.name];
+    }
+
+    return [];
+  }
 }

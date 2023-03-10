@@ -15,6 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+export * from "./analysis/dynamic/types/DynamicTypeResolver";
+export * from "./analysis/dynamic/types/SimpleDynamicTypeResolver";
 
 export * from "./analysis/static/dependency/ExportGenerator";
 export * from "./analysis/static/dependency/ExportVisitor";
@@ -39,9 +41,9 @@ export * from "./analysis/static/types/discovery/Relation";
 export * from "./analysis/static/types/discovery/VariableGenerator";
 export * from "./analysis/static/types/discovery/VariableVisitor";
 
-export * from "./analysis/static/types/resolving/ProbabilisticTypeResolver";
-export * from "./analysis/static/types/resolving/RandomTypeResolver";
-export * from "./analysis/static/types/resolving/TypeResolver";
+export * from "./analysis/static/types/resolving/ProbabilisticStaticTypeResolver";
+export * from "./analysis/static/types/resolving/RandomStaticTypeResolver";
+export * from "./analysis/static/types/resolving/StaticTypeResolver";
 
 export * from "./analysis/static/types/selecting/ProportionalTypeSelector";
 export * from "./analysis/static/types/selecting/RankedTypeSelector";
@@ -64,7 +66,6 @@ export * from "./search/JavaScriptSubject";
 export * from "./testbuilding/JavaScriptDecoder";
 export * from "./testbuilding/JavaScriptSuiteBuilder";
 
-export * from "./testcase/execution/ExecutionInformationIntegrator";
 export * from "./testcase/execution/JavaScriptRunner";
 export * from "./testcase/execution/SilentMochaReporter";
 

@@ -26,7 +26,6 @@ import {
 } from "../../search/JavaScriptExecutionResult";
 import cloneDeep = require("lodash.clonedeep");
 import { SilentMochaReporter } from "./SilentMochaReporter";
-import ExecutionInformationIntegrator from "./ExecutionInformationIntegrator";
 
 import { Runner } from "mocha";
 import { unlinkSync, writeFileSync } from "fs";
@@ -34,18 +33,23 @@ import { JavaScriptDecoder } from "../../testbuilding/JavaScriptDecoder";
 import Mocha = require("mocha");
 import originalrequire = require("original-require");
 import { getLogger } from "@syntest/logging";
+import { DynamicTypeResolver } from "../../analysis/dynamic/types/DynamicTypeResolver";
 
 export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
   private static LOGGER = getLogger("JavaScriptRunner");
 
   protected decoder: JavaScriptDecoder;
   protected tempTestDirectory: string;
-  protected errorProcessor: ExecutionInformationIntegrator;
+  protected dynamicTypeResolving: DynamicTypeResolver;
 
-  constructor(decoder: JavaScriptDecoder, tempTestDirectory: string) {
+  constructor(
+    decoder: JavaScriptDecoder,
+    dynamicTypeResolving: DynamicTypeResolver,
+    tempTestDirectory: string
+  ) {
     this.decoder = decoder;
+    this.dynamicTypeResolving = dynamicTypeResolving;
     this.tempTestDirectory = tempTestDirectory;
-    this.errorProcessor = new ExecutionInformationIntegrator();
 
     process.on("uncaughtException", (reason) => {
       throw reason;
@@ -128,12 +132,7 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
 
     const test = runner.suite.suites[0].tests[0];
 
-    // If one of the executions failed, log it
-    if (stats.failures > 0) {
-      this.errorProcessor.processError(testCase, test);
-    } else {
-      this.errorProcessor.processSuccess(testCase, test);
-    }
+    this.dynamicTypeResolving.processTestResult(testCase, test);
 
     // Retrieve execution traces
     const instrumentationData = cloneDeep(global.__coverage__);

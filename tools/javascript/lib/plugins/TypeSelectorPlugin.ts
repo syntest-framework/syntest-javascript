@@ -31,4 +31,17 @@ export abstract class TypeSelectorPlugin<T extends Encoding> extends Plugin {
   abstract createTypeSelector<O extends TypeSelectorOptions<T>>(
     options: O
   ): TypeSelector;
+
+  getCommandOptionChoices(
+    tool: string,
+    labels: string[],
+    command: string,
+    option: string
+  ): string[] {
+    if (option === "type-selector") {
+      return [this.name];
+    }
+
+    return [];
+  }
 }

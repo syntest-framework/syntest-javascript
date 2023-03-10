@@ -25,6 +25,7 @@ import { RankedTypeSelectorPlugin } from "./plugins/type-selectors/RankedTypeSel
 import { ProbabilisticTypeResolverPlugin } from "./plugins/static-type-resolvers/ProbabilisticTypeResolverPlugin";
 import { RandomTypeResolverPlugin } from "./plugins/static-type-resolvers/RandomTypeResolverPlugin";
 import { JavaScriptTreeCrossoverPlugin } from "./plugins/crossover/JavaScriptTreeCrossoverPlugin";
+import { SimpleDynamicTypeResolverPlugin } from "./plugins/dynamic-type-resolvers/SimpleDynamicTypeResolverPlugin";
 
 export default class JavaScriptModule extends Module {
   constructor() {
@@ -50,11 +51,17 @@ export default class JavaScriptModule extends Module {
   }
   async getPlugins(): Promise<Plugin[]> {
     return [
+      // crossover
       new JavaScriptTreeCrossoverPlugin(),
 
+      // dynamic type resolvers
+      new SimpleDynamicTypeResolverPlugin(),
+
+      // static type resolvers
       new ProbabilisticTypeResolverPlugin(),
       new RandomTypeResolverPlugin(),
 
+      // type selectors
       new ProportionalTypeSelectorPlugin(),
       new RankedTypeSelectorPlugin(),
     ];
