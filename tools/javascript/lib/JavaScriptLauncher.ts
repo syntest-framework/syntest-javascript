@@ -31,10 +31,23 @@ import {
 } from "@syntest/core";
 
 import {
+  ActionType,
   Export,
   ExportGenerator,
+  ImportGenerator,
+  JavaScriptDecoder,
+  JavaScriptRandomSampler,
+  JavaScriptRunner,
+  JavaScriptSubject,
+  JavaScriptSuiteBuilder,
+  JavaScriptTargetMetaData,
   JavaScriptTargetPool,
   JavaScriptTestCase,
+  JavaScriptTreeCrossover,
+  TargetMapGenerator,
+  TypeResolver,
+  TypeResolverInference,
+  TypeResolverUnknown,
 } from "@syntest/core-javascript";
 
 import {
@@ -45,6 +58,7 @@ import {
   createTempDirectoryStructure,
   deleteTempDirectories,
   Launcher,
+  SearchAlgorithmPlugin,
 } from "@syntest/base-testing-tool";
 
 import { AbstractSyntaxTreeGenerator } from "@syntest/ast-javascript";
@@ -60,6 +74,7 @@ import {
   collectStatistics,
 } from "./collection";
 import { ModuleManager } from "@syntest/module";
+import { TestCommandOptions } from "./commands/test";
 
 export interface JavaScriptArguments extends ArgumentsObject {
   incorporateExecutionInformation: boolean;
@@ -128,7 +143,7 @@ export class JavaScriptLauncher extends Launcher {
   }
 
   async preprocess(): Promise<void> {
-    this.targetPool.loadTargets();
+    this.targetPool.loadTargets(CONFIG.include, CONFIG.exclude);
 
     if (!this.targetPool.targets.length) {
       // Shut server down
@@ -197,8 +212,13 @@ export class JavaScriptLauncher extends Launcher {
     //     ],
     //   ])]);
 
-    await (<JavaScriptTargetPool>this.targetPool).prepareAndInstrument();
-    await (<JavaScriptTargetPool>this.targetPool).scanTargetRootDirectory();
+    await (<JavaScriptTargetPool>this.targetPool).prepareAndInstrument(
+      CONFIG.targetRootDirectory,
+      CONFIG.tempInstrumentedDirectory
+    );
+    await (<JavaScriptTargetPool>this.targetPool).scanTargetRootDirectory(
+      CONFIG.targetRootDirectory
+    );
   }
 
   async process(): Promise<void> {
@@ -231,16 +251,31 @@ export class JavaScriptLauncher extends Launcher {
 
   async postprocess(): Promise<void> {
     const testDir = path.join(CONFIG.syntestDirectory, CONFIG.testDirectory);
+    const tempTestDir = path.join(
+      CONFIG.tempSyntestDirectory,
+      CONFIG.tempTestDirectory
+    );
+    const tempLogDir = path.join(
+      CONFIG.tempSyntestDirectory,
+      CONFIG.tempLogDirectory
+    );
+
     await clearDirectory(testDir);
 
     const decoder = new JavaScriptDecoder(
       <JavaScriptTargetPool>this.targetPool,
       this.dependencyMap,
-      this.exports
+      this.exports,
+      CONFIG.targetRootDirectory,
+      tempLogDir
     );
-    const runner = new JavaScriptRunner(decoder);
+    const runner = new JavaScriptRunner(decoder, tempTestDir);
 
-    const suiteBuilder = new JavaScriptSuiteBuilder(decoder, runner);
+    const suiteBuilder = new JavaScriptSuiteBuilder(
+      decoder,
+      runner,
+      tempLogDir
+    );
 
     // TODO fix hardcoded paths
 
@@ -421,27 +456,69 @@ export class JavaScriptLauncher extends Launcher {
     dependencyMap.set(targetMeta.name, dependencies);
     const exports = targetPool.getExports(targetPath);
 
-    const decoder = new JavaScriptDecoder(targetPool, dependencyMap, exports);
-    const runner = new JavaScriptRunner(decoder);
+    const tempTestDir = path.join(
+      CONFIG.tempSyntestDirectory,
+      CONFIG.tempTestDirectory
+    );
+    const tempLogDir = path.join(
+      CONFIG.tempSyntestDirectory,
+      CONFIG.tempLogDirectory
+    );
 
-    const suiteBuilder = new JavaScriptSuiteBuilder(decoder, runner);
+    const decoder = new JavaScriptDecoder(
+      targetPool,
+      dependencyMap,
+      exports,
+      CONFIG.targetRootDirectory,
+      tempLogDir
+    );
+    const runner = new JavaScriptRunner(decoder, tempTestDir);
+
+    const suiteBuilder = new JavaScriptSuiteBuilder(
+      decoder,
+      runner,
+      tempLogDir
+    );
 
     // TODO constant pool
 
-    const sampler = new JavaScriptRandomSampler(currentSubject, targetPool);
-    const crossover = new JavaScriptTreeCrossover();
-    const algorithm = ModuleManager.instance.getPlugin(
-      PluginType.SearchAlgorithm,
-      CONFIG.algorithm
+    const sampler = new JavaScriptRandomSampler(
+      currentSubject,
+      (<TestCommandOptions>(<unknown>CONFIG)).typeInferenceMode,
+      (<TestCommandOptions>(<unknown>CONFIG)).randomTypeProbability,
+      (<TestCommandOptions>(<unknown>CONFIG)).incorporateExecutionInformation,
+      CONFIG.maxActionStatements,
+      CONFIG.stringAlphabet,
+      CONFIG.stringMaxLength,
+      CONFIG.resampleGeneProbability,
+      CONFIG.deltaMutationProbability,
+      CONFIG.exploreIllegalValues,
+      targetPool
     );
-    createSearchAlgorithmFromConfig(
-      this.eventManager,
-      this.pluginManager,
-      null,
-      sampler,
-      runner,
-      crossover
-    );
+
+    const objectiveManager = (<ObjectiveManagerPlugin<JavaScriptTestCase>>(
+      ModuleManager.instance.getPlugin(
+        PluginType.ObjectiveManager,
+        CONFIG.objectiveManager
+      )
+    )).createObjectiveManager({
+      runner: runner,
+    });
+    const crossover = new JavaScriptTreeCrossover(CONFIG.crossoverProbability);
+    const algorithm = (<SearchAlgorithmPlugin<JavaScriptTestCase>>(
+      ModuleManager.instance.getPlugin(
+        PluginType.SearchAlgorithm,
+        CONFIG.algorithm
+      )
+    )).createSearchAlgorithm({
+      objectiveManager: ObjectiveManager<T>,
+      encodingSampler: sampler,
+      runner: runner,
+      crossover: crossover,
+      populationSize: CONFIG.populationSize,
+      // TODO should this even have the crossover probability?
+      crossoverProbability: CONFIG.crossoverProbability,
+    });
 
     await suiteBuilder.clearDirectory(CONFIG.tempTestDirectory);
 
