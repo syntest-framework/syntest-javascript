@@ -39,13 +39,17 @@ export * from "./analysis/static/types/discovery/Relation";
 export * from "./analysis/static/types/discovery/VariableGenerator";
 export * from "./analysis/static/types/discovery/VariableVisitor";
 
-export * from "./analysis/static/types/resolving/logic/ObjectMatcher";
-export * from "./analysis/static/types/resolving/logic/TypeResolverInference";
-
-export * from "./analysis/static/types/resolving/TypeEnum";
-export * from "./analysis/static/types/resolving/TypeProbability";
+export * from "./analysis/static/types/resolving/ProbabilisticTypeResolver";
+export * from "./analysis/static/types/resolving/RandomTypeResolver";
 export * from "./analysis/static/types/resolving/TypeResolver";
-export * from "./analysis/static/types/resolving/TypeResolverUnknown";
+
+export * from "./analysis/static/types/selecting/ProportionalTypeSelector";
+export * from "./analysis/static/types/selecting/RankedTypeSelector";
+export * from "./analysis/static/types/selecting/TypeSelector";
+
+export * from "./analysis/static/types/ObjectMatcher";
+export * from "./analysis/static/types/TypeEnum";
+export * from "./analysis/static/types/TypeProbability";
 
 export * from "./analysis/static/JavaScriptTargetPool";
 

@@ -18,7 +18,7 @@
 
 import { TypeEnum } from "./TypeEnum";
 import { prng } from "@syntest/core";
-import { ComplexObject } from "../discovery/object/ComplexObject";
+import { ComplexObject } from "./discovery/object/ComplexObject";
 
 /**
  * Type Probability Map
@@ -119,7 +119,7 @@ export class TypeProbability {
   /**
    * Calculates the actual probabilities for each identifierDescription based on the given scores
    */
-  calculateProbabilities(incorporateExecutionInformation: boolean) {
+  calculateProbabilities() {
     if (!this.scoresChanged) {
       return;
     }
@@ -146,9 +146,7 @@ export class TypeProbability {
 
     for (const identifier of this.scores.keys()) {
       if (this.typeIsTypeProbability.has(identifier)) {
-        this.typeIsTypeProbability
-          .get(identifier)
-          .calculateProbabilities(incorporateExecutionInformation);
+        this.typeIsTypeProbability.get(identifier).calculateProbabilities();
         const probs = this.typeIsTypeProbability.get(identifier).probabilities;
 
         let divider = 1;
@@ -191,7 +189,7 @@ export class TypeProbability {
       minValue = Math.min(minValue, this.executionScores.get(key));
     }
 
-    if (incorporateExecutionInformation && this.executionScores.size) {
+    if (this.executionScores.size) {
       // calculate total
       let totalScore = 0;
       for (const key of this.probabilities.keys()) {
@@ -245,8 +243,8 @@ export class TypeProbability {
   /**
    * Gets a random identifierDescription from the probability map based on their likelyhood
    */
-  getRandomType(incorporateExecutionInformation: boolean): string {
-    this.calculateProbabilities(incorporateExecutionInformation);
+  getRandomType(): string {
+    this.calculateProbabilities();
 
     if (!this.probabilities.size) {
       return TypeEnum.ANY;
@@ -260,9 +258,7 @@ export class TypeProbability {
 
       if (choice <= index + probability) {
         if (this.typeIsTypeProbability.has(type)) {
-          return this.typeIsTypeProbability
-            .get(type)
-            .getRandomType(incorporateExecutionInformation);
+          return this.typeIsTypeProbability.get(type).getRandomType();
         }
         return type;
       }
@@ -273,16 +269,14 @@ export class TypeProbability {
     const type = this.probabilities.keys().next().value;
 
     if (this.typeIsTypeProbability.has(type)) {
-      return this.typeIsTypeProbability
-        .get(type)
-        .getRandomType(incorporateExecutionInformation);
+      return this.typeIsTypeProbability.get(type).getRandomType();
     }
 
     return type;
   }
 
-  getHighestProbabilityType(incorporateExecutionInformation: boolean): string {
-    this.calculateProbabilities(incorporateExecutionInformation);
+  getHighestProbabilityType(): string {
+    this.calculateProbabilities();
 
     if (!this.probabilities.size) {
       return TypeEnum.ANY;
@@ -297,9 +291,7 @@ export class TypeProbability {
     }
 
     if (this.typeIsTypeProbability.has(best)) {
-      return this.typeIsTypeProbability
-        .get(best)
-        .getHighestProbabilityType(incorporateExecutionInformation);
+      return this.typeIsTypeProbability.get(best).getHighestProbabilityType();
     }
 
     return best;

@@ -35,10 +35,31 @@ export function getTestCommand(
     type: "boolean",
   });
 
-  options.set("type-inference-mode", {
+  options.set("static-type-resolver", {
     alias: [],
-    default: "proportional",
-    description: "The type inference mode: [proportional, ranked, none].",
+    choices: [],
+    default: "",
+    description: "The type inference mode.",
+    group: "Type Inference Options:",
+    hidden: false,
+    type: "string",
+  });
+
+  options.set("dynamic-type-resolver", {
+    alias: [],
+    choices: [],
+    default: "",
+    description: "The type inference mode.",
+    group: "Type Inference Options:",
+    hidden: false,
+    type: "string",
+  });
+
+  options.set("type-selector", {
+    alias: [],
+    choices: [],
+    default: "",
+    description: "The type selector mode.",
     group: "Type Inference Options:",
     hidden: false,
     type: "string",
@@ -67,7 +88,8 @@ export function getTestCommand(
 }
 
 export type TestCommandOptions = {
-  incorporateExecutionInformation: boolean;
-  typeInferenceMode: string;
+  staticTypeResolver: string;
+  dynamicTypeResolver: string;
+  typeSelector: string;
   randomTypeProbability: number;
 };

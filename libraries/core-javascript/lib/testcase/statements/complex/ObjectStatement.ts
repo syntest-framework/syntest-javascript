@@ -22,7 +22,7 @@ import { Decoding, Statement } from "../Statement";
 import { IdentifierDescription } from "../../../analysis/static/parsing/IdentifierDescription";
 import * as path from "path";
 import { StringStatement } from "../primitive/StringStatement";
-import { TypeProbability } from "../../../analysis/static/types/resolving/TypeProbability";
+import { TypeProbability } from "../../../analysis/static/types/TypeProbability";
 import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 
 /**

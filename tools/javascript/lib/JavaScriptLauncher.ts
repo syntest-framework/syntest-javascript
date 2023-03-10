@@ -75,6 +75,8 @@ import {
 } from "./collection";
 import { ModuleManager } from "@syntest/module";
 import { TestCommandOptions } from "./commands/test";
+import { TypeResolverPlugin } from "./plugins/StaticTypeResolverPlugin";
+import { PluginType as JavaScriptPluginType } from "./plugins/PluginType";
 
 export interface JavaScriptArguments extends ArgumentsObject {
   incorporateExecutionInformation: boolean;
@@ -109,13 +111,12 @@ export class JavaScriptLauncher extends Launcher {
     const abstractSyntaxTreeGenerator = new AbstractSyntaxTreeGenerator();
     const targetMapGenerator = new TargetMapGenerator();
 
-    let typeResolver: TypeResolver;
-
-    if ((<JavaScriptArguments>CONFIG).typeInferenceMode === "none") {
-      typeResolver = new TypeResolverUnknown();
-    } else {
-      typeResolver = new TypeResolverInference();
-    }
+    const typeResolver = (<TypeResolverPlugin<JavaScriptTestCase>>(
+      ModuleManager.instance.getPlugin(
+        JavaScriptPluginType.TypeResolver,
+        CONFIG.typeResolver
+      )
+    )).createTypeResolver({});
 
     const controlFlowGraphGenerator = new ControlFlowGraphGenerator();
     const importGenerator = new ImportGenerator();

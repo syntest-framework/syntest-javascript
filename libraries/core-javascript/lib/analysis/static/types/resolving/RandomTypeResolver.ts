@@ -17,9 +17,9 @@
  */
 
 import { TypeResolver } from "./TypeResolver";
-import { TypeProbability } from "./TypeProbability";
+import { TypeProbability } from "../TypeProbability";
 
-export class TypeResolverUnknown extends TypeResolver {
+export class RandomTypeResolver extends TypeResolver {
   getTyping(): TypeProbability {
     return new TypeProbability();
   }

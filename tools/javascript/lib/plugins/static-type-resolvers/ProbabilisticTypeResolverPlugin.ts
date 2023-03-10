@@ -1,7 +1,7 @@
 /*
  * Copyright 2020-2023 Delft University of Technology and SynTest contributors
  *
- * This file is part of SynTest Framework - SynTest Javascript.
+ * This file is part of SynTest Framework - SynTest JavaScript.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,18 @@
  * limitations under the License.
  */
 
-import { TypeProbability } from "../types/TypeProbability";
+import { Encoding } from "@syntest/core";
+import { ProbabilisticTypeResolver } from "@syntest/core-javascript";
+import { StaticTypeResolverPlugin } from "../StaticTypeResolverPlugin";
 
-/**
- * Interface for a IdentifierDescription Description.
- *
- * @author Dimitri Stallenberg
- */
-export interface IdentifierDescription {
-  /**
-   * Name of the parameter.
-   */
-  name: string;
+export class ProbabilisticTypeResolverPlugin<
+  T extends Encoding
+> extends StaticTypeResolverPlugin<T> {
+  constructor() {
+    super("probabilistic", "Resolve types using probabilistic inference");
+  }
 
-  /**
-   * Type probability map of the parameter.
-   */
-  typeProbabilityMap: TypeProbability;
+  createStaticTypeResolver<O extends Encoding>() {
+    return new ProbabilisticTypeResolver();
+  }
 }

@@ -16,15 +16,15 @@
  * limitations under the License.
  */
 
-import { TypeResolver } from "../TypeResolver";
+import { TypeResolver } from "./TypeResolver";
 import { elementTypeToTypingType, TypeEnum } from "../TypeEnum";
-import { Relation, RelationType } from "../../discovery/Relation";
+import { Relation, RelationType } from "../discovery/Relation";
 import { Element, Scope } from "@syntest/ast-javascript";
-import { ComplexObject } from "../../discovery/object/ComplexObject";
+import { ComplexObject } from "../discovery/object/ComplexObject";
 import { TypeProbability } from "../TypeProbability";
-import { createAnonObject } from "./ObjectMatcher";
+import { createAnonObject } from "../ObjectMatcher";
 
-export class TypeResolverInference extends TypeResolver {
+export class ProbabilisticTypeResolver extends TypeResolver {
   /**
    * This function resolves constant elements such as numerical constants or other primitives
    * @param elements the elements to resolve

@@ -19,6 +19,12 @@
 import { Module, Plugin, Tool } from "@syntest/module";
 import yargs = require("yargs");
 import { getTestCommand } from "./commands/test";
+import { ProportionalTypeSelectorPlugin } from "./plugins/type-selectors/ProportionalTypeSelectorPlugin";
+import { RankedTypeSelector } from "@syntest/core-javascript";
+import { RankedTypeSelectorPlugin } from "./plugins/type-selectors/RankedTypeSelectorPlugin";
+import { ProbabilisticTypeResolverPlugin } from "./plugins/static-type-resolvers/ProbabilisticTypeResolverPlugin";
+import { RandomTypeResolverPlugin } from "./plugins/static-type-resolvers/RandomTypeResolverPlugin";
+import { JavaScriptTreeCrossoverPlugin } from "./plugins/crossover/JavaScriptTreeCrossoverPlugin";
 
 export default class JavaScriptModule extends Module {
   constructor() {
@@ -43,6 +49,14 @@ export default class JavaScriptModule extends Module {
     return [javascriptTool];
   }
   async getPlugins(): Promise<Plugin[]> {
-    return [];
+    return [
+      new JavaScriptTreeCrossoverPlugin(),
+
+      new ProbabilisticTypeResolverPlugin(),
+      new RandomTypeResolverPlugin(),
+
+      new ProportionalTypeSelectorPlugin(),
+      new RankedTypeSelectorPlugin(),
+    ];
   }
 }

@@ -1,7 +1,7 @@
 /*
  * Copyright 2020-2023 Delft University of Technology and SynTest contributors
  *
- * This file is part of SynTest Framework - SynTest Javascript.
+ * This file is part of SynTest Framework - SynTest JavaScript.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,24 @@
  * limitations under the License.
  */
 
-import { TypeProbability } from "../types/TypeProbability";
+import { Encoding } from "crypto";
+import { TypeSelectorOptions, TypeSelectorPlugin } from "../TypeSelectorPlugin";
+import {
+  ProportionalTypeSelector,
+  TypeSelector,
+} from "@syntest/core-javascript";
 
-/**
- * Interface for a IdentifierDescription Description.
- *
- * @author Dimitri Stallenberg
- */
-export interface IdentifierDescription {
-  /**
-   * Name of the parameter.
-   */
-  name: string;
+export class ProportionalTypeSelectorPlugin<
+  T extends Encoding
+> extends TypeSelectorPlugin<T> {
+  constructor() {
+    super(
+      "proportional",
+      "Selects a type based on the probability of the type"
+    );
+  }
 
-  /**
-   * Type probability map of the parameter.
-   */
-  typeProbabilityMap: TypeProbability;
+  createTypeSelector<O extends TypeSelectorOptions<T>>(): TypeSelector {
+    return new ProportionalTypeSelector();
+  }
 }

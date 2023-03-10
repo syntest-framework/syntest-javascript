@@ -20,7 +20,7 @@ import { prng } from "@syntest/core";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";
 import { IdentifierDescription } from "../../../analysis/static/parsing/IdentifierDescription";
-import { TypeProbability } from "../../../analysis/static/types/resolving/TypeProbability";
+import { TypeProbability } from "../../../analysis/static/types/TypeProbability";
 import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 
 /**

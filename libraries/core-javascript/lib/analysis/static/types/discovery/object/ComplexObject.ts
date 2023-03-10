@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { TypeProbability } from "../../resolving/TypeProbability";
+import { TypeProbability } from "../../TypeProbability";
 import { Export } from "../../../dependency/ExportVisitor";
 
 export interface ComplexObject {

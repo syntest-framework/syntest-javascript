@@ -20,7 +20,7 @@ import { TargetMetaData } from "@syntest/core";
 import { ActionType } from "../parsing/ActionType";
 import { ActionVisibility } from "../parsing/ActionVisibility";
 import { ActionDescription } from "../parsing/ActionDescription";
-import { TypeProbability } from "../types/resolving/TypeProbability";
+import { TypeProbability } from "../types/TypeProbability";
 import { AbstractSyntaxTreeVisitor } from "@syntest/ast-javascript";
 import { IdentifierDescription } from "../parsing/IdentifierDescription";
 import { ComplexObject } from "../types/discovery/object/ComplexObject";

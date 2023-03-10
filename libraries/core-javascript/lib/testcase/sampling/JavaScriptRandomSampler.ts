@@ -34,8 +34,8 @@ import { ActionType } from "../../analysis/static/parsing/ActionType";
 import { IdentifierDescription } from "../../analysis/static/parsing/IdentifierDescription";
 import { ArrayStatement } from "../statements/complex/ArrayStatement";
 import { ObjectStatement } from "../statements/complex/ObjectStatement";
-import { TypeProbability } from "../../analysis/static/types/resolving/TypeProbability";
-import { TypeEnum } from "../../analysis/static/types/resolving/TypeEnum";
+import { TypeProbability } from "../../analysis/static/types/TypeProbability";
+import { TypeEnum } from "../../analysis/static/types/TypeEnum";
 import { NullStatement } from "../statements/primitive/NullStatement";
 import { UndefinedStatement } from "../statements/primitive/UndefinedStatement";
 import { ActionVisibility } from "../../analysis/static/parsing/ActionVisibility";
@@ -43,9 +43,11 @@ import { JavaScriptTargetPool } from "../../analysis/static/JavaScriptTargetPool
 import { RootObject } from "../statements/root/RootObject";
 import { Getter } from "../statements/action/Getter";
 import { Setter } from "../statements/action/Setter";
+import { TypeSelector } from "../../analysis/static/types/selecting/TypeSelector";
 
 export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   private targetPool: JavaScriptTargetPool;
+  private typeSelector: TypeSelector;
 
   constructor(
     subject: JavaScriptSubject,
@@ -58,7 +60,8 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     resampleGeneProbability: number,
     deltaMutationProbability: number,
     exploreIllegalValues: boolean,
-    targetPool: JavaScriptTargetPool
+    targetPool: JavaScriptTargetPool,
+    typeSelector: TypeSelector
   ) {
     super(
       subject,
@@ -73,6 +76,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       exploreIllegalValues
     );
     this.targetPool = targetPool;
+    this.typeSelector = typeSelector;
   }
 
   sample(): JavaScriptTestCase {
@@ -104,9 +108,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
     return new FunctionCall(
       action.returnParameter,
-      action.returnParameter.typeProbabilityMap.getRandomType(
-        this.incorporateExecutionInformation
-      ),
+      this.typeSelector.selectType(action.returnParameter.typeProbabilityMap),
       prng.uniqueId(),
       action.name,
       args
@@ -266,9 +268,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
       return new MethodCall(
         action.returnParameter,
-        action.returnParameter.typeProbabilityMap.getRandomType(
-          this.incorporateExecutionInformation
-        ),
+        this.typeSelector.selectType(action.returnParameter.typeProbabilityMap),
         prng.uniqueId(),
         action.name,
         args
@@ -276,9 +276,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     } else if (action.type === ActionType.GET) {
       return new Getter(
         action.returnParameter,
-        action.returnParameter.typeProbabilityMap.getRandomType(
-          this.incorporateExecutionInformation
-        ),
+        this.typeSelector.selectType(action.returnParameter.typeProbabilityMap),
         prng.uniqueId(),
         action.name
       );
@@ -289,9 +287,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       });
       return new Setter(
         action.returnParameter,
-        action.returnParameter.typeProbabilityMap.getRandomType(
-          this.incorporateExecutionInformation
-        ),
+        this.typeSelector.selectType(action.returnParameter.typeProbabilityMap),
         prng.uniqueId(),
         action.name,
         args[0]
@@ -314,23 +310,9 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
     // console.log(identifierDescription.name)
     // console.log(identifierDescription.typeProbabilityMap)
-    let chosenType: string;
-
-    if (
-      this.typeInferenceMode === "proportional" ||
-      this.typeInferenceMode === "none"
-    ) {
-      chosenType = identifierDescription.typeProbabilityMap.getRandomType(
-        this.incorporateExecutionInformation
-      );
-    } else if (this.typeInferenceMode === "ranked") {
-      chosenType =
-        identifierDescription.typeProbabilityMap.getHighestProbabilityType(
-          this.incorporateExecutionInformation
-        );
-    } else {
-      throw new Error("Invalid identifierDescription inference mode selected");
-    }
+    let chosenType = this.typeSelector.selectType(
+      identifierDescription.typeProbabilityMap
+    );
 
     // this ensures that there is a chance of trying a random other identifierDescription
     if (prng.nextBoolean(this.randomTypeProbability)) {
@@ -476,8 +458,8 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
             calls.push(
               new MethodCall(
                 action.returnParameter,
-                action.returnParameter.typeProbabilityMap.getRandomType(
-                  this.incorporateExecutionInformation
+                this.typeSelector.selectType(
+                  action.returnParameter.typeProbabilityMap
                 ),
                 prng.uniqueId(),
                 action.name,

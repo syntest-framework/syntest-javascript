@@ -1,7 +1,7 @@
 /*
  * Copyright 2020-2023 Delft University of Technology and SynTest contributors
  *
- * This file is part of SynTest Framework - SynTest Javascript.
+ * This file is part of SynTest Framework - SynTest Core.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import { TypeProbability } from "../types/TypeProbability";
-
-/**
- * Interface for a IdentifierDescription Description.
- *
- * @author Dimitri Stallenberg
- */
-export interface IdentifierDescription {
-  /**
-   * Name of the parameter.
-   */
-  name: string;
-
-  /**
-   * Type probability map of the parameter.
-   */
-  typeProbabilityMap: TypeProbability;
+export enum PluginType {
+  StaticTypeResolver = "StaticTypeResolver",
+  DynamicTypeResolver = "DynamicTypeResolver",
+  TypeSelector = "TypeSelector",
 }
