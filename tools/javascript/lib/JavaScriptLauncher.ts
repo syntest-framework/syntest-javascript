@@ -28,6 +28,7 @@ import {
   StatisticsSearchListener,
   SummaryWriter,
   TotalTimeBudget,
+  TerminationManager,
 } from "@syntest/core";
 
 import {
@@ -43,7 +44,6 @@ import {
   JavaScriptTargetMetaData,
   JavaScriptTargetPool,
   JavaScriptTestCase,
-  JavaScriptTreeCrossover,
   TargetMapGenerator,
   TypeResolver,
   TypeResolverInference,
@@ -59,6 +59,9 @@ import {
   deleteTempDirectories,
   Launcher,
   SearchAlgorithmPlugin,
+  PluginType,
+  TerminationPlugin,
+  CrossoverPlugin,
 } from "@syntest/base-testing-tool";
 
 import { AbstractSyntaxTreeGenerator } from "@syntest/ast-javascript";
@@ -94,7 +97,7 @@ export class JavaScriptLauncher extends Launcher {
   private coveredInPath = new Map<string, Archive<JavaScriptTestCase>>();
 
   constructor(userInterface: UserInterface) {
-    super("syntest");
+    super();
     this.userInterface = userInterface;
   }
 
@@ -504,20 +507,23 @@ export class JavaScriptLauncher extends Launcher {
     )).createObjectiveManager({
       runner: runner,
     });
-    const crossover = new JavaScriptTreeCrossover(CONFIG.crossoverProbability);
+    const crossover = (<CrossoverPlugin<JavaScriptTestCase>>(
+      ModuleManager.instance.getPlugin(PluginType.Crossover, CONFIG.crossover)
+    )).createCrossoverOperator({
+      crossoverProbability: CONFIG.crossoverProbability,
+    });
+
     const algorithm = (<SearchAlgorithmPlugin<JavaScriptTestCase>>(
       ModuleManager.instance.getPlugin(
         PluginType.SearchAlgorithm,
         CONFIG.algorithm
       )
     )).createSearchAlgorithm({
-      objectiveManager: ObjectiveManager<T>,
+      objectiveManager: objectiveManager,
       encodingSampler: sampler,
       runner: runner,
       crossover: crossover,
       populationSize: CONFIG.populationSize,
-      // TODO should this even have the crossover probability?
-      crossoverProbability: CONFIG.crossoverProbability,
     });
 
     await suiteBuilder.clearDirectory(CONFIG.tempTestDirectory);
@@ -534,7 +540,21 @@ export class JavaScriptLauncher extends Launcher {
     budgetManager.addBudget(totalTimeBudget);
 
     // Termination
-    const terminationManager = createTerminationManagerFromConfig();
+    const terminationManager = new TerminationManager();
+
+    CONFIG.terminationTriggers.forEach((trigger) => {
+      terminationManager.addTrigger(
+        (<TerminationPlugin<JavaScriptTestCase>>(
+          ModuleManager.instance.getPlugin(PluginType.Termination, trigger)
+        )).createTerminationTrigger({
+          objectiveManager: objectiveManager,
+          encodingSampler: sampler,
+          runner: runner,
+          crossover: crossover,
+          populationSize: CONFIG.populationSize,
+        })
+      );
+    });
 
     // Collector
     const collector = new StatisticsCollector(totalTimeBudget);

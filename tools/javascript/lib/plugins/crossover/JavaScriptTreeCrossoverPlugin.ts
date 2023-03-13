@@ -16,12 +16,8 @@
  * limitations under the License.
  */
 import { CrossoverOptions, CrossoverPlugin } from "@syntest/base-testing-tool";
-import {
-  Encoding,
-  ObjectiveManager,
-  UncoveredObjectiveManager,
-} from "@syntest/core";
-import { pluginRequiresOptions } from "@syntest/module";
+import { Encoding, Crossover } from "@syntest/core";
+import { JavaScriptTreeCrossover } from "@syntest/core-javascript";
 
 /**
  * Plugin for SignalTerminationTrigger
@@ -32,14 +28,10 @@ export class JavaScriptTreeCrossoverPlugin<
   T extends Encoding
 > extends CrossoverPlugin<T> {
   constructor() {
-    super("uncovered", "An uncovered objective manager");
+    super("javascript-tree", "A JavaScript tree crossover plugin");
   }
 
-  createObjectiveManager(options: CrossoverOptions<T>): ObjectiveManager<T> {
-    if (!options.runner) {
-      throw new Error(pluginRequiresOptions("uncovered", "runner"));
-    }
-
-    return new UncoveredObjectiveManager(options.runner);
+  createCrossoverOperator(options: CrossoverOptions<T>): Crossover<T> {
+    return new JavaScriptTreeCrossover(options.crossoverProbability);
   }
 }
