@@ -59,9 +59,6 @@ export class JavaScriptTargetPool extends TargetPool<JavaScriptTestCase> {
   protected exportGenerator: ExportGenerator;
   private _typeResolver: TypeResolver;
 
-  // Mapping: filepath -> source code
-  protected _sources: Map<string, string>;
-
   // Mapping: filepath -> AST
   protected _abstractSyntaxTrees: Map<string, t.Node>;
 
@@ -99,7 +96,6 @@ export class JavaScriptTargetPool extends TargetPool<JavaScriptTestCase> {
     this.exportGenerator = exportGenerator;
     this._typeResolver = typeResolver;
 
-    this._sources = new Map<string, string>();
     this._abstractSyntaxTrees = new Map<string, t.Node>();
     this._targetMap = new Map<string, Map<string, JavaScriptTargetMetaData>>();
     this._functionMaps = new Map<

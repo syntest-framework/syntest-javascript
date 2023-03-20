@@ -45,7 +45,7 @@ import { Getter } from "../statements/action/Getter";
 import { Setter } from "../statements/action/Setter";
 
 export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
-  private targetPool: JavaScriptTargetPool;
+  private rootContext: JavaScriptTargetPool;
 
   constructor(
     subject: JavaScriptSubject,
@@ -58,7 +58,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     resampleGeneProbability: number,
     deltaMutationProbability: number,
     exploreIllegalValues: boolean,
-    targetPool: JavaScriptTargetPool
+    rootContext: JavaScriptTargetPool
   ) {
     super(
       subject,
@@ -72,7 +72,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       deltaMutationProbability,
       exploreIllegalValues
     );
-    this.targetPool = targetPool;
+    this.rootContext = rootContext;
   }
 
   sample(): JavaScriptTestCase {
@@ -354,7 +354,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       // if (depth <= Properties.max_depth) {
       //   const complexObjects = new Map()
       //
-      //   this.targetPool.typeResolver.availableTypes.forEach((t) => {
+      //   this.rootContext.typeResolver.availableTypes.forEach((t) => {
       //     [...t.objectDescription.keys()].forEach((o) => {
       //       complexObjects.set(o, t)
       //       typeOptions.push(o)
@@ -414,7 +414,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       //  TODO WIP
 
       if (object.export) {
-        const functionMap = this.targetPool.getFunctionMapSpecific(
+        const functionMap = this.rootContext.getFunctionMapSpecific(
           object.export.filePath,
           object.name
         );
@@ -423,18 +423,14 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
           const func = functionMap.get(key);
           for (const param of func.parameters) {
             if (func.type === ActionType.FUNCTION) {
-              param.typeProbabilityMap = this.targetPool.typeResolver.getTyping(
-                func.scope,
-                param.name
-              );
+              param.typeProbabilityMap =
+                this.rootContext.typeResolver.getTyping(func.scope, param.name);
             } else if (
               func.type === ActionType.METHOD ||
               func.type === ActionType.CONSTRUCTOR
             ) {
-              param.typeProbabilityMap = this.targetPool.typeResolver.getTyping(
-                func.scope,
-                param.name
-              );
+              param.typeProbabilityMap =
+                this.rootContext.typeResolver.getTyping(func.scope, param.name);
             } else {
               throw new Error(
                 `Unimplemented action identifierDescription ${func.type}`

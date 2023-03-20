@@ -88,7 +88,7 @@ export interface JavaScriptArguments extends ArgumentsObject {
 export class JavaScriptLauncher extends Launcher {
   private userInterface: UserInterface;
 
-  private targetPool: JavaScriptTargetPool;
+  private rootContext: JavaScriptTargetPool;
   private archive: Archive<JavaScriptTestCase>;
 
   private exports: Export[];
@@ -123,7 +123,7 @@ export class JavaScriptLauncher extends Launcher {
     const controlFlowGraphGenerator = new ControlFlowGraphGenerator();
     const importGenerator = new ImportGenerator();
     const exportGenerator = new ExportGenerator();
-    this.targetPool = new JavaScriptTargetPool(
+    this.rootContext = new JavaScriptTargetPool(
       abstractSyntaxTreeGenerator,
       targetMapGenerator,
       controlFlowGraphGenerator,
@@ -146,9 +146,9 @@ export class JavaScriptLauncher extends Launcher {
   }
 
   async preprocess(): Promise<void> {
-    this.targetPool.loadTargets(CONFIG.include, CONFIG.exclude);
+    this.rootContext.loadTargets(CONFIG.include, CONFIG.exclude);
 
-    if (!this.targetPool.targets.length) {
+    if (!this.rootContext.targets.length) {
       // Shut server down
       this.userInterface.printError(
         `No targets where selected! Try changing the 'include' parameter`
@@ -158,7 +158,7 @@ export class JavaScriptLauncher extends Launcher {
 
     const names: string[] = [];
 
-    this.targetPool.targets.forEach((target) =>
+    this.rootContext.targets.forEach((target) =>
       names.push(
         `${path.basename(target.canonicalPath)} -> ${target.targetName}`
       )
@@ -215,11 +215,11 @@ export class JavaScriptLauncher extends Launcher {
     //     ],
     //   ])]);
 
-    await (<JavaScriptTargetPool>this.targetPool).prepareAndInstrument(
+    await (<JavaScriptTargetPool>this.rootContext).prepareAndInstrument(
       CONFIG.targetRootDirectory,
       CONFIG.tempInstrumentedDirectory
     );
-    await (<JavaScriptTargetPool>this.targetPool).scanTargetRootDirectory(
+    await (<JavaScriptTargetPool>this.rootContext).scanTargetRootDirectory(
       CONFIG.targetRootDirectory
     );
   }
@@ -229,23 +229,23 @@ export class JavaScriptLauncher extends Launcher {
     this.exports = [];
     this.dependencyMap = new Map();
 
-    for (const target of this.targetPool.targets) {
+    for (const target of this.rootContext.targets) {
       const archive = await this.testTarget(
-        <JavaScriptTargetPool>this.targetPool,
+        <JavaScriptTargetPool>this.rootContext,
         target.canonicalPath,
-        (<JavaScriptTargetPool>this.targetPool)
+        (<JavaScriptTargetPool>this.rootContext)
           .getTargetMap(target.canonicalPath)
           .get(target.targetName)
       );
 
       const dependencies = (<JavaScriptTargetPool>(
-        this.targetPool
+        this.rootContext
       )).getDependencies(target.canonicalPath);
       this.archive.merge(archive);
 
       this.dependencyMap.set(target.targetName, dependencies);
       this.exports.push(
-        ...(<JavaScriptTargetPool>this.targetPool).getExports(
+        ...(<JavaScriptTargetPool>this.rootContext).getExports(
           target.canonicalPath
         )
       );
@@ -266,7 +266,7 @@ export class JavaScriptLauncher extends Launcher {
     await clearDirectory(testDir);
 
     const decoder = new JavaScriptDecoder(
-      <JavaScriptTargetPool>this.targetPool,
+      <JavaScriptTargetPool>this.rootContext,
       this.dependencyMap,
       this.exports,
       CONFIG.targetRootDirectory,
@@ -330,7 +330,7 @@ export class JavaScriptLauncher extends Launcher {
     let totalStatements = 0;
     let totalFunctions = 0;
     for (const file of Object.keys(instrumentationData)) {
-      const target = this.targetPool.targets.find(
+      const target = this.rootContext.targets.find(
         (t) => t.canonicalPath === file
       );
       if (!target) {
@@ -403,13 +403,13 @@ export class JavaScriptLauncher extends Launcher {
   }
 
   private async testTarget(
-    targetPool: JavaScriptTargetPool,
+    rootContext: JavaScriptTargetPool,
     targetPath: string,
     targetMeta: JavaScriptTargetMetaData
   ): Promise<Archive<JavaScriptTestCase>> {
-    const cfg = targetPool.getCFG(targetPath, targetMeta.name);
+    const cfg = rootContext.getCFG(targetPath, targetMeta.name);
 
-    const functionMap = targetPool.getFunctionMapSpecific(
+    const functionMap = rootContext.getFunctionMapSpecific(
       targetPath,
       targetMeta.name
     );
@@ -419,7 +419,7 @@ export class JavaScriptLauncher extends Launcher {
     for (const func of functionMap.values()) {
       for (const param of func.parameters) {
         if (func.type === ActionType.FUNCTION) {
-          param.typeProbabilityMap = targetPool.typeResolver.getTyping(
+          param.typeProbabilityMap = rootContext.typeResolver.getTyping(
             func.scope,
             param.name
           );
@@ -429,7 +429,7 @@ export class JavaScriptLauncher extends Launcher {
           func.type === ActionType.SET ||
           func.type === ActionType.CONSTRUCTOR
         ) {
-          param.typeProbabilityMap = targetPool.typeResolver.getTyping(
+          param.typeProbabilityMap = rootContext.typeResolver.getTyping(
             func.scope,
             param.name
           );
@@ -454,10 +454,10 @@ export class JavaScriptLauncher extends Launcher {
       return new Archive();
     }
 
-    const dependencies = targetPool.getDependencies(targetPath);
+    const dependencies = rootContext.getDependencies(targetPath);
     const dependencyMap = new Map<string, Export[]>();
     dependencyMap.set(targetMeta.name, dependencies);
-    const exports = targetPool.getExports(targetPath);
+    const exports = rootContext.getExports(targetPath);
 
     const tempTestDir = path.join(
       CONFIG.tempSyntestDirectory,
@@ -469,7 +469,7 @@ export class JavaScriptLauncher extends Launcher {
     );
 
     const decoder = new JavaScriptDecoder(
-      targetPool,
+      rootContext,
       dependencyMap,
       exports,
       CONFIG.targetRootDirectory,
@@ -496,7 +496,7 @@ export class JavaScriptLauncher extends Launcher {
       CONFIG.resampleGeneProbability,
       CONFIG.deltaMutationProbability,
       CONFIG.exploreIllegalValues,
-      targetPool
+      rootContext
     );
 
     const objectiveManager = (<ObjectiveManagerPlugin<JavaScriptTestCase>>(

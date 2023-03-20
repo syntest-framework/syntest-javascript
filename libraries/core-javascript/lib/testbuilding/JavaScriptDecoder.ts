@@ -27,20 +27,20 @@ import { RootStatement } from "../testcase/statements/root/RootStatement";
 import { JavaScriptTargetPool } from "../analysis/static/JavaScriptTargetPool";
 
 export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
-  private targetPool: JavaScriptTargetPool;
+  private rootContext: JavaScriptTargetPool;
   private dependencies: Map<string, Export[]>;
   private exports: Export[];
   private targetRootDirectory: string;
   private tempLogDirectory: string;
 
   constructor(
-    targetPool: JavaScriptTargetPool,
+    rootContext: JavaScriptTargetPool,
     dependencies: Map<string, Export[]>,
     exports: Export[],
     targetRootDirectory: string,
     tempLogDirectory: string
   ) {
-    this.targetPool = targetPool;
+    this.rootContext = rootContext;
     this.dependencies = dependencies;
     this.exports = exports;
     this.targetRootDirectory = targetRootDirectory;
