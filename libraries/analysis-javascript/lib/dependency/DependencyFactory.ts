@@ -38,6 +38,6 @@ export class DependencyFactory implements CoreDependencyFactory<t.Node> {
 
     traverse(AST, visitor);
 
-    return visitor.imports;
+    return [...visitor.imports];
   }
 }

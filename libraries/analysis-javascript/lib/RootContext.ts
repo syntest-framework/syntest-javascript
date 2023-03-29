@@ -33,8 +33,6 @@ import { ControlFlowGraphFactory } from "./cfg/ControlFlowGraphFactory";
 import { DependencyFactory } from "./dependency/DependencyFactory";
 import { ActionDescription } from "./target/ActionDescription";
 import { Export } from "./target/export/Export";
-import { ExportGenerator } from "./target/ExportGenerator";
-import { ExportType } from "./target/IdentifierVisitor";
 import { TargetFactory } from "./target/TargetFactory";
 import { ComplexObject } from "./type/discovery/object/ComplexObject";
 import { ObjectGenerator } from "./type/discovery/object/ObjectGenerator";
@@ -51,7 +49,6 @@ export interface JavaScriptTargetMetaData extends TargetMetaData {
 }
 
 export class RootContext extends CoreRootContext<t.Node> {
-  protected exportGenerator: ExportGenerator;
   private _typeResolver: TypeResolver;
 
   // Mapping: filepath -> target name -> Exports
@@ -64,7 +61,6 @@ export class RootContext extends CoreRootContext<t.Node> {
     controlFlowGraphFactory: ControlFlowGraphFactory,
     targetFactory: TargetFactory,
     dependencyFactory: DependencyFactory,
-    exportGenerator: ExportGenerator,
     typeResolver: TypeResolver
   ) {
     super(
@@ -76,7 +72,6 @@ export class RootContext extends CoreRootContext<t.Node> {
       dependencyFactory
     );
 
-    this.exportGenerator = exportGenerator;
     this._typeResolver = typeResolver;
 
     this._exportMap = new Map();

@@ -29,9 +29,7 @@ export * from "./lib/target/export/ExpressionStatement";
 
 export * from "./lib/target/ActionDescription";
 export * from "./lib/target/ActionType";
-export * from "./lib/target/ExportGenerator";
 export * from "./lib/target/IdentifierDescription";
-export * from "./lib/target/IdentifierVisitor";
 export * from "./lib/target/Target";
 export * from "./lib/target/TargetFactory";
 export * from "./lib/target/TargetVisitor";

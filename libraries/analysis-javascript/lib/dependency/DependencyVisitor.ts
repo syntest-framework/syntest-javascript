@@ -42,7 +42,9 @@ export class ImportVisitor extends AbstractSyntaxTreeVisitor {
         this._imports.add(path.node.arguments[0].value);
       } else {
         // This tool does not support dynamic require statements.
-        // throw new Error("This tool does not support dynamic require statements.")
+        throw new Error(
+          "This tool does not support dynamic require statements."
+        );
       }
     }
   };
