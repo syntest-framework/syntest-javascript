@@ -214,9 +214,9 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
       const importName =
         gene instanceof FunctionCall
           ? gene.functionName
-          : (gene instanceof ConstructorCall
+          : gene instanceof ConstructorCall
           ? gene.constructorName
-          : gene.type);
+          : gene.type;
       const complexObject =
         gene.identifierDescription.typeProbabilityMap.getObjectDescription(
           importName

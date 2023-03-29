@@ -169,9 +169,9 @@ export class RootContext extends CoreRootContext<t.Node> {
           type:
             export_.type === ExportType.class || isPrototypeClass
               ? SubjectType.class
-              : (export_.type === ExportType.const
+              : export_.type === ExportType.const
               ? SubjectType.object
-              : SubjectType.function),
+              : SubjectType.function,
           export: export_,
         });
       }
