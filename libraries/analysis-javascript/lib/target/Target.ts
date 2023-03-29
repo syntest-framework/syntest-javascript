@@ -20,7 +20,8 @@ import {
   Target as CoreTarget,
   TargetType,
 } from "@syntest/analysis";
-import { Scope } from "@syntest/ast-visitor-javascript";
+
+import { Scope as BabelScope } from "@babel/traverse";
 
 import { VisibilityType } from "./VisibilityType";
 
@@ -35,6 +36,11 @@ export interface SubTarget extends CoreSubTarget {
   id: string;
 }
 
+export interface NamedSubTarget extends SubTarget {
+  scope: BabelScope;
+  name: string;
+}
+
 export type Exportable = {
   exported: boolean;
   // maybe scope?
@@ -44,42 +50,34 @@ export type Exportable = {
 };
 
 export interface Callable {
-  scope: Scope;
-  parameters: string[];
-  return: string;
-}
-
-export interface FunctionTarget extends SubTarget, Exportable, Callable {
-  type: TargetType.FUNCTION;
-  name: string;
-}
-
-export interface ClassTarget extends SubTarget, Exportable {
-  type: TargetType.CLASS;
-  name: string;
-}
-
-export interface MethodTarget extends SubTarget, Callable {
-  type: TargetType.METHOD;
-  className: string;
-  name: string;
-
-  visibility: VisibilityType;
-
-  isConstructor: boolean;
-  isStatic: boolean;
   isAsync: boolean;
 }
 
-export interface ObjectTarget extends SubTarget, Exportable {
-  type: TargetType.OBJECT;
-  name: string;
+export interface FunctionTarget extends NamedSubTarget, Exportable, Callable {
+  type: TargetType.FUNCTION;
 }
 
-export interface ObjectFunctionTarget extends SubTarget, Callable {
+export interface ClassTarget extends NamedSubTarget, Exportable {
+  type: TargetType.CLASS;
+}
+
+export interface MethodTarget extends NamedSubTarget, Callable {
+  type: TargetType.METHOD;
+  className: string;
+
+  visibility: VisibilityType;
+
+  methodType: "constructor" | "method" | "get" | "set";
+  isStatic: boolean;
+}
+
+export interface ObjectTarget extends NamedSubTarget, Exportable {
+  type: TargetType.OBJECT;
+}
+
+export interface ObjectFunctionTarget extends NamedSubTarget, Callable {
   type: TargetType.OBJECT_FUNCTION;
   objectName: string;
-  name: string;
 }
 
 export interface PathTarget extends SubTarget {

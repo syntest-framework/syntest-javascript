@@ -116,6 +116,11 @@ export function extractExportsFromExpressionStatement(
           // throw new Error("Unsupported export declaration");
           return undefined;
         }
+      } else {
+        // e.g. somethingelse.? = ??
+        // e.g. somethingelse.? = ??
+        // dont care
+        return undefined;
       }
     } else if (object.type === "MemberExpression") {
       // e.g. ??.??.?? = ??
@@ -157,6 +162,10 @@ export function extractExportsFromExpressionStatement(
     } else {
       return undefined;
     }
+  } else {
+    // this is probably an unrelated statement
+    // e.g. not an export
+    return undefined;
   }
 
   if (!name) {

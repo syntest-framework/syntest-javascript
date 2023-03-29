@@ -45,7 +45,7 @@ describe("visitor test", () => {
     `;
 
     const generator = new AbstractSyntaxTreeFactory();
-    const ast = generator.generate(source);
+    const ast = generator.convert(source);
 
     const visitor = new AbstractSyntaxTreeVisitor("");
     traverse(ast, visitor);

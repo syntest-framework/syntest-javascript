@@ -43,7 +43,7 @@ describe("example test", () => {
     `;
 
     const generator = new AbstractSyntaxTreeFactory();
-    const ast = generator.generate(source);
+    const ast = generator.convert(source);
 
     expect(ast.type === "File");
   });

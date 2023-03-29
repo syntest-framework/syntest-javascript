@@ -45,7 +45,7 @@ export function extractExportsFromExportDefaultDeclaration(
     case "ClassDeclaration": {
       name = path.node.declaration.id
         ? path.node.declaration.id.name
-        : "anonymous";
+        : "default";
 
       break;
     }

@@ -25,7 +25,7 @@ const expect = chai.expect;
 
 function exportHelper(source: string) {
   const generator = new AbstractSyntaxTreeFactory();
-  const ast = generator.generate(source);
+  const ast = generator.convert(source);
 
   const visitor = new ExportVisitor("");
 
@@ -392,10 +392,10 @@ describe("ExportVisitor test", () => {
 
     expect(exports.length).to.equal(1);
 
-    expect(exports[0].name).to.equal("anonymous");
+    expect(exports[0].name).to.equal("default");
     expect(exports[0].default).to.equal(true);
     expect(exports[0].module).to.equal(false);
-    expect(exports[0].renamedTo).to.equal("anonymous");
+    expect(exports[0].renamedTo).to.equal("default");
   });
 
   it("export default class unnamed", () => {
@@ -405,10 +405,10 @@ describe("ExportVisitor test", () => {
 
     expect(exports.length).to.equal(1);
 
-    expect(exports[0].name).to.equal("anonymous");
+    expect(exports[0].name).to.equal("default");
     expect(exports[0].default).to.equal(true);
     expect(exports[0].module).to.equal(false);
-    expect(exports[0].renamedTo).to.equal("anonymous");
+    expect(exports[0].renamedTo).to.equal("default");
   });
 
   it("export default starred function unnamed", () => {
@@ -418,10 +418,10 @@ describe("ExportVisitor test", () => {
 
     expect(exports.length).to.equal(1);
 
-    expect(exports[0].name).to.equal("anonymous");
+    expect(exports[0].name).to.equal("default");
     expect(exports[0].default).to.equal(true);
     expect(exports[0].module).to.equal(false);
-    expect(exports[0].renamedTo).to.equal("anonymous");
+    expect(exports[0].renamedTo).to.equal("default");
   });
 
   it("export default const value", () => {

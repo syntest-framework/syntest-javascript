@@ -15,13 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { AbstractSyntaxTreeFactory } from "@syntest/ast-visitor-javascript";
+import { expect } from "chai";
+import { AbstractSyntaxTreeFactory } from "../../lib/ast/AbstractSyntaxTreeFactory";
 
 import { TargetFactory } from "../../lib/target/TargetFactory";
 
-describe("Temp", () => {
-  it("temp", () => {
-    const target = "test";
+describe("TargetFactory", () => {
+  it("class with getter and setters", () => {
     const code = `
     class Test {
         _propertyX  = "example"
@@ -34,11 +34,12 @@ describe("Temp", () => {
         }
     }
     `;
-    const ast = new AbstractSyntaxTreeFactory().generate(code);
+    const ast = new AbstractSyntaxTreeFactory().convert(code);
 
     const targetMapGenerator = new TargetFactory();
-    const targets = targetMapGenerator.extract(target, ast);
+    const target = targetMapGenerator.extract("", ast);
 
-    console.log(targets);
+    expect(target.subTargets.length).to.equal(3);
+    // console.log(targets);
   });
 });

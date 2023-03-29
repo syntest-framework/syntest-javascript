@@ -27,7 +27,7 @@ import { Target } from "./Target";
 import { TargetVisitor } from "./TargetVisitor";
 
 /**
- * FUNCTION map generator for targets.
+ * TargetFactory for Javascript.
  *
  * @author Dimitri Stallenberg
  */
