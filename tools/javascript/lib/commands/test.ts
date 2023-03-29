@@ -15,10 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { UserInterface } from "@syntest/cli-graphics";
 import { Command } from "@syntest/module";
 import Yargs = require("yargs");
+
 import { JavaScriptLauncher } from "../JavaScriptLauncher";
-import { UserInterface } from "@syntest/cli-graphics";
 
 export function getTestCommand(
   tool: string,
@@ -26,11 +27,13 @@ export function getTestCommand(
 ): Command {
   const options = new Map<string, Yargs.Options>();
 
+  const commandGroup = "Type Inference Options:";
+
   options.set("incorporate-execution-information", {
     alias: [],
     default: true,
     description: "Incorporate execution information.",
-    group: "Type Inference Options:",
+    group: commandGroup,
     hidden: false,
     type: "boolean",
   });
@@ -39,7 +42,7 @@ export function getTestCommand(
     alias: [],
     default: "proportional",
     description: "The type inference mode: [proportional, ranked, none].",
-    group: "Type Inference Options:",
+    group: commandGroup,
     hidden: false,
     type: "string",
   });
@@ -49,7 +52,7 @@ export function getTestCommand(
     default: 0.1,
     description:
       "The probability we use a random type regardless of the inferred type.",
-    group: "Type Inference Options:",
+    group: commandGroup,
     hidden: false,
     type: "number",
   });
@@ -59,9 +62,9 @@ export function getTestCommand(
     "test",
     "Run the test case generation tool on a certain JavaScript project.",
     options,
-    async (args: Yargs.ArgumentsCamelCase) => {
+    async (_arguments_: Yargs.ArgumentsCamelCase) => {
       const launcher = new JavaScriptLauncher(userInterface);
-      launcher.run();
+      await launcher.run();
     }
   );
 }

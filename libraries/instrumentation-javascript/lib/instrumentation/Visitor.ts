@@ -19,7 +19,8 @@
 import { defaults } from "@istanbuljs/schema";
 import { VisitState } from "./VisitState";
 import { createHash } from "crypto";
-import { template } from "@babel/core";
+import { NodePath, template } from "@babel/core";
+import * as t from "@babel/types";
 
 const { name } = require("../../package.json");
 
@@ -70,7 +71,7 @@ export class Visitor {
 
   exit(path) {
     if (alreadyInstrumented(path, this.visitState)) {
-      return;
+      return undefined;
     }
     this.visitState.cov.freeze();
     const coverageData = this.visitState.cov.toJSON();
@@ -576,7 +577,7 @@ const metaTemplate = template(
 // https://github.com/istanbuljs/babel-plugin-istanbul/issues/94
 // we should only instrument code for coverage the first time
 // it's run through istanbul-lib-instrument.
-function alreadyInstrumented(path, visitState) {
+function alreadyInstrumented(path: NodePath<t.Node>, visitState) {
   return path.scope.hasBinding(visitState.varName);
 }
 function shouldIgnoreFile(programNode) {

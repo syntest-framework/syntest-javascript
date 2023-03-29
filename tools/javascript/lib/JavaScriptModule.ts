@@ -18,11 +18,12 @@
 
 import { Module, Plugin, Tool } from "@syntest/module";
 import yargs = require("yargs");
+
 import { getTestCommand } from "./commands/test";
 
 export default class JavaScriptModule extends Module {
   constructor() {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, unicorn/prefer-module
     super("javascript", require("../package.json").version);
   }
 

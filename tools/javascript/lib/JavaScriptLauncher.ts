@@ -16,6 +16,25 @@
  * limitations under the License.
  */
 
+import { existsSync } from "node:fs";
+import * as path from "node:path";
+
+import { ControlFlowGraphGenerator } from "@syntest/analysis-javascript";
+import { AbstractSyntaxTreeGenerator } from "@syntest/ast-visitor-javascript";
+import {
+  ArgumentsObject,
+  clearDirectory,
+  CONFIG,
+  createDirectoryStructure,
+  createTempDirectoryStructure,
+  CrossoverPlugin,
+  deleteTempDirectories,
+  Launcher,
+  PluginType,
+  SearchAlgorithmPlugin,
+  TerminationPlugin,
+} from "@syntest/base-testing-tool";
+import { TableObject, UserInterface } from "@syntest/cli-graphics";
 import {
   Archive,
   BudgetManager,
@@ -27,10 +46,10 @@ import {
   StatisticsCollector,
   StatisticsSearchListener,
   SummaryWriter,
-  TotalTimeBudget,
   TerminationManager,
+  TotalTimeBudget,
 } from "@syntest/core";
-
+import { ModuleManager } from "@syntest/module";
 import {
   ActionType,
   Export,
@@ -48,35 +67,13 @@ import {
   TypeResolver,
   TypeResolverInference,
   TypeResolverUnknown,
-} from "@syntest/core-javascript";
+} from "@syntest/search-javascript";
 
-import {
-  ArgumentsObject,
-  clearDirectory,
-  CONFIG,
-  createDirectoryStructure,
-  createTempDirectoryStructure,
-  deleteTempDirectories,
-  Launcher,
-  SearchAlgorithmPlugin,
-  PluginType,
-  TerminationPlugin,
-  CrossoverPlugin,
-} from "@syntest/base-testing-tool";
-
-import { AbstractSyntaxTreeGenerator } from "@syntest/ast-javascript";
-import * as path from "path";
-
-import { ControlFlowGraphGenerator } from "@syntest/cfg-javascript";
-
-import { existsSync } from "fs";
-import { TableObject, UserInterface } from "@syntest/cli-graphics";
 import {
   collectCoverageData,
   collectInitialVariables,
   collectStatistics,
 } from "./collection";
-import { ModuleManager } from "@syntest/module";
 import { TestCommandOptions } from "./commands/test";
 
 export interface JavaScriptArguments extends ArgumentsObject {
@@ -112,13 +109,10 @@ export class JavaScriptLauncher extends Launcher {
     const abstractSyntaxTreeGenerator = new AbstractSyntaxTreeGenerator();
     const targetMapGenerator = new TargetMapGenerator();
 
-    let typeResolver: TypeResolver;
-
-    if ((<JavaScriptArguments>CONFIG).typeInferenceMode === "none") {
-      typeResolver = new TypeResolverUnknown();
-    } else {
-      typeResolver = new TypeResolverInference();
-    }
+    const typeResolver: TypeResolver =
+      (<JavaScriptArguments>CONFIG).typeInferenceMode === "none"
+        ? new TypeResolverUnknown()
+        : new TypeResolverInference();
 
     const controlFlowGraphGenerator = new ControlFlowGraphGenerator();
     const importGenerator = new ImportGenerator();
@@ -133,6 +127,7 @@ export class JavaScriptLauncher extends Launcher {
     );
 
     this.userInterface.printHeader("GENERAL INFO");
+
     // TODO ui info messages
 
     this.userInterface.printHeader("TARGETS");
@@ -148,7 +143,7 @@ export class JavaScriptLauncher extends Launcher {
   async preprocess(): Promise<void> {
     this.rootContext.loadTargets(CONFIG.include, CONFIG.exclude);
 
-    if (!this.rootContext.targets.length) {
+    if (this.rootContext.targets.length === 0) {
       // Shut server down
       this.userInterface.printError(
         `No targets where selected! Try changing the 'include' parameter`
@@ -158,11 +153,11 @@ export class JavaScriptLauncher extends Launcher {
 
     const names: string[] = [];
 
-    this.rootContext.targets.forEach((target) =>
+    for (const target of this.rootContext.targets)
       names.push(
         `${path.basename(target.canonicalPath)} -> ${target.targetName}`
-      )
-    );
+      );
+
     // this.userInterface.report("targets", names);
 
     // this.userInterface.report("header", ["CONFIGURATION"]);
@@ -215,13 +210,11 @@ export class JavaScriptLauncher extends Launcher {
     //     ],
     //   ])]);
 
-    await (<JavaScriptTargetPool>this.rootContext).prepareAndInstrument(
+    await this.rootContext.prepareAndInstrument(
       CONFIG.targetRootDirectory,
       CONFIG.tempInstrumentedDirectory
     );
-    await (<JavaScriptTargetPool>this.rootContext).scanTargetRootDirectory(
-      CONFIG.targetRootDirectory
-    );
+    await this.rootContext.scanTargetRootDirectory(CONFIG.targetRootDirectory);
   }
 
   async process(): Promise<void> {
@@ -231,53 +224,52 @@ export class JavaScriptLauncher extends Launcher {
 
     for (const target of this.rootContext.targets) {
       const archive = await this.testTarget(
-        <JavaScriptTargetPool>this.rootContext,
+        this.rootContext,
         target.canonicalPath,
-        (<JavaScriptTargetPool>this.rootContext)
+        this.rootContext
           .getTargetMap(target.canonicalPath)
           .get(target.targetName)
       );
 
-      const dependencies = (<JavaScriptTargetPool>(
-        this.rootContext
-      )).getDependencies(target.canonicalPath);
+      const dependencies = this.rootContext.getDependencies(
+        target.canonicalPath
+      );
       this.archive.merge(archive);
 
       this.dependencyMap.set(target.targetName, dependencies);
-      this.exports.push(
-        ...(<JavaScriptTargetPool>this.rootContext).getExports(
-          target.canonicalPath
-        )
-      );
+      this.exports.push(...this.rootContext.getExports(target.canonicalPath));
     }
   }
 
   async postprocess(): Promise<void> {
-    const testDir = path.join(CONFIG.syntestDirectory, CONFIG.testDirectory);
-    const tempTestDir = path.join(
+    const testDirectory = path.join(
+      CONFIG.syntestDirectory,
+      CONFIG.testDirectory
+    );
+    const temporaryTestDirectory = path.join(
       CONFIG.tempSyntestDirectory,
       CONFIG.tempTestDirectory
     );
-    const tempLogDir = path.join(
+    const temporaryLogDirectory = path.join(
       CONFIG.tempSyntestDirectory,
       CONFIG.tempLogDirectory
     );
 
-    await clearDirectory(testDir);
+    await clearDirectory(testDirectory);
 
     const decoder = new JavaScriptDecoder(
-      <JavaScriptTargetPool>this.rootContext,
+      this.rootContext,
       this.dependencyMap,
       this.exports,
       CONFIG.targetRootDirectory,
-      tempLogDir
+      temporaryLogDirectory
     );
-    const runner = new JavaScriptRunner(decoder, tempTestDir);
+    const runner = new JavaScriptRunner(decoder, temporaryTestDirectory);
 
     const suiteBuilder = new JavaScriptSuiteBuilder(
       decoder,
       runner,
-      tempLogDir
+      temporaryLogDirectory
     );
 
     // TODO fix hardcoded paths
@@ -331,7 +323,7 @@ export class JavaScriptLauncher extends Launcher {
     let totalFunctions = 0;
     for (const file of Object.keys(instrumentationData)) {
       const target = this.rootContext.targets.find(
-        (t) => t.canonicalPath === file
+        (target: Target) => target.canonicalPath === file
       );
       if (!target) {
         continue;
@@ -380,22 +372,21 @@ export class JavaScriptLauncher extends Launcher {
     overall["function"] /= totalFunctions;
 
     table.footers.push(
-      ...[
-        overall["statement"] * 100 + " %",
-        overall["branch"] * 100 + " %",
-        overall["function"] * 100 + " %",
-      ]
+      overall["statement"] * 100 + " %",
+      overall["branch"] * 100 + " %",
+      overall["function"] * 100 + " %"
     );
 
-    const originalSourceDir = path
+    const originalSourceDirectory = path
       .join("../../", path.relative(process.cwd(), CONFIG.targetRootDirectory))
       .replace(path.basename(CONFIG.targetRootDirectory), "");
 
     this.userInterface.printTable("Coverage", table);
+
     // create final suite
     await suiteBuilder.createSuite(
       reducedArchive,
-      originalSourceDir,
+      originalSourceDirectory,
       CONFIG.testDirectory,
       false,
       true
@@ -416,29 +407,30 @@ export class JavaScriptLauncher extends Launcher {
 
     // couple types to parameters
     // TODO do this type matching already in the target visitor
-    for (const func of functionMap.values()) {
-      for (const param of func.parameters) {
-        if (func.type === ActionType.FUNCTION) {
-          param.typeProbabilityMap = rootContext.typeResolver.getTyping(
-            func.scope,
-            param.name
+    for (const function_ of functionMap.values()) {
+      for (const parameter of function_.parameters) {
+        if (function_.type === ActionType.FUNCTION) {
+          parameter.typeProbabilityMap = rootContext.typeResolver.getTyping(
+            function_.scope,
+            parameter.name
           );
         } else if (
-          func.type === ActionType.METHOD ||
-          func.type === ActionType.GET ||
-          func.type === ActionType.SET ||
-          func.type === ActionType.CONSTRUCTOR
+          function_.type === ActionType.METHOD ||
+          function_.type === ActionType.GET ||
+          function_.type === ActionType.SET ||
+          function_.type === ActionType.CONSTRUCTOR
         ) {
-          param.typeProbabilityMap = rootContext.typeResolver.getTyping(
-            func.scope,
-            param.name
+          parameter.typeProbabilityMap = rootContext.typeResolver.getTyping(
+            function_.scope,
+            parameter.name
           );
         } else {
           throw new Error(
-            `Unimplemented action identifierDescription ${func.type}`
+            `Unimplemented action identifierDescription ${function_.type}`
           );
         }
       }
+
       // TODO return types
     }
 
@@ -449,7 +441,7 @@ export class JavaScriptLauncher extends Launcher {
       [...functionMap.values()]
     );
 
-    if (!currentSubject.getPossibleActions().length) {
+    if (currentSubject.getPossibleActions().length === 0) {
       // report skipped
       return new Archive();
     }
@@ -459,11 +451,11 @@ export class JavaScriptLauncher extends Launcher {
     dependencyMap.set(targetMeta.name, dependencies);
     const exports = rootContext.getExports(targetPath);
 
-    const tempTestDir = path.join(
+    const temporaryTestDirectory = path.join(
       CONFIG.tempSyntestDirectory,
       CONFIG.tempTestDirectory
     );
-    const tempLogDir = path.join(
+    const temporaryLogDirectory = path.join(
       CONFIG.tempSyntestDirectory,
       CONFIG.tempLogDirectory
     );
@@ -473,14 +465,14 @@ export class JavaScriptLauncher extends Launcher {
       dependencyMap,
       exports,
       CONFIG.targetRootDirectory,
-      tempLogDir
+      temporaryLogDirectory
     );
-    const runner = new JavaScriptRunner(decoder, tempTestDir);
+    const runner = new JavaScriptRunner(decoder, temporaryTestDirectory);
 
     const suiteBuilder = new JavaScriptSuiteBuilder(
       decoder,
       runner,
-      tempLogDir
+      temporaryLogDirectory
     );
 
     // TODO constant pool
@@ -542,7 +534,7 @@ export class JavaScriptLauncher extends Launcher {
     // Termination
     const terminationManager = new TerminationManager();
 
-    CONFIG.terminationTriggers.forEach((trigger) => {
+    for (const trigger of CONFIG.terminationTriggers) {
       terminationManager.addTrigger(
         (<TerminationPlugin<JavaScriptTestCase>>(
           ModuleManager.instance.getPlugin(PluginType.Termination, trigger)
@@ -554,7 +546,7 @@ export class JavaScriptLauncher extends Launcher {
           populationSize: CONFIG.populationSize,
         })
       );
-    });
+    }
 
     // Collector
     const collector = new StatisticsCollector(totalTimeBudget);
@@ -612,9 +604,8 @@ export class JavaScriptLauncher extends Launcher {
   }
 
   async exit(): Promise<void> {
+    // TODO should be cleanup step in tool
     // Finish
     await deleteTempDirectories();
-
-    process.exit(0);
   }
 }

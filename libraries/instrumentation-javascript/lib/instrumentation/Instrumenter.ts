@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-import { TransformOptions, transformSync } from "@babel/core";
+import { transformSync } from "@babel/core";
 import { Visitor } from "./Visitor";
-import { defaultBabelOptions } from "@syntest/ast-javascript";
+import { defaultBabelOptions } from "@syntest/analysis-javascript";
 
 export interface OutputObject {
   fileCoverage?: any;

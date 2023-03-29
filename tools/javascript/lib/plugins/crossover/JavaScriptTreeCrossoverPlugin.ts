@@ -16,22 +16,25 @@
  * limitations under the License.
  */
 import { CrossoverOptions, CrossoverPlugin } from "@syntest/base-testing-tool";
-import { Encoding, Crossover } from "@syntest/core";
-import { JavaScriptTreeCrossover } from "@syntest/core-javascript";
+import {
+  JavaScriptTestCase,
+  JavaScriptTreeCrossover,
+} from "@syntest/search-javascript";
 
 /**
  * Plugin for SignalTerminationTrigger
  *
  * @author Dimitri Stallenberg
  */
-export class JavaScriptTreeCrossoverPlugin<
-  T extends Encoding
-> extends CrossoverPlugin<T> {
+export class JavaScriptTreeCrossoverPlugin extends CrossoverPlugin<JavaScriptTestCase> {
   constructor() {
     super("javascript-tree", "A JavaScript tree crossover plugin");
   }
 
-  createCrossoverOperator(options: CrossoverOptions<T>): Crossover<T> {
-    return new JavaScriptTreeCrossover(options.crossoverProbability);
+  createCrossoverOperator(options: CrossoverOptions): JavaScriptTreeCrossover {
+    return new JavaScriptTreeCrossover(
+      options.crossoverEncodingProbability,
+      options.crossoverStatementProbability
+    );
   }
 }

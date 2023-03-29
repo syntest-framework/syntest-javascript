@@ -19,8 +19,12 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "/dist",
-    "/NOTICE",
+    "dist/lib",
+    "dist/index.d.ts",
+    "dist/index.d.ts.map",
+    "dist/index.js",
+    "dist/index.js.map",
+    "NOTICE",
     "README.md"
   ],
   "repository": {
@@ -43,7 +47,7 @@
   },
   "dependencies": {
     "@babel/core": "7.20.12",
-    "@syntest/ast-javascript": "^0.1.0-beta.3"
+    "@syntest/ast-visitor-javascript": "*"
   },
   "devDependencies": {
     "@types/babel__core": "7.20.0"

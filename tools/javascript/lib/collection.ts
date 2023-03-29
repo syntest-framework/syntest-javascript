@@ -16,9 +16,12 @@
  * limitations under the License.
  */
 
-import * as path from "path";
+import * as path from "node:path";
+
+import { CONFIG } from "@syntest/base-testing-tool";
 import {
   Archive,
+  Encoding,
   EvaluationBudget,
   ExceptionObjectiveFunction,
   ExecutionResult,
@@ -28,10 +31,8 @@ import {
   SearchTimeBudget,
   StatisticsCollector,
   TotalTimeBudget,
-  Encoding,
 } from "@syntest/core";
-import { JavaScriptSubject } from "@syntest/core-javascript";
-import { CONFIG } from "@syntest/base-testing-tool";
+import { JavaScriptSubject } from "@syntest/search-javascript";
 
 export function collectInitialVariables<T extends Encoding>(
   collector: StatisticsCollector<T>,
@@ -88,7 +89,7 @@ export function collectStatistics<T extends Encoding>(
     `${evaluationBudget.getUsedBudget()}`
   );
 
-  const numOfExceptions = archive
+  const numberOfExceptions = archive
     .getObjectives()
     .filter(
       (objective) => objective instanceof ExceptionObjectiveFunction
@@ -96,13 +97,13 @@ export function collectStatistics<T extends Encoding>(
 
   collector.recordVariable(
     RuntimeVariable.COVERED_EXCEPTIONS,
-    `${numOfExceptions}`
+    `${numberOfExceptions}`
   );
 
   collector.recordVariable(
     RuntimeVariable.COVERAGE,
     `${
-      (archive.getObjectives().length - numOfExceptions) /
+      (archive.getObjectives().length - numberOfExceptions) /
       currentSubject.getObjectives().length
     }`
   );
@@ -119,24 +120,23 @@ export function collectCoverageData<T extends Encoding>(
   for (const key of archive.getObjectives()) {
     const test = archive.getEncoding(key);
     const result: ExecutionResult = test.getExecutionResult();
+
     // TODO this does not work when there are files with the same name in different directories!!
     const paths = key.getSubject().path.split("/");
     const fileName = paths[paths.length - 1];
 
-    result
+    for (const current of result
       .getTraces()
       .filter((element) => element.type.includes(objectiveType))
-      .filter((element) => element.path.includes(fileName))
-      .forEach((current) => {
-        total.add(current.id + "_" + current.branchType);
+      .filter((element) => element.path.includes(fileName))) {
+      total.add(current.id + "_" + current.branchType);
 
-        if (current.hits > 0)
-          covered.add(current.id + "_" + current.branchType);
-      });
+      if (current.hits > 0) covered.add(current.id + "_" + current.branchType);
+    }
   }
 
   switch (objectiveType) {
-    case "branch":
+    case "branch": {
       {
         collector.recordVariable(
           RuntimeVariable.COVERED_BRANCHES,
@@ -147,7 +147,7 @@ export function collectCoverageData<T extends Encoding>(
           `${total.size}`
         );
 
-        if (total.size > 0.0) {
+        if (total.size > 0) {
           collector.recordVariable(
             RuntimeVariable.BRANCH_COVERAGE,
             `${covered.size / total.size}`
@@ -157,7 +157,8 @@ export function collectCoverageData<T extends Encoding>(
         }
       }
       break;
-    case "statement":
+    }
+    case "statement": {
       {
         collector.recordVariable(
           RuntimeVariable.COVERED_LINES,
@@ -165,7 +166,7 @@ export function collectCoverageData<T extends Encoding>(
         );
         collector.recordVariable(RuntimeVariable.TOTAL_LINES, `${total.size}`);
 
-        if (total.size > 0.0) {
+        if (total.size > 0) {
           collector.recordVariable(
             RuntimeVariable.LINE_COVERAGE,
             `${covered.size / total.size}`
@@ -175,7 +176,8 @@ export function collectCoverageData<T extends Encoding>(
         }
       }
       break;
-    case "function":
+    }
+    case "function": {
       {
         collector.recordVariable(
           RuntimeVariable.COVERED_FUNCTIONS,
@@ -186,7 +188,7 @@ export function collectCoverageData<T extends Encoding>(
           `${total.size}`
         );
 
-        if (total.size > 0.0) {
+        if (total.size > 0) {
           collector.recordVariable(
             RuntimeVariable.FUNCTION_COVERAGE,
             `${covered.size / total.size}`
@@ -196,5 +198,6 @@ export function collectCoverageData<T extends Encoding>(
         }
       }
       break;
+    }
   }
 }

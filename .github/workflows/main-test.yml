@@ -61,8 +61,8 @@ jobs:
       matrix:
         # Collect coverage for all packages and plugins
         package:
-          - libraries/ast-javascript
-          - libraries/cfg-javascript
+          - libraries/ast-visitor-javascript
+          - libraries/analysis-javascript
           - libraries/instrumentation-javascript
           - libraries/javascript
           

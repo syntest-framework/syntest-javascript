@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable unicorn/no-empty-file */
 // /*
 //  * Copyright 2020-2023 Delft University of Technology and SynTest contributors
 //  *
