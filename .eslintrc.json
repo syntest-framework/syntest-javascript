@@ -11,8 +11,8 @@
     "plugin:unicorn/recommended",
     // "plugin:import/recommended",
     // "plugin:import/typescript",
-    "plugin:promise/recommended"
-    // "prettier"//,
+    "plugin:promise/recommended",
+    "prettier"//,
     // "plugin:sonarjs/recommended"
   ],
   // "parser": "@typescript-eslint/parser",
