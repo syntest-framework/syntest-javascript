@@ -246,7 +246,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
         type: TargetType.OBJECT,
         scope: path.parentPath.scope,
         name: parentNode.left.object.name,
-        id: `${this.nodeId}`,
+        id: `${this._getNodeId(path)}`,
         exported: !!export_,
         default: export_ ? export_.default : false,
         module: export_ ? export_.module : false,
@@ -256,7 +256,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
         objectName: parentNode.left.object.name,
         scope: path.parentPath.scope,
         name: functionName,
-        id: `${this.nodeId}`,
+        id: `${this._getNodeId(path)}`,
         isAsync: path.node.async,
       };
 
@@ -266,7 +266,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
 
       const target: FunctionTarget = {
         scope: path.parentPath.scope,
-        id: `${this.nodeId}`,
+        id: `${this._getNodeId(path)}`,
         name: targetName,
         type: TargetType.FUNCTION,
         exported: !!export_,
@@ -287,7 +287,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
 
       const target: FunctionTarget = {
         scope: path.parentPath.scope,
-        id: `${this.nodeId}`,
+        id: `${this._getNodeId(path)}`,
         name: targetName,
         type: TargetType.FUNCTION,
         exported: !!export_,
@@ -306,7 +306,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
     const export_ = this._getExport(path, targetName);
 
     const target: ClassTarget = {
-      id: `${this.nodeId}`,
+      id: `${this._getNodeId(path)}`,
       scope: path.parentPath.scope,
       name: targetName,
       type: TargetType.CLASS,
@@ -326,7 +326,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
     const export_ = this._getExport(path, targetName);
 
     const target: ClassTarget = {
-      id: `${this.nodeId}`,
+      id: `${this._getNodeId(path)}`,
       scope: path.parentPath.scope,
       name: targetName,
       type: TargetType.CLASS,
@@ -437,7 +437,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
     }
 
     const target: MethodTarget = {
-      id: `${this.nodeId}`,
+      id: `${this._getNodeId(path)}`,
       scope: path.parentPath.scope,
       name: targetName,
       type: TargetType.METHOD,
@@ -491,7 +491,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
         type: TargetType.OBJECT,
         scope: path.parentPath.scope,
         name: parentNode.left.object.name,
-        id: `${this.nodeId}`,
+        id: `${this._getNodeId(path)}`,
         exported: !!export_,
         default: export_ ? export_.default : false,
         module: export_ ? export_.module : false,
@@ -501,7 +501,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
         objectName: parentNode.left.object.name,
         scope: path.parentPath.scope,
         name: functionName,
-        id: `${this.nodeId}`,
+        id: `${this._getNodeId(path)}`,
         isAsync: path.node.async,
       };
 
@@ -526,7 +526,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
 
       const target: MethodTarget = {
         scope: path.parentPath.scope,
-        id: `${this.nodeId}`,
+        id: `${this._getNodeId(path)}`,
         className: parentClassName,
         name: targetName,
         type: TargetType.METHOD,
@@ -542,7 +542,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
 
       const target: FunctionTarget = {
         scope: path.parentPath.scope,
-        id: `${this.nodeId}`,
+        id: `${this._getNodeId(path)}`,
         name: targetName,
         type: TargetType.FUNCTION,
         exported: !!export_,

@@ -48,6 +48,9 @@ export class TargetFactory implements CoreTargetFactory<t.Node> {
 
     traverse(AST, visitor);
 
+    // we should check wether every export is actually used
+    // TODO
+
     return {
       path: filePath,
       name: path.basename(filePath),

@@ -20,7 +20,7 @@ import { NodePath } from "@babel/core";
 import * as t from "@babel/types";
 import { AbstractSyntaxTreeVisitor } from "@syntest/ast-visitor-javascript";
 
-export class ImportVisitor extends AbstractSyntaxTreeVisitor {
+export class DependencyVisitor extends AbstractSyntaxTreeVisitor {
   private _imports: Set<string>;
 
   constructor(filePath: string) {
@@ -34,6 +34,38 @@ export class ImportVisitor extends AbstractSyntaxTreeVisitor {
     this._imports.add(path.node.source.value);
   };
 
+  public Import: (path: NodePath<t.Import>) => void = (path) => {
+    const parentNode = path.parentPath.node;
+
+    if (parentNode.type === "CallExpression") {
+      // e.g. import(?)
+      if (parentNode.arguments.length === 1) {
+        if (parentNode.arguments[0].type === "StringLiteral") {
+          // e.g. import('module1')
+          this._imports.add(parentNode.arguments[0].value);
+        } else {
+          // e.g. import('module' + '1')
+          // e.g. import(`module${1}`)
+          // e.g. import(x)
+          // This tool does not support computed dynamic import statements.
+          throw new Error(
+            "This tool does not support computed dynamic import statements."
+          );
+        }
+      } else {
+        // e.g. import()
+        // e.g. import('module1', 'module2')
+        // unsupported
+        // not possible
+        throw new Error("Unsupported import statement.");
+      }
+    } else {
+      // unsupported
+      // no clue what this is
+      throw new Error("Unsupported import statement.");
+    }
+  };
+
   public CallExpression: (path: NodePath<t.CallExpression>) => void = (
     path
   ) => {
@@ -41,9 +73,9 @@ export class ImportVisitor extends AbstractSyntaxTreeVisitor {
       if (path.node.arguments[0].type === "StringLiteral") {
         this._imports.add(path.node.arguments[0].value);
       } else {
-        // This tool does not support dynamic require statements.
+        // This tool does not support computed dynamic require statements.
         throw new Error(
-          "This tool does not support dynamic require statements."
+          "This tool does not support computed dynamic require statements."
         );
       }
     }

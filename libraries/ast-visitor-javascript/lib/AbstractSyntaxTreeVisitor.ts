@@ -21,26 +21,25 @@ import * as t from "@babel/types";
 
 import { Element, ElementType } from "./Element";
 import { Scope } from "./Scope";
+import { getLogger } from "@syntest/logging";
 
 export class AbstractSyntaxTreeVisitor implements TraverseOptions {
-  private _filePath: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected static LOGGER: any;
 
-  private _nodeId: number;
-  private _scopeIdOffset: number;
+  protected _filePath: string;
 
-  private _thisScopes: Set<string> = new Set([
+  protected _scopeIdOffset: number;
+
+  protected _thisScopes: Set<string> = new Set([
     "ClassDeclaration",
     "FunctionDeclaration",
   ]);
-  private _thisScopeStack: number[] = [];
-  private _thisScopeStackNames: string[] = [];
+  protected _thisScopeStack: number[] = [];
+  protected _thisScopeStackNames: string[] = [];
 
   get filePath() {
     return this._filePath;
-  }
-
-  get nodeId() {
-    return this._nodeId;
   }
 
   get scopeIdOffset() {
@@ -49,26 +48,47 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
 
   constructor(filePath: string) {
     this._filePath = filePath;
-    this._nodeId = 0;
+    AbstractSyntaxTreeVisitor.LOGGER = getLogger("AbstractSyntaxTreeVisitor");
   }
 
-  private _getUidFromScope(scope: BabelScope): number {
+  protected _getUidFromScope(scope: BabelScope): number {
     return (<{ uid: number }>(<unknown>scope))["uid"];
   }
 
-  enter = () => {
-    this._nodeId += 1;
+  protected _getNodeId(path: NodePath<t.Node>): string {
+    // could include the file path as well
+    // ${this._filePath}:${path.node.loc?.start.index}:${path.node.loc?.start.index}
+    if (path.node.loc === undefined) {
+      throw new Error(
+        `Node ${path.type} in file '${this._filePath}' does not have a location`
+      );
+    }
+
+    const startIndex = (<{ index: number }>(<unknown>path.node.loc.start))
+      .index;
+    const endIndex = (<{ index: number }>(<unknown>path.node.loc.end)).index;
+
+    return `${startIndex}-${endIndex}`;
+  }
+
+  enter = (path: NodePath<t.Node>) => {
+    AbstractSyntaxTreeVisitor.LOGGER.silly(
+      `Visiting node ${path.type} in file '${this._filePath}': location: ${path.node.loc?.start.line}:${path.node.loc?.start.column} - ${path.node.loc?.end.line}:${path.node.loc?.end.column} - type: ${path.node.type}`
+    );
   };
 
-  Program = {
-    enter: (path: NodePath<t.Program>) => {
-      // console.log(path.scope)
-      if (this._scopeIdOffset === undefined) {
-        this._scopeIdOffset = this._getUidFromScope(path.scope);
-        this._thisScopeStack.push(this._getUidFromScope(path.scope));
-        this._thisScopeStackNames.push("global");
-      }
-    },
+  exit = (path: NodePath<t.Node>) => {
+    AbstractSyntaxTreeVisitor.LOGGER.silly(
+      `Exiting node ${path.type} in file '${this._filePath}': location: ${path.node.loc?.start.line}:${path.node.loc?.start.column} - ${path.node.loc?.end.line}:${path.node.loc?.end.column} - type: ${path.node.type}`
+    );
+  };
+
+  public Program: (path: NodePath<t.Program>) => void = (path) => {
+    if (this._scopeIdOffset === undefined) {
+      this._scopeIdOffset = this._getUidFromScope(path.scope);
+      this._thisScopeStack.push(this._getUidFromScope(path.scope));
+      this._thisScopeStackNames.push("global");
+    }
   };
 
   Scopable = {
@@ -101,7 +121,7 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
     },
   };
 
-  private _getCurrentThisScopeId() {
+  protected _getCurrentThisScopeId() {
     if (this._thisScopeStack.length === 0) {
       throw new Error("Invalid scope stack!");
     }
@@ -109,7 +129,7 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
     return this._thisScopeStack[this._thisScopeStack.length - 1];
   }
 
-  // private _getCurrentThisScopeName() {
+  // protected _getCurrentThisScopeName() {
   //   if (this._thisScopeStackNames.length === 0) {
   //     throw new Error("Invalid scope stack!");
   //   }
@@ -117,7 +137,7 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
   //   return this._thisScopeStackNames[this._thisScopeStackNames.length - 1];
   // }
 
-  private _getNameFromNode(node: t.Node): string {
+  protected _getNameFromNode(node: t.Node): string {
     if (node.type === "Identifier") {
       return node.name;
     }

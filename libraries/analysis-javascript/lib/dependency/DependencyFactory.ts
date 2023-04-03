@@ -20,7 +20,7 @@ import { traverse } from "@babel/core";
 import * as t from "@babel/types";
 import { DependencyFactory as CoreDependencyFactory } from "@syntest/analysis";
 
-import { ImportVisitor } from "./DependencyVisitor";
+import { DependencyVisitor } from "./DependencyVisitor";
 
 /**
  * Dependency generator for targets.
@@ -34,7 +34,7 @@ export class DependencyFactory implements CoreDependencyFactory<t.Node> {
    * @param AST The AST of the target
    */
   extract(filePath: string, AST: t.Node): string[] {
-    const visitor = new ImportVisitor(filePath);
+    const visitor = new DependencyVisitor(filePath);
 
     traverse(AST, visitor);
 

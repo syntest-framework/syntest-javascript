@@ -65,9 +65,7 @@ export class VariableVisitor extends AbstractSyntaxTreeVisitor {
 
   // context
 
-  public ClassMethod: (path: NodePath<t.FunctionDeclaration>) => void = (
-    path
-  ) => {
+  public ClassMethod: (path: NodePath<t.ClassMethod>) => void = (path) => {
     if (path.node.kind === "constructor") {
       // TODO
       return;
