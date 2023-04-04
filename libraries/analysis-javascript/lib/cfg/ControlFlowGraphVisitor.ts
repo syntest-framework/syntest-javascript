@@ -412,12 +412,12 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     // connect all break nodes to loop exit
     this._currentParents.push(...this._breakNodesStack.pop());
 
-    // connect all continue nodes to loop entry
+    // connect all continue nodes to test
     for (const continueNode of this._continueNodesStack.pop()) {
       this._edges.push(
         this._createEdge(
           this._nodes.get(continueNode),
-          firstBodyNode,
+          loopNode,
           EdgeType.BACK_EDGE,
           EdgeType.BACK_EDGE
         )
@@ -468,7 +468,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     // connect all break nodes to loop exit
     this._currentParents.push(...this._breakNodesStack.pop());
 
-    // connect all continue nodes to loop entry
+    // connect all continue nodes to test entry
     for (const continueNode of this._continueNodesStack.pop()) {
       this._edges.push(
         this._createEdge(
@@ -543,7 +543,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     // connect all break nodes to loop exit
     this._currentParents.push(...this._breakNodesStack.pop());
 
-    // connect all continue nodes to loop entry
+    // connect all continue nodes to test
     for (const continueNode of this._continueNodesStack.pop()) {
       this._edges.push(
         this._createEdge(
@@ -610,7 +610,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     // connect all break nodes to loop exit
     this._currentParents.push(...this._breakNodesStack.pop());
 
-    // connect all continue nodes to loop entry
+    // connect all continue nodes to test
     for (const continueNode of this._continueNodesStack.pop()) {
       this._edges.push(
         this._createEdge(
@@ -692,7 +692,58 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     path.skip();
   };
 
-  // // TODO switch
+  public SwitchStatement: (path: NodePath<t.SwitchStatement>) => void = (
+    path
+  ) => {
+    ControlFlowGraphVisitor.LOGGER.debug(
+      `Entering SwitchStatement: ${path.type}\tline: ${path.node.loc.start.line}\tcolumn: ${path.node.loc.start.column}`
+    );
+    this._breakNodesStack.push(new Set());
+
+    // TODO test
+    const testNode = this._createNode(path); // or path.get("test") ??
+    this._connectToParents(testNode);
+    this._currentParents = [testNode.id];
+
+    for (const caseNode of path.get("cases")) {
+      // TODO test
+      const caseTestNode = this._createNode(caseNode); // or path.get("test") ??
+      this._connectToParents(caseTestNode);
+      this._currentParents = [caseTestNode.id];
+
+      if (caseNode.has("test")) {
+        // case
+        this._edgeType = EdgeType.CONDITIONAL_TRUE;
+      }
+
+      // consequent
+      if (caseNode.get("consequent").length === 0) {
+        // empty body
+        // create placeholder node
+        const placeholderNode = this._createPlaceholderNode(caseNode);
+        this._connectToParents(placeholderNode);
+        this._currentParents = [placeholderNode.id];
+      } else {
+        for (const consequentNode of caseNode.get("consequent")) {
+          consequentNode.visit();
+        }
+      }
+
+      if (caseNode.has("test")) {
+        // case
+        this._edgeType = EdgeType.CONDITIONAL_FALSE;
+        this._currentParents = [caseTestNode.id, ...this._currentParents];
+      } else {
+        // default
+        this._currentParents = [...this._currentParents];
+      }
+    }
+
+    // connect all break nodes to switch exit
+    this._currentParents.push(...this._breakNodesStack.pop());
+
+    path.skip();
+  };
 
   // terminating statements
   // these statements are the end of a path
