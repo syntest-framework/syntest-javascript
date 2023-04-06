@@ -16,10 +16,9 @@
  * limitations under the License.
  */
 
-import { Decoder, Encoding } from "@syntest/core";
+import { Decoder, Encoding, EncodingSampler } from "@syntest/core";
 import { getLogger } from "@syntest/logging";
 
-import { JavaScriptTestCaseSampler } from "./sampling/JavaScriptTestCaseSampler";
 import { RootStatement } from "./statements/root/RootStatement";
 
 /**
@@ -41,7 +40,7 @@ export class JavaScriptTestCase extends Encoding {
     this._root = root;
   }
 
-  mutate(sampler: JavaScriptTestCaseSampler) {
+  mutate<E extends Encoding>(sampler: EncodingSampler<E>): E {
     JavaScriptTestCase.LOGGER.debug(`Mutating test case: ${this._id}`);
     return sampler.resampleGeneProbability
       ? sampler.sample()
@@ -59,8 +58,8 @@ export class JavaScriptTestCase extends Encoding {
     return hash;
   }
 
-  copy(): JavaScriptTestCase {
-    return new JavaScriptTestCase(this.root.copy());
+  copy<E extends Encoding>(): E {
+    return <E>(<unknown>new JavaScriptTestCase(this.root.copy()));
   }
 
   getLength(): number {

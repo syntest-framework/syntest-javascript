@@ -18,7 +18,7 @@
 
 import { Element } from "@syntest/ast-visitor-javascript";
 
-import { TypeProbability } from "../resolving/TypeProbability";
+import { TypeProbability } from "../../resolving/TypeProbability";
 
 export class ElementTypeMap {
   private elementMap: Map<string, Element>;

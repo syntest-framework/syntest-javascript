@@ -48,6 +48,7 @@ function getName(node: t.Node): string {
 }
 
 export function extractExportsFromExpressionStatement(
+  filePath: string,
   path: NodePath<t.ExpressionStatement>
 ): Export[] | undefined {
   if (path.node.expression.type !== "AssignmentExpression") {
@@ -192,6 +193,7 @@ export function extractExportsFromExpressionStatement(
 
           exports.push({
             scope: path.scope,
+            filePath,
             name: property.key.name,
             renamedTo: property.key.name,
             default: false,
@@ -223,6 +225,7 @@ export function extractExportsFromExpressionStatement(
             // e.g. exports = { a: b }
             exports.push({
               scope: path.scope,
+              filePath,
               name: property.value.name,
               renamedTo: key,
               default: false,
@@ -232,6 +235,7 @@ export function extractExportsFromExpressionStatement(
             // e.g. exports = { a: 1 }
             exports.push({
               scope: path.scope,
+              filePath,
               name: key,
               renamedTo: key,
               default: false,
@@ -245,6 +249,7 @@ export function extractExportsFromExpressionStatement(
       // e.g. module.exports = obj
       exports.push({
         scope: path.scope,
+        filePath,
         name: name,
         renamedTo: name,
         default: default_,
@@ -258,6 +263,7 @@ export function extractExportsFromExpressionStatement(
       // e.g. exports.a = b
       exports.push({
         scope: path.scope,
+        filePath,
         name: init.name,
         renamedTo: name,
         default: default_,
@@ -267,6 +273,7 @@ export function extractExportsFromExpressionStatement(
       // e.g. exports.a = 1
       exports.push({
         scope: path.scope,
+        filePath,
         name: name,
         renamedTo: name,
         default: default_,

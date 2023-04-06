@@ -25,30 +25,24 @@ import {
   SourceFactory,
 } from "@syntest/analysis";
 import { Element } from "@syntest/ast-visitor-javascript";
-import { Instrumenter } from "@syntest/instrumentation-javascript";
-import { copySync, outputFileSync } from "fs-extra";
 
 import { AbstractSyntaxTreeFactory } from "./ast/AbstractSyntaxTreeFactory";
 import { ControlFlowGraphFactory } from "./cfg/ControlFlowGraphFactory";
 import { DependencyFactory } from "./dependency/DependencyFactory";
-import { ActionDescription } from "./target/ActionDescription";
 import { Export } from "./target/export/Export";
 import { TargetFactory } from "./target/TargetFactory";
-import { ComplexObject } from "./type/discovery/object/ComplexObject";
+import { ComplexType } from "./type/ComplexType";
 import { ObjectGenerator } from "./type/discovery/object/ObjectGenerator";
-import { Relation } from "./type/discovery/Relation";
+import { Relation } from "./type/discovery/relation/Relation";
 import { VariableGenerator } from "./type/discovery/VariableGenerator";
 import { TypeEnum } from "./type/resolving/TypeEnum";
 import { TypeProbability } from "./type/resolving/TypeProbability";
 import { TypeResolver } from "./type/resolving/TypeResolver";
 import { getAllFiles, readFile } from "./utils/fileSystem";
-
-export interface JavaScriptTargetMetaData extends TargetMetaData {
-  type: SubjectType;
-  export: Export;
-}
+import { ExportFactory } from "./target/export/ExportFactory";
 
 export class RootContext extends CoreRootContext<t.Node> {
+  protected _exportFactory: ExportFactory;
   private _typeResolver: TypeResolver;
 
   // Mapping: filepath -> target name -> Exports
@@ -61,6 +55,7 @@ export class RootContext extends CoreRootContext<t.Node> {
     controlFlowGraphFactory: ControlFlowGraphFactory,
     targetFactory: TargetFactory,
     dependencyFactory: DependencyFactory,
+    exportFactory: ExportFactory,
     typeResolver: TypeResolver
   ) {
     super(
@@ -71,16 +66,20 @@ export class RootContext extends CoreRootContext<t.Node> {
       targetFactory,
       dependencyFactory
     );
-
+    this._exportFactory = exportFactory;
     this._typeResolver = typeResolver;
 
     this._exportMap = new Map();
   }
 
+  get rootPath(): string {
+    return this._rootPath;
+  }
+
   // TODO something with the types
 
-  getSource(targetPath: string) {
-    let absoluteTargetPath = path.resolve(targetPath);
+  override getSource(filePath: string) {
+    let absoluteTargetPath = path.resolve(filePath);
 
     if (!this._sources.has(absoluteTargetPath)) {
       if (!existsSync(absoluteTargetPath)) {
@@ -113,217 +112,132 @@ export class RootContext extends CoreRootContext<t.Node> {
     return this._sources.get(absoluteTargetPath);
   }
 
-  getTargetMap(targetPath: string): Map<string, JavaScriptTargetMetaData> {
-    const absoluteTargetPath = path.resolve(targetPath);
+  getExports(filePath: string): Export[] {
+    const absolutePath = this.resolvePath(filePath);
 
-    if (!this._targetMap.has(absoluteTargetPath)) {
-      const targetAST = this.getAST(absoluteTargetPath);
-      const { targetMap, functionMap } = this.targetMapGenerator.generate(
-        absoluteTargetPath,
-        targetAST
-      );
-
-      const exports = this.getExports(targetPath);
-
-      const finalTargetMap = new Map<string, JavaScriptTargetMetaData>();
-
-      for (const key of targetMap.keys()) {
-        const name = targetMap.get(key).name;
-        const export_ = exports.find((export_) => export_.name === name);
-
-        if (!export_) {
-          // No export found so we cannot import it and thus not test it
-          continue;
-        }
-
-        if (
-          export_.type === ExportType.const &&
-          functionMap.get(key).size === 0
-        ) {
-          throw new Error(
-            `Target cannot be constant: ${name} -> ${JSON.stringify(export_)}`
-          );
-        }
-
-        let isPrototypeClass = false;
-        for (const function_ of functionMap.get(key).values()) {
-          if (function_.isConstructor) {
-            isPrototypeClass = true;
-            break;
-          }
-        }
-
-        // let isClass = false
-        // if (functionMap.get(key).size > 1) {
-        //   isClass = true
-        // }
-
-        // threat everything as a function if we don't know
-        finalTargetMap.set(key, {
-          name: name,
-          type:
-            export_.type === ExportType.class || isPrototypeClass
-              ? SubjectType.class
-              : export_.type === ExportType.const
-              ? SubjectType.object
-              : SubjectType.function,
-          export: export_,
-        });
-      }
-
-      this._targetMap.set(absoluteTargetPath, finalTargetMap);
-      this._functionMaps.set(absoluteTargetPath, functionMap);
-    }
-
-    return this._targetMap.get(absoluteTargetPath);
-  }
-
-  getFunctionMapSpecific(
-    targetPath: string,
-    targetName: string
-  ): Map<string, ActionDescription> {
-    const absoluteTargetPath = path.resolve(targetPath);
-
-    if (!this._functionMaps.has(absoluteTargetPath)) {
-      this.getTargetMap(absoluteTargetPath);
-    }
-
-    if (this._functionMaps.get(absoluteTargetPath).has(targetName)) {
-      return this._functionMaps.get(absoluteTargetPath).get(targetName);
-    } else {
-      throw new Error(
-        `Target ${targetName} could not be found at ${targetPath}`
-      );
-    }
-  }
-
-  getFunctionMap<A extends CoreActionDescription>(
-    targetPath: string,
-    targetName: string
-  ): Map<string, A> {
-    const absoluteTargetPath = path.resolve(targetPath);
-
-    if (!this._functionMaps.has(absoluteTargetPath)) {
-      this.getTargetMap(absoluteTargetPath);
-    }
-
-    if (!this._functionMaps.get(absoluteTargetPath).has(targetName)) {
-      return new Map();
-    }
-
-    return <Map<string, A>>(
-      (<unknown>this._functionMaps.get(absoluteTargetPath).get(targetName))
-    );
-  }
-
-  getFunctionMaps<A extends CoreActionDescription>(
-    targetPath: string
-  ): Map<string, Map<string, A>> {
-    const absoluteTargetPath = path.resolve(targetPath);
-
-    if (!this._functionMaps.has(absoluteTargetPath)) {
-      this.getTargetMap(absoluteTargetPath);
-    }
-
-    return <Map<string, Map<string, A>>>(
-      (<unknown>this._functionMaps.get(absoluteTargetPath))
-    );
-  }
-
-  getExports(targetPath: string): Export[] {
-    const absoluteTargetPath = path.resolve(targetPath);
-
-    if (!this._exportMap.has(absoluteTargetPath)) {
-      // this._exportMap.set(absoluteTargetPath, exports);
-      return this.exportGenerator.generate(
-        absoluteTargetPath,
-        this.getAST(absoluteTargetPath)
+    if (!this._exportMap.has(absolutePath)) {
+      this._exportMap.set(
+        absolutePath,
+        this._exportFactory.extract(
+          absolutePath,
+          this.getAbstractSyntaxTree(absolutePath)
+        )
       );
     }
 
-    return this._exportMap.get(absoluteTargetPath);
+    return this._exportMap.get(absolutePath);
   }
 
-  getDependencies(targetPath: string): Export[] {
-    const absoluteTargetPath = path.resolve(targetPath);
+  // getTargetMap(targetPath: string): Map<string, JavaScriptTargetMetaData> {
+  //   const absoluteTargetPath = path.resolve(targetPath);
 
-    if (!this._dependencyMaps.has(absoluteTargetPath)) {
-      // Find all external imports in the file under test
-      const imports = this.importGenerator.generate(
-        absoluteTargetPath,
-        this.getAST(targetPath)
-      );
+  //   if (!this._targetMap.has(absoluteTargetPath)) {
+  //     const targetAST = this.getAST(absoluteTargetPath);
+  //     const { targetMap, functionMap } = this.targetMapGenerator.generate(
+  //       absoluteTargetPath,
+  //       targetAST
+  //     );
 
-      // For each external import scan the file for libraries with exported functions
-      const libraries: Export[] = [];
-      for (const importPath of imports) {
-        // Full path to the imported file
-        const pathLibrary = path.join(path.dirname(targetPath), importPath);
+  //     const exports = this.getExports(targetPath);
 
-        // External libraries have a different path!
-        try {
-          this.getSource(pathLibrary);
-        } catch (error) {
-          if (error.message.includes("Cannot find source")) {
-            // TODO would be nice if we could get the actual path! (node modules)
-            continue;
+  //     const finalTargetMap = new Map<string, JavaScriptTargetMetaData>();
 
-            // pathLib = path.join
-          } else {
-            throw error;
-          }
-        }
+  //     for (const key of targetMap.keys()) {
+  //       const name = targetMap.get(key).name;
+  //       const export_ = exports.find((export_) => export_.name === name);
 
-        // Scan for libraries with public or external functions
-        const exports = this.getExports(pathLibrary);
+  //       if (!export_) {
+  //         // No export found so we cannot import it and thus not test it
+  //         continue;
+  //       }
 
-        // Import the found libraries
-        // TODO: check for duplicates in libraries
-        libraries.push(...exports);
-      }
+  //       if (
+  //         export_.type === ExportType.const &&
+  //         functionMap.get(key).size === 0
+  //       ) {
+  //         throw new Error(
+  //           `Target cannot be constant: ${name} -> ${JSON.stringify(export_)}`
+  //         );
+  //       }
 
-      return libraries;
+  //       let isPrototypeClass = false;
+  //       for (const function_ of functionMap.get(key).values()) {
+  //         if (function_.isConstructor) {
+  //           isPrototypeClass = true;
+  //           break;
+  //         }
+  //       }
 
-      // this._dependencyMaps.set(targetPath, libraries);
-    }
+  //       // let isClass = false
+  //       // if (functionMap.get(key).size > 1) {
+  //       //   isClass = true
+  //       // }
 
-    return this._dependencyMaps.get(absoluteTargetPath);
-  }
+  //       // threat everything as a function if we don't know
+  //       finalTargetMap.set(key, {
+  //         name: name,
+  //         type:
+  //           export_.type === ExportType.class || isPrototypeClass
+  //             ? SubjectType.class
+  //             : export_.type === ExportType.const
+  //             ? SubjectType.object
+  //             : SubjectType.function,
+  //         export: export_,
+  //       });
+  //     }
 
-  // TODO move to javascript tool
-  async prepareAndInstrument(
-    targetRootDirectory: string,
-    temporaryInstrumentedDirectory: string
-  ): Promise<void> {
-    const absoluteRootPath = path.resolve(targetRootDirectory);
+  //     this._targetMap.set(absoluteTargetPath, finalTargetMap);
+  //     this._functionMaps.set(absoluteTargetPath, functionMap);
+  //   }
 
-    const destinationPath = path.resolve(
-      temporaryInstrumentedDirectory,
-      path.basename(targetRootDirectory)
-    );
+  //   return this._targetMap.get(absoluteTargetPath);
+  // }
 
-    // copy everything
-    await copySync(absoluteRootPath, destinationPath);
+  // getDependencies(targetPath: string): Export[] {
+  //   const absoluteTargetPath = path.resolve(targetPath);
 
-    // overwrite the stuff that needs instrumentation
-    const instrumenter = new Instrumenter();
+  //   if (!this._dependencyMaps.has(absoluteTargetPath)) {
+  //     // Find all external imports in the file under test
+  //     const imports = this.importGenerator.generate(
+  //       absoluteTargetPath,
+  //       this.getAST(targetPath)
+  //     );
 
-    const targetPaths = this.targets.map((target) => target.canonicalPath);
+  //     // For each external import scan the file for libraries with exported functions
+  //     const libraries: Export[] = [];
+  //     for (const importPath of imports) {
+  //       // Full path to the imported file
+  //       const pathLibrary = path.join(path.dirname(targetPath), importPath);
 
-    for (const targetPath of targetPaths) {
-      const source = this.getSource(targetPath);
-      const instrumentedSource = await instrumenter.instrument(
-        source,
-        targetPath
-      );
+  //       // External libraries have a different path!
+  //       try {
+  //         this.getSource(pathLibrary);
+  //       } catch (error) {
+  //         if (error.message.includes("Cannot find source")) {
+  //           // TODO would be nice if we could get the actual path! (node modules)
+  //           continue;
 
-      const _path = path
-        .normalize(targetPath)
-        .replace(absoluteRootPath, destinationPath);
+  //           // pathLib = path.join
+  //         } else {
+  //           throw error;
+  //         }
+  //       }
 
-      await outputFileSync(_path, instrumentedSource);
-    }
-  }
+  //       // Scan for libraries with public or external functions
+  //       const exports = this.getExports(pathLibrary);
+
+  //       // Import the found libraries
+  //       // TODO: check for duplicates in libraries
+  //       libraries.push(...exports);
+  //     }
+
+  //     return libraries;
+
+  //     // this._dependencyMaps.set(targetPath, libraries);
+  //   }
+
+  //   return this._dependencyMaps.get(absoluteTargetPath);
+  // }
 
   scanTargetRootDirectory(targetRootDirectory: string): void {
     const absoluteRootPath = path.resolve(targetRootDirectory);
@@ -336,13 +250,17 @@ export class RootContext extends CoreRootContext<t.Node> {
         !x.includes("node_modules")
     ); // maybe we should also take those into account
 
-    const objects: ComplexObject[] = [];
+    const objects: ComplexType[] = [];
     const objectGenerator = new ObjectGenerator();
 
     for (const file of files) {
       const exports = this.getExports(file);
       objects.push(
-        ...objectGenerator.generate(file, this.getAST(file), exports)
+        ...objectGenerator.generate(
+          file,
+          this.getAbstractSyntaxTree(file),
+          exports
+        )
       );
     }
 
@@ -456,10 +374,10 @@ export class RootContext extends CoreRootContext<t.Node> {
     // TODO npm dependencies
     // TODO get rid of duplicates
 
-    const finalObjects = [];
+    const finalObjects: ComplexType[] = [];
 
     // eslint-disable-next-line unicorn/consistent-function-scoping
-    function eqSet(as, bs) {
+    function eqSet(as: Set<unknown>, bs: Set<unknown>) {
       if (as.size !== bs.size) return false;
       for (const a of as) if (!bs.has(a)) return false;
       return true;
@@ -491,7 +409,7 @@ export class RootContext extends CoreRootContext<t.Node> {
 
     for (const file of files) {
       const [_elements, _relations, _wrapperElementIsRelation] =
-        generator.generate(file, this.getAST(file));
+        generator.generate(file, this.getAbstractSyntaxTree(file));
 
       elements.push(..._elements);
       relations.push(..._relations);

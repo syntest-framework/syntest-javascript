@@ -39,18 +39,18 @@ export abstract class RootStatement extends ActionStatement {
     this._children = children;
   }
 
-  abstract mutate(
+  abstract override mutate(
     sampler: EncodingSampler<Encoding>,
     depth: number
   ): RootStatement;
 
-  abstract copy(): RootStatement;
+  abstract override copy(): RootStatement;
 
-  hasChildren(): boolean {
+  override hasChildren(): boolean {
     return this.args.length > 0 || this._children.length > 0;
   }
 
-  getChildren(): Statement[] {
+  override getChildren(): Statement[] {
     return [...this.args, ...this._children];
   }
 
@@ -58,7 +58,7 @@ export abstract class RootStatement extends ActionStatement {
     return this._children;
   }
 
-  setChild(index: number, newChild: Statement) {
+  override setChild(index: number, newChild: Statement) {
     if (!newChild) {
       throw new Error("Invalid new child!");
     }
@@ -75,7 +75,7 @@ export abstract class RootStatement extends ActionStatement {
     }
   }
 
-  getFlatTypes(): string[] {
+  override getFlatTypes(): string[] {
     return [
       ...this.args.flatMap((a) => a.getFlatTypes()),
       ...this.children.flatMap((a) => a.getFlatTypes()),

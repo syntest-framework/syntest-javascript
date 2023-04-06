@@ -18,7 +18,7 @@
 
 import { prng } from "@syntest/core";
 
-import { ComplexObject } from "../discovery/object/ComplexObject";
+import { ComplexType } from "../ComplexType";
 
 import { TypeEnum } from "./TypeEnum";
 
@@ -31,7 +31,7 @@ import { TypeEnum } from "./TypeEnum";
 
 export class TypeProbability {
   private id: string;
-  objectDescription: Map<string, ComplexObject>;
+  objectDescription: Map<string, ComplexType>;
   private objectPropertyTypes: Map<string, Map<string, TypeProbability>>;
 
   private scores: Map<string, number>;
@@ -44,7 +44,7 @@ export class TypeProbability {
 
   private executionScores: Map<string, number>;
 
-  getObjectDescription(type: string): ComplexObject {
+  getObjectDescription(type: string): ComplexType {
     return this.objectDescription.get(type);
   }
 
@@ -56,7 +56,7 @@ export class TypeProbability {
    * Constructor
    */
   constructor(
-    initialTypes?: [string | TypeProbability, number, ComplexObject | null][]
+    initialTypes?: [string | TypeProbability, number, ComplexType | null][]
   ) {
     this.id = prng.uniqueId();
 
@@ -83,7 +83,7 @@ export class TypeProbability {
   addType(
     type: string | TypeProbability,
     score: number,
-    objectDescription?: ComplexObject | undefined,
+    objectDescription?: ComplexType | undefined,
     propertyTypes?: Map<string, TypeProbability> | undefined
   ) {
     if (score <= 0) {

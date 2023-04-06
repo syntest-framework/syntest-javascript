@@ -16,15 +16,16 @@
  * limitations under the License.
  */
 
-import { Element, Scope } from "@syntest/ast-visitor-javascript";
+import { Scope } from "@syntest/ast-visitor-javascript";
 
-import { ComplexObject } from "../../discovery/object/ComplexObject";
-import { Relation, RelationType } from "../../discovery/Relation";
+import { ComplexType } from "../../ComplexType";
+import { Relation, RelationType } from "../../discovery/relation/Relation";
 import { elementTypeToTypingType, TypeEnum } from "../TypeEnum";
 import { TypeProbability } from "../TypeProbability";
 import { TypeResolver } from "../TypeResolver";
 
 import { createAnonObject } from "./ObjectMatcher";
+import { Element } from "../../discovery/element/Element";
 
 export class TypeResolverInference extends TypeResolver {
   /**
@@ -71,7 +72,7 @@ export class TypeResolverInference extends TypeResolver {
     elements: Element[],
     relations: Relation[],
     wrapperElementIsRelation: Map<string, Relation>,
-    objects: ComplexObject[]
+    objects: ComplexType[]
   ): boolean {
     let somethingSolved = false;
 
@@ -299,7 +300,7 @@ export class TypeResolverInference extends TypeResolver {
     elements: Element[],
     relations: Relation[],
     wrapperElementIsRelation: Map<string, Relation>,
-    objects: ComplexObject[]
+    objects: ComplexType[]
   ) {
     this.wrapperElementIsRelation = wrapperElementIsRelation;
 
@@ -588,8 +589,6 @@ export class TypeResolverInference extends TypeResolver {
         return false;
       }
     }
-
-    throw new Error(`Unimplemented relation type: ${relationType}`);
   }
 
   resolveRelation(relation: Relation, involved: TypeProbability[]): boolean {
@@ -801,7 +800,5 @@ export class TypeResolverInference extends TypeResolver {
         return false;
       }
     }
-
-    throw new Error(`Unimplemented relation type: ${relation.relation}`);
   }
 }

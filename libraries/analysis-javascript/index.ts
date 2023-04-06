@@ -27,20 +27,18 @@ export * from "./lib/target/export/ExportNamedDeclaration";
 export * from "./lib/target/export/ExportVisitor";
 export * from "./lib/target/export/ExpressionStatement";
 
-export * from "./lib/target/ActionDescription";
-export * from "./lib/target/ActionType";
 export * from "./lib/target/IdentifierDescription";
 export * from "./lib/target/Target";
 export * from "./lib/target/TargetFactory";
 export * from "./lib/target/TargetVisitor";
 export * from "./lib/target/VisibilityType";
 
-export * from "./lib/type/discovery/object/ComplexObject";
+export * from "./lib/type/ComplexType";
 export * from "./lib/type/discovery/object/ObjectGenerator";
 export * from "./lib/type/discovery/object/ObjectVisitor";
 
-export * from "./lib/type/discovery/ElementTypeMap";
-export * from "./lib/type/discovery/Relation";
+export * from "./lib/type/discovery/element/ElementTypeMap";
+export * from "./lib/type/discovery/relation/Relation";
 export * from "./lib/type/discovery/VariableGenerator";
 export * from "./lib/type/discovery/VariableVisitor";
 

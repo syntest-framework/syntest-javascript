@@ -16,41 +16,61 @@
  * limitations under the License.
  */
 
-import { Element } from "@syntest/ast-visitor-javascript";
-
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators
 // TODO add missing
 
 export interface Relation {
+  id: string;
   relation: RelationType;
-  involved: Element[];
+  involved: string[];
   computed?: boolean;
 }
 
 export enum RelationType {
+  // special
+  Return = "L->R",
+  Call = "L(R)",
+  PrivateName = "#L",
+  ObjectProperty = "{L:R}",
+  ObjectMethod = "{L(R)}",
+
+  ClassProperty = "L{R}",
+  StaticClassProperty = "L{static R}",
+  ClassMethod = "L{R()}",
+  AsyncClassMethod = "L{async R()}",
+  StaticClassMethod = "L{static R()}",
+  StaticAsyncClassMethod = "L{static async R()}",
+  ClassConstructor = "L{constructor(R)}",
+  ClassGetter = "L{get R}",
+  ClassSetter = "L{set R}",
+
+  ArrayPattern = "[L]",
+  ObjectPattern = "{L}",
+  RestElement = "...R",
+
   // Primary Expressions
-  // TODO others
-  FunctionDefinition = "L_R",
+  This = "this",
+  // literals are processed differently
+  ArrayInitializer = "[L]",
+  ObjectInitializer = "{L}",
+  FunctionDefinition = "function L",
   ClassDefinition = "class L",
-
-  Await = "await L",
-
-  // object
-  Object = "{L}", // TODO not correct L doesnt matter
-  ObjectProperty = "L:R",
-
-  // array
-  Array = "[L]",
+  FunctionStarDefinition = "function* L",
+  AsyncFunctionDefinition = "async function L",
+  AsyncFunctionStarDefinition = "async function* L",
+  // RegularExpression = "/L/", this is a literal
+  TemplateLiteral = "`L`",
   Sequence = "(L,R)",
 
   // Left-hand-side Expressions
   PropertyAccessor = "L.R",
+  OptionalPropertyAccessor = "L?.R",
   New = "new L()",
 
   // TODO new.target
   // TODO import.meta
-  // TODO super
-  Spread = "...L",
+  // TODO super()
+  // TODO import()
 
   // UNARY
   // Increment and Decrement
@@ -67,6 +87,7 @@ export enum RelationType {
   MinusUnary = "-L",
   BitwiseNotUnary = "~L",
   LogicalNotUnary = "!L",
+  Await = "await L",
 
   // BINARY
   // Arithmetic
@@ -78,12 +99,12 @@ export enum RelationType {
   Exponentiation = "L**R",
 
   // Relation
-  In = "L in R",
-  InstanceOf = "L instanceof R",
   Less = "L<R",
   Greater = "L>R",
   LessOrEqual = "L<=R",
   GreaterOrEqual = "L>=R",
+  InstanceOf = "L instanceof R",
+  In = "L in R",
 
   // Equality
   Equality = "L==R",
@@ -109,9 +130,6 @@ export enum RelationType {
   // Ternary
   Conditional = "C?L:R",
 
-  // Optional chaining
-  // TODO
-
   // Assignment
   Assignment = "L=R",
   MultiplicationAssignment = "L*=R",
@@ -129,17 +147,17 @@ export enum RelationType {
   LogicalAndAssignment = "L&&=R",
   LogicalOrAssignment = "L||=R",
   LogicalNullishAssignment = "L??=R",
+  // destructuring assignment is equal to assignment
 
-  // TODO destructuring assignment
+  // yield
+  Yield = "yield L",
+  YieldStar = "yield* L",
 
-  // function
-  Return = "L->R",
+  // spread
+  Spread = "...L",
 
-  // MULTI
-  // function
-  Call = "L(R)",
-
-  PrivateName = "#L",
+  // comma
+  Comma = "L,R",
 }
 
 function getUnaryRelationType(operator: string, prefix: boolean) {

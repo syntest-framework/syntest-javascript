@@ -16,15 +16,15 @@
  * limitations under the License.
  */
 
-/**
- * Enum for a Action Types.
- *
- * @author Dimitri Stallenberg
- */
-export enum ActionType {
-  METHOD = "method",
-  GET = "get",
-  SET = "set",
-  CONSTRUCTOR = "constructor",
-  FUNCTION = "function",
+import { Export } from "../target/export/Export";
+import { TypeProbability } from "./resolving/TypeProbability";
+
+export interface ComplexType {
+  export?: Export;
+  id: string;
+  name: string;
+  properties: Set<string>;
+  functions: Set<string>;
+  propertyTypes: Map<string, TypeProbability>;
+  functionTypes: Map<string, TypeProbability>;
 }

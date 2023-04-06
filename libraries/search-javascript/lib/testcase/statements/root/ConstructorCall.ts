@@ -16,10 +16,7 @@
  * limitations under the License.
  */
 
-import {
-  ActionType,
-  IdentifierDescription,
-} from "@syntest/analysis-javascript";
+import { IdentifierDescription } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/core";
 
 import { JavaScriptSubject } from "../../../search/JavaScriptSubject";

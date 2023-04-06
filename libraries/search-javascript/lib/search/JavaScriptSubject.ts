@@ -15,29 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import * as t from "@babel/types";
-import {
-  ActionDescription,
-  ActionType,
-  IdentifierDescription,
-  JavaScriptTargetMetaData,
-} from "@syntest/analysis-javascript";
-import { ControlFlowGraph, NodeType } from "@syntest/cfg-core";
+import { SubTarget } from "@syntest/analysis-javascript";
+import { TargetType } from "@syntest/analysis";
+import { ControlFlowGraph, Edge } from "@syntest/cfg-core";
 import {
   FunctionObjectiveFunction,
   ObjectiveFunction,
   SearchSubject,
+  BranchObjectiveFunction,
+  ApproachLevel,
 } from "@syntest/core";
 
-import { JavaScriptBranchObjectiveFunction } from "../criterion/JavaScriptBranchObjectiveFunction";
 import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
-
-export enum SubjectType {
-  class,
-  function,
-  object,
-}
+import { BranchDistance } from "../criterion/BranchDistance";
 
 export interface TypeScore {
   types: string[];
@@ -45,94 +35,71 @@ export interface TypeScore {
 }
 
 export class JavaScriptSubject extends SearchSubject<JavaScriptTestCase> {
-  private _functions: ActionDescription[];
-  private _type: SubjectType;
-
-  private _typeScores: Map<string, TypeScore[]>;
-
-  reevaluateTypes() {
-    // TODO find correlations
-    // maybe look at bayesian inference
-  }
-
-  get functions(): ActionDescription[] {
-    return this._functions;
-  }
-
-  constructor(
-    path: string,
-    targetMeta: JavaScriptTargetMetaData,
-    cfg: ControlFlowGraph<t.Node>,
-    functions: ActionDescription[]
-  ) {
-    super(path, targetMeta.name, cfg);
-
-    // TODO SearchSubject should just use the targetMetaData
-    this._type = targetMeta.type;
-    this._functions = functions;
-    this._typeScores = new Map();
-  }
-
   protected _extractObjectives(): void {
+    const graph = this._rootContext.getControlFlowProgram(
+      this._target.path
+    ).graph;
+    const functions = this._rootContext.getControlFlowProgram(
+      this._target.path
+    ).functions;
+
     // Branch objectives
-    // Find all branch nodes
-    const branches = this._cfg.nodes.filter(
-      (node) => node.type === NodeType.Branch
+    // Find all control nodes
+    // I.E. nodes that have more than one outgoing edge
+    const controlNodeIds = [...graph.nodes.keys()].filter(
+      (node) => graph.getOutgoingEdges(node).length > 1
     );
 
-    for (const branchNode of branches) {
-      for (const edge of this._cfg.edges
+    for (const controlNodeId of controlNodeIds) {
+      const outGoingEdges = graph.getOutgoingEdges(controlNodeId);
 
-        // Find all edges from the branch node
-        .filter((edge) => edge.from === branchNode.id)) {
-        for (const childNode of this._cfg.nodes
-
-          // Find nodes with incoming edge from branch node
-          .filter((node) => node.id === edge.to)) {
-          // Add objective function
-          this._objectives.set(
-            new JavaScriptBranchObjectiveFunction(
-              this,
-              childNode.id,
-              branchNode.lines[0],
-              edge.branchType
-            ),
-            []
-          );
-        }
+      for (const edge of outGoingEdges) {
+        // Add objective function
+        this._objectives.set(
+          new BranchObjectiveFunction(
+            new ApproachLevel(),
+            new BranchDistance(),
+            this,
+            edge.target
+          ),
+          []
+        );
       }
     }
 
     for (const objective of this._objectives.keys()) {
-      const childrenObject = this.findChildren(objective);
+      const childrenObject = this.findChildren(graph, objective);
       this._objectives.get(objective).push(...childrenObject);
     }
 
     // FUNCTION objectives
-    for (const node of this._cfg.nodes
-
-      // Find all root function nodes
-      .filter((node) => node.type === NodeType.Root)) {
+    for (const function_ of functions) {
       // Add objective
       const functionObjective = new FunctionObjectiveFunction(
+        new ApproachLevel(),
+        new BranchDistance(),
         this,
-        node.id,
-        node.lines[0]
+        function_.id,
+        1 // deprecated in next version
       );
-      const childrenObject = this.findChildren(functionObjective);
+      const childrenObject = this.findChildren(
+        function_.graph,
+        functionObjective
+      );
       this._objectives.set(functionObjective, childrenObject);
     }
   }
 
   findChildren(
+    graph: ControlFlowGraph<unknown>,
     object: ObjectiveFunction<JavaScriptTestCase>
   ): ObjectiveFunction<JavaScriptTestCase>[] {
-    let childrenObject = [];
+    let childrenObject: ObjectiveFunction<JavaScriptTestCase>[] = [];
 
-    let edges2Visit = this._cfg.edges.filter(
-      (edge) => edge.from === object.getIdentifier()
+    let edges2Visit = graph.edges.filter(
+      (edge) => edge.source === object.getIdentifier()
     );
-    const visitedEdges = [];
+    const visitedEdges: Edge[] = [];
 
     while (edges2Visit.length > 0) {
       const edge = edges2Visit.pop();
@@ -144,11 +111,11 @@ export class JavaScriptSubject extends SearchSubject<JavaScriptTestCase> {
       visitedEdges.push(edge);
 
       const found = this.getObjectives().filter(
-        (child) => child.getIdentifier() === edge.to
+        (child) => child.getIdentifier() === edge.target
       );
       if (found.length === 0) {
-        const additionalEdges = this._cfg.edges.filter(
-          (nextEdge) => nextEdge.from === edge.to
+        const additionalEdges = graph.edges.filter(
+          (nextEdge) => nextEdge.source === edge.target
         );
         edges2Visit = [...edges2Visit, ...additionalEdges];
       } else {
@@ -159,27 +126,19 @@ export class JavaScriptSubject extends SearchSubject<JavaScriptTestCase> {
     return childrenObject;
   }
 
-  getPossibleActions(
-    type?: ActionType,
-    returnType?: IdentifierDescription
-  ): ActionDescription[] {
-    return this.functions.filter((f) => {
-      if (
-        returnType && // TODO this will not work (comparing typeprobability maps)
-        returnType.typeProbabilityMap !== f.returnParameter.typeProbabilityMap
-      ) {
-        return false;
-      }
-
+  getActionableTargets(): SubTarget[] {
+    return this._target.subTargets.filter((t) => {
       return (
-        (type === undefined || f.type === type) &&
-        f.visibility === ActionVisibility.PUBLIC &&
-        f.name !== "" // fallback function has no name
+        t.type === TargetType.FUNCTION ||
+        t.type === TargetType.CLASS ||
+        t.type === TargetType.METHOD ||
+        t.type === TargetType.OBJECT ||
+        t.type === TargetType.OBJECT_FUNCTION
       );
     });
   }
 
-  get type(): SubjectType {
-    return this._type;
+  getActionableTargetsByType(type: TargetType): SubTarget[] {
+    return this.getActionableTargets().filter((t) => t.type === type);
   }
 }

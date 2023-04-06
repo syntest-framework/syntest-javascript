@@ -39,6 +39,7 @@ export class TargetFactory implements CoreTargetFactory<t.Node> {
    * @param AST The AST of the target
    */
   extract(filePath: string, AST: t.Node): Target {
+    // bit sad that we have to do this twice, but we need to know the exports
     const exportVisitor = new ExportVisitor(filePath);
 
     traverse(AST, exportVisitor);

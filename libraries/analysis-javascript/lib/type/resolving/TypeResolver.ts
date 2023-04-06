@@ -18,8 +18,8 @@
 
 import { Element, ElementType, Scope } from "@syntest/ast-visitor-javascript";
 
-import { ComplexObject } from "../discovery/object/ComplexObject";
-import { Relation, RelationType } from "../discovery/Relation";
+import { ComplexType } from "../ComplexType";
+import { Relation, RelationType } from "../discovery/relation/Relation";
 
 import { TypeProbability } from "./TypeProbability";
 
@@ -65,7 +65,7 @@ export abstract class TypeResolver {
     elements: Element[],
     relations: Relation[],
     wrapperElementIsRelation: Map<string, Relation>,
-    objects: ComplexObject[]
+    objects: ComplexType[]
   ): void;
 
   /**
@@ -139,7 +139,7 @@ export abstract class TypeResolver {
     element: Element,
     type: string | TypeProbability,
     value: number,
-    object?: ComplexObject | undefined,
+    object?: ComplexType | undefined,
     propertyTypings?: Map<string, TypeProbability> | undefined
   ) {
     if (!this.processed.has(relation)) {
@@ -171,7 +171,7 @@ export abstract class TypeResolver {
     element: Element,
     type: string | TypeProbability,
     value: number,
-    object?: ComplexObject | undefined,
+    object?: ComplexType | undefined,
     propertyTypings?: Map<string, TypeProbability> | undefined
   ) {
     if (element.type === ElementType.Relation) {

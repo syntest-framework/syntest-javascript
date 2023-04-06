@@ -16,13 +16,29 @@
  * limitations under the License.
  */
 
-import { Export } from "../../../target/export/ExportVisitor";
-import { TypeProbability } from "../../resolving/TypeProbability";
+import { traverse } from "@babel/core";
+import * as t from "@babel/types";
 
-export interface ComplexObject {
-  export?: Export;
-  name: string;
-  properties: Set<string>;
-  functions: Set<string>;
-  propertyType?: Map<string, TypeProbability>;
+import { ExportVisitor } from "./ExportVisitor";
+import { Export } from "./Export";
+
+/**
+ * ExportFactory for Javascript.
+ *
+ * @author Dimitri Stallenberg
+ */
+export class ExportFactory {
+  /**
+   * Generate exports for specified target.
+   *
+   * @param filePath The filePath of the target
+   * @param AST The AST of the target
+   */
+  extract(filePath: string, AST: t.Node): Export[] {
+    const exportVisitor = new ExportVisitor(filePath);
+
+    traverse(AST, exportVisitor);
+
+    return exportVisitor.exports;
+  }
 }

@@ -19,7 +19,6 @@ import { NodePath } from "@babel/core";
 import { Scope as BabelScope, TraverseOptions } from "@babel/traverse";
 import * as t from "@babel/types";
 
-import { Element, ElementType } from "./Element";
 import { Scope } from "./Scope";
 import { getLogger } from "@syntest/logging";
 
@@ -56,8 +55,6 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
   }
 
   protected _getNodeId(path: NodePath<t.Node>): string {
-    // could include the file path as well
-    // ${this._filePath}:${path.node.loc?.start.index}:${path.node.loc?.start.index}
     if (path.node.loc === undefined) {
       throw new Error(
         `Node ${path.type} in file '${this._filePath}' does not have a location`
@@ -68,7 +65,7 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
       .index;
     const endIndex = (<{ index: number }>(<unknown>path.node.loc.end)).index;
 
-    return `${startIndex}-${endIndex}`;
+    return `${this._filePath}:${startIndex}-${endIndex}`;
   }
 
   enter = (path: NodePath<t.Node>) => {
@@ -157,7 +154,7 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
     return "anon";
   }
 
-  _getScope<T extends t.Node>(path: NodePath<T>): Scope {
+  _getScope(path: NodePath<t.Node>): Scope {
     switch (path.node.type) {
       case "ThisExpression": {
         return {
@@ -262,145 +259,6 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
       `Cannot find scope of element of type ${path.node.type}\n${
         this.filePath
       }\n${path.getSource()}`
-    );
-  }
-
-  _getElement(path: NodePath<t.Node>): Element {
-    const uid = this._getUidFromScope(path.scope.getBlockParent());
-
-    const scope: Scope = {
-      filePath: this.filePath,
-      uid: `${uid - this.scopeIdOffset}`,
-    };
-
-    if (path.node.type === "PrivateName") {
-      // TODO should be done differently maybe
-      return {
-        scope: scope,
-        type: ElementType.Identifier,
-        value: "#" + path.node.id.name,
-      };
-    }
-
-    switch (path.node.type) {
-      case "NullLiteral": {
-        return {
-          scope: scope,
-          type: ElementType.NullConstant,
-          // eslint-disable-next-line unicorn/no-null
-          value: null,
-        };
-      }
-      case "StringLiteral":
-      case "TemplateLiteral": {
-        return {
-          scope: scope,
-          type: ElementType.StringConstant,
-          value: path.getSource(),
-        };
-      }
-      case "NumericLiteral": {
-        return {
-          scope: scope,
-          type: ElementType.NumericalConstant,
-          value: `${path.node.value}`,
-        };
-      }
-      case "BooleanLiteral": {
-        return {
-          scope: scope,
-          type: ElementType.BooleanConstant,
-          value: path.node.value ? "true" : "false",
-        };
-      }
-      case "RegExpLiteral": {
-        return {
-          scope: scope,
-          type: ElementType.RegexConstant,
-          value: path.node.pattern,
-        };
-      }
-      case "Super": {
-        return {
-          scope: scope,
-          type: ElementType.Identifier,
-          value: "super",
-        };
-      }
-    }
-
-    switch (path.node.type) {
-      case "Identifier": {
-        if (path.node.name === "undefined") {
-          return {
-            scope: scope,
-            type: ElementType.UndefinedConstant,
-            value: path.node.name,
-          };
-        }
-        return {
-          scope: this._getScope(path),
-          type: ElementType.Identifier,
-          value: path.node.name,
-        };
-      }
-      case "ThisExpression": {
-        // TODO should be done differently maybe
-        return {
-          scope: this._getScope(path),
-          type: ElementType.Identifier,
-          value: "this",
-        };
-      }
-      case "MemberExpression": {
-        return {
-          scope: this._getScope(path),
-          type: ElementType.Relation,
-          value: `%-${this.filePath}-${path.node.start}-${path.node.end}`,
-        };
-      }
-
-      // No default
-    }
-
-    // all relation stuff
-    if (
-      path.node.type === "UnaryExpression" ||
-      path.node.type === "UpdateExpression" ||
-      path.node.type === "CallExpression" ||
-      path.node.type === "BinaryExpression" ||
-      path.node.type === "LogicalExpression" ||
-      path.node.type === "ConditionalExpression" ||
-      path.node.type === "ArrowFunctionExpression" ||
-      path.node.type === "FunctionExpression" ||
-      path.node.type === "ClassExpression" ||
-      path.node.type === "SpreadElement" ||
-      path.node.type === "NewExpression" ||
-      path.node.type === "SequenceExpression" ||
-      path.node.type === "ObjectPattern" ||
-      path.node.type === "RestElement" ||
-      path.node.type === "ArrayExpression" ||
-      path.node.type === "ObjectExpression" ||
-      path.node.type === "AwaitExpression" ||
-      path.node.type === "ObjectProperty" ||
-      path.node.type === "ObjectMethod" ||
-      path.node.type === "AssignmentExpression" ||
-      path.node.type === "AssignmentPattern" ||
-      path.node.type === "ArrayPattern" ||
-      path.node.type === "MetaProperty"
-    ) {
-      // TODO should be default
-      return {
-        scope: scope,
-        type: ElementType.Relation,
-        value: `%-${this.filePath}-${path.node.start}-${path.node.end}`,
-      };
-    }
-    throw new Error(
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      `Cannot get element: "${this._getNameFromNode(path.node)}" -> ${
-        path.node.type
-      }\n${this.filePath}`
     );
   }
 }

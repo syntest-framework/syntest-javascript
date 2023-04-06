@@ -18,13 +18,15 @@
 
 import { traverse } from "@babel/core";
 import * as t from "@babel/types";
-import { Element } from "@syntest/ast-visitor-javascript";
+import { visitors } from "@babel/traverse";
 
-import { Relation } from "./Relation";
-import { VariableVisitor } from "./VariableVisitor";
+import { Relation } from "./relation/Relation";
+import { Element } from "./element/Element";
+import { ElementVisitor } from "./element/ElementVisitor";
+import { RelationVisitor } from "./relation/RelationVisitor";
 
 /**
- * Typing generator for targets.
+ * Todo rename
  *
  * @author Dimitri Stallenberg
  */
@@ -37,16 +39,16 @@ export class VariableGenerator {
    */
   generate(
     filePath: string,
-    targetAST: t.Node
-  ): [Element[], Relation[], Map<string, Relation>] {
-    const visitor = new VariableVisitor(filePath);
+    AST: t.Node
+  ): { elementMap: Map<string, Element>; relationMap: Map<string, Relation> } {
+    const elementVisitor = new ElementVisitor(filePath);
+    const relationVisitor = new RelationVisitor(filePath);
 
-    traverse(targetAST, visitor);
+    traverse(AST, visitors.merge([elementVisitor, relationVisitor]));
 
-    return [
-      visitor.elements,
-      visitor.relations,
-      visitor.wrapperElementIsRelation,
-    ];
+    return {
+      elementMap: elementVisitor.elementMap,
+      relationMap: relationVisitor.relationMap,
+    };
   }
 }

@@ -22,6 +22,7 @@ import * as t from "@babel/types";
 import { Export } from "./Export";
 
 function extractFromIdentifier(
+  filePath: string,
   scope: BabelScope,
   node: t.Identifier,
   init?: t.Node
@@ -29,6 +30,7 @@ function extractFromIdentifier(
   return init && init.type === "Identifier"
     ? {
         scope: scope,
+        filePath,
         name: init.name,
         renamedTo: node.name,
         default: false,
@@ -36,6 +38,7 @@ function extractFromIdentifier(
       }
     : {
         scope: scope,
+        filePath,
         name: node.name,
         renamedTo: node.name,
         default: false,
@@ -44,6 +47,7 @@ function extractFromIdentifier(
 }
 
 function extractFromObjectPattern(
+  filePath: string,
   scope: BabelScope,
   node: t.ObjectPattern,
   init: t.Node
@@ -131,6 +135,7 @@ function extractFromObjectPattern(
       // in the above example we rename b to a (as the export)
       exports.push({
         scope: scope,
+        filePath,
         name: match.value.name,
         renamedTo: property.key.name,
         default: false,
@@ -141,6 +146,7 @@ function extractFromObjectPattern(
       // e.g. export const {a} = {a: 1}
       exports.push({
         scope: scope,
+        filePath,
         name: property.key.name,
         renamedTo: property.key.name,
         default: false,
@@ -152,6 +158,7 @@ function extractFromObjectPattern(
 }
 
 function extractFromArrayPattern(
+  filePath: string,
   scope: BabelScope,
   node: t.ArrayPattern,
   init: t.Node
@@ -185,6 +192,7 @@ function extractFromArrayPattern(
       // in the above example we rename b to a (as the export)
       exports.push({
         scope: scope,
+        filePath,
         name: initElement.name,
         renamedTo: element.name,
         default: false,
@@ -195,6 +203,7 @@ function extractFromArrayPattern(
       // e.g. export const [a] = [1]
       exports.push({
         scope: scope,
+        filePath,
         name: element.name,
         renamedTo: element.name,
         default: false,
@@ -207,6 +216,7 @@ function extractFromArrayPattern(
 }
 
 export function extractExportsFromExportNamedDeclaration(
+  filePath: string,
   path: NodePath<t.ExportNamedDeclaration>
 ): Export[] {
   const exports: Export[] = [];
@@ -218,6 +228,7 @@ export function extractExportsFromExportNamedDeclaration(
     ) {
       exports.push({
         scope: path.scope,
+        filePath,
         name: path.node.declaration.id.name,
         renamedTo: path.node.declaration.id.name,
         default: false,
@@ -229,6 +240,7 @@ export function extractExportsFromExportNamedDeclaration(
           case "Identifier": {
             exports.push(
               extractFromIdentifier(
+                filePath,
                 path.scope,
                 declaration.id,
                 declaration.init
@@ -240,6 +252,7 @@ export function extractExportsFromExportNamedDeclaration(
           case "ObjectPattern": {
             exports.push(
               ...extractFromObjectPattern(
+                filePath,
                 path.scope,
                 declaration.id,
                 declaration.init
@@ -251,6 +264,7 @@ export function extractExportsFromExportNamedDeclaration(
           case "ArrayPattern": {
             exports.push(
               ...extractFromArrayPattern(
+                filePath,
                 path.scope,
                 declaration.id,
                 declaration.init
@@ -276,6 +290,7 @@ export function extractExportsFromExportNamedDeclaration(
         // e.g. export {a}
         exports.push({
           scope: path.scope,
+          filePath,
           name: specifier.local.name,
           renamedTo:
             specifier.exported.type === "Identifier"

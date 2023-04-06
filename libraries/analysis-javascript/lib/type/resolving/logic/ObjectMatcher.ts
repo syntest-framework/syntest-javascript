@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-import { Element, ElementType } from "@syntest/ast-visitor-javascript";
+import { Element, ElementType } from "../../discovery/element/Element";
 
-import { ComplexObject } from "../../discovery/object/ComplexObject";
-import { Relation, RelationType } from "../../discovery/Relation";
+import { ComplexType } from "../../ComplexType";
+import { Relation, RelationType } from "../../discovery/relation/Relation";
 import { TypeEnum } from "../TypeEnum";
 import { TypeProbability } from "../TypeProbability";
 
@@ -28,7 +28,7 @@ export function createAnonObject(
   wrapperElementIsRelation: Map<string, Relation>,
   elementTyping: Map<Element, TypeProbability>
 ) {
-  const anonObject: ComplexObject = {
+  const anonObject: ComplexType = {
     name: "anon",
     properties: new Set<string>(),
     functions: new Set<string>(),

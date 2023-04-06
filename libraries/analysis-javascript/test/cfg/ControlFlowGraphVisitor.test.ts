@@ -1038,4 +1038,19 @@ describe("ControlFlowGraphVisitor test", () => {
     expect(cfg.graph.getIncomingEdges(exit)).to.have.lengthOf(3);
     expect(cfg.graph.getOutgoingEdges(exit)).to.have.lengthOf(0);
   });
+
+  // functions
+  it("function simple block", () => {
+    const source = `
+      function a () {
+        const x = 1;
+        const y = 1;
+        const z = 1;
+      }
+      `;
+
+    const cfg = cfgHelper(source);
+
+    console.log(cfg.functions[0]);
+  });
 });

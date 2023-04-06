@@ -184,6 +184,8 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     >
   ) => void = (path) => {
     if (
+      path.isFunction() ||
+      path.isClass() ||
       path.isConditional() ||
       path.isLoop() ||
       path.isBlock() ||
@@ -227,16 +229,18 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     }
   }
 
-  public override Program: (path: NodePath<t.Program>) => void = (path) => {
+  public Block: (path: NodePath<t.Block>) => void = (path) => {
     ControlFlowGraphVisitor.LOGGER.debug(
-      `Entering program\tline: ${path.node.loc.start.line}\tcolumn: ${path.node.loc.start.column}`
+      `Entering block\tline: ${path.node.loc.start.line}\tcolumn: ${path.node.loc.start.column}`
     );
     // we need to repeat this from the baseclass because we cannot use super.Program
-    if (this._scopeIdOffset === undefined) {
+    if (path.isProgram() && this._scopeIdOffset === undefined) {
       this._scopeIdOffset = this._getUidFromScope(path.scope);
       this._thisScopeStack.push(this._getUidFromScope(path.scope));
       this._thisScopeStackNames.push("global");
     }
+
+    const first = !this._nodes.has("ENTRY");
 
     const entry = new Node<t.Node>("ENTRY", NodeType.ENTRY, "ENTRY", [], {});
     const successExit = new Node<t.Node>(
@@ -254,58 +258,76 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
       {}
     );
 
-    this._nodes.set(entry.id, entry);
-    this._nodes.set(successExit.id, successExit);
-    this._nodes.set(errorExit.id, errorExit);
+    if (first) {
+      this._nodes.set(entry.id, entry);
+      this._nodes.set(successExit.id, successExit);
+      this._nodes.set(errorExit.id, errorExit);
 
-    this._currentParents = [entry.id];
+      this._currentParents = [entry.id];
+    }
 
     for (const statement of path.get("body")) {
       statement.visit();
     }
 
-    // connect last nodes to success exit
-    this._connectToParents(successExit);
+    if (first) {
+      // connect last nodes to success exit
+      this._connectToParents(successExit);
 
-    // connect all return nodes to success exit
-    for (const returnNode of this._returnNodes) {
-      this._edges.push(
-        this._createEdge(
-          this._nodes.get(returnNode),
-          successExit,
-          EdgeType.NORMAL
-        )
-      );
-    }
+      // connect all return nodes to success exit
+      for (const returnNode of this._returnNodes) {
+        this._edges.push(
+          this._createEdge(
+            this._nodes.get(returnNode),
+            successExit,
+            EdgeType.NORMAL
+          )
+        );
+      }
 
-    // connect all throw nodes to error exit
-    for (const throwNode of this._throwNodes) {
-      this._edges.push(
-        this._createEdge(
-          this._nodes.get(throwNode),
-          errorExit,
-          EdgeType.EXCEPTION
-        )
-      );
-    }
+      // connect all throw nodes to error exit
+      for (const throwNode of this._throwNodes) {
+        this._edges.push(
+          this._createEdge(
+            this._nodes.get(throwNode),
+            errorExit,
+            EdgeType.EXCEPTION
+          )
+        );
+      }
 
-    if (this._breakNodesStack.length > 0) {
-      ControlFlowGraphVisitor.LOGGER.warn(
-        `Found ${this._breakNodesStack.length} break node stacks that are not connected to a loop`
-      );
-    }
+      if (this._breakNodesStack.length > 0) {
+        ControlFlowGraphVisitor.LOGGER.warn(
+          `Found ${this._breakNodesStack.length} break node stacks that are not connected to a loop`
+        );
+      }
 
-    if (this._continueNodesStack.length > 0) {
-      ControlFlowGraphVisitor.LOGGER.warn(
-        `Found ${this._continueNodesStack.length} continue node stacks that are not connected to a loop`
-      );
+      if (this._continueNodesStack.length > 0) {
+        ControlFlowGraphVisitor.LOGGER.warn(
+          `Found ${this._continueNodesStack.length} continue node stacks that are not connected to a loop`
+        );
+      }
     }
 
     path.skip();
   };
 
-  // TODO function stuff?
+  // functions
+  public Function: (path: NodePath<t.Function>) => void = (path) => {
+    const subVisitor = new ControlFlowGraphVisitor(this.filePath);
+    path.traverse(subVisitor);
 
+    this._functions.push(
+      {
+        id: this._getNodeId(path),
+        name: "id" in path.node ? path.node.id?.name : "anonymous",
+        graph: subVisitor.cfg.graph,
+      },
+      ...subVisitor.cfg.functions
+    );
+  };
+
+  // actual control flow graph related nodes
   public Statement: (path: NodePath<t.Statement>) => void = (path) => {
     ControlFlowGraphVisitor.LOGGER.debug(
       `Entering statement: ${path.type}\tline: ${path.node.loc.start.line}\tcolumn: ${path.node.loc.start.column}`

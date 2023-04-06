@@ -17,10 +17,8 @@
  */
 
 import {
-  ActionDescription,
-  ActionType,
   IdentifierDescription,
-  JavaScriptRootContext,
+  RootContext,
   TypeEnum,
   TypeProbability,
 } from "@syntest/analysis-javascript";
@@ -48,7 +46,7 @@ import { Statement } from "../statements/Statement";
 import { JavaScriptTestCaseSampler } from "./JavaScriptTestCaseSampler";
 
 export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
-  private rootContext: JavaScriptRootContext;
+  private rootContext: RootContext;
 
   constructor(
     subject: JavaScriptSubject,
@@ -61,7 +59,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     resampleGeneProbability: number,
     deltaMutationProbability: number,
     exploreIllegalValues: boolean,
-    rootContext: JavaScriptRootContext
+    rootContext: RootContext
   ) {
     super(
       subject,

@@ -16,9 +16,10 @@
  * limitations under the License.
  */
 
-import { Scope } from "./Scope";
+import { Scope } from "@syntest/ast-visitor-javascript";
 
 export interface Element {
+  id: string;
   scope: Scope;
   type: ElementType;
   value: string;
@@ -30,14 +31,18 @@ export function isInstanceOfElement(object: any): object is Element {
 }
 
 export enum ElementType {
-  StringConstant = "stringConstant",
-  NumericalConstant = "numericalConstant",
-  BooleanConstant = "booleanConstant",
-  NullConstant = "nullConstant",
-  UndefinedConstant = "undefinedConstant",
-  RegexConstant = "regexConstant",
+  StringLiteral = "stringLiteral",
+  NumericalLiteral = "numericalLiteral",
+  NullLiteral = "nullLiteral",
+  BooleanLiteral = "booleanLiteral",
+  RegExpLiteral = "regExpLiteral",
+  TemplateLiteral = "templateLiteral",
+  BigIntLiteral = "bigIntLiteral",
+  DecimalLiteral = "decimalLiteral",
+
+  Undefined = "undefined",
+
   Identifier = "identifier",
-  Relation = "relation",
 }
 
 export function getElementId(element: Element): string {

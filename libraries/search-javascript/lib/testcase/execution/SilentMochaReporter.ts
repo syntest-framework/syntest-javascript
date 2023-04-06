@@ -29,7 +29,8 @@ const {
 
 export class SilentMochaReporter {
   private _indents: number;
-  private failures;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private failures: any[];
 
   constructor(runner: Mocha.Runner) {
     this._indents = 0;
@@ -64,8 +65,11 @@ export class SilentMochaReporter {
         // }
         // more than one error per test
         if (test.err && error instanceof Error) {
-          // eslint-disable-next-line unicorn/prefer-spread
-          test.err.multiple = (test.err.multiple || []).concat(error);
+          (<{ multiple: unknown[] }>(<unknown>test.err)).multiple = (
+            (<{ multiple: unknown[] }>(<unknown>test.err)).multiple || []
+          )
+            // eslint-disable-next-line unicorn/prefer-spread
+            .concat(error);
         } else {
           test.err = error;
         }

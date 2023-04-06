@@ -43,14 +43,18 @@ export class ExportVisitor extends AbstractSyntaxTreeVisitor {
       return;
     }
 
-    this._exports.push(...extractExportsFromExportNamedDeclaration(path));
+    this._exports.push(
+      ...extractExportsFromExportNamedDeclaration(this.filePath, path)
+    );
   };
 
   // e.g. export default foo
   public ExportDefaultDeclaration: (
     path: NodePath<t.ExportDefaultDeclaration>
   ) => void = (path) => {
-    this._exports.push(extractExportsFromExportDefaultDeclaration(path));
+    this._exports.push(
+      extractExportsFromExportDefaultDeclaration(this.filePath, path)
+    );
   };
 
   // e.g. module.exports = ...
@@ -61,7 +65,10 @@ export class ExportVisitor extends AbstractSyntaxTreeVisitor {
         return;
       }
 
-      const exports = extractExportsFromExpressionStatement(path);
+      const exports = extractExportsFromExpressionStatement(
+        this.filePath,
+        path
+      );
       if (exports) {
         this._exports.push(...exports);
       }

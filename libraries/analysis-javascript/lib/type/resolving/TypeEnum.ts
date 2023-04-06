@@ -37,22 +37,22 @@ export function elementTypeToTypingType(
   elementType: ElementType
 ): TypeEnum | void {
   switch (elementType) {
-    case ElementType.BooleanConstant: {
+    case ElementType.BooleanLiteral: {
       return TypeEnum.BOOLEAN;
     }
-    case ElementType.StringConstant: {
+    case ElementType.StringLiteral: {
       return TypeEnum.STRING;
     }
-    case ElementType.NumericalConstant: {
+    case ElementType.NumericalLiteral: {
       return TypeEnum.NUMERIC;
     }
-    case ElementType.NullConstant: {
+    case ElementType.NullLiteral: {
       return TypeEnum.NULL;
     }
-    case ElementType.UndefinedConstant: {
+    case ElementType.Undefined: {
       return TypeEnum.UNDEFINED;
     }
-    case ElementType.RegexConstant: {
+    case ElementType.RegExpLiteral: {
       return TypeEnum.REGEX;
     }
   }

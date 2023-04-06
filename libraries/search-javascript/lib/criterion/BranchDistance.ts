@@ -17,8 +17,9 @@
  */
 
 import * as t from "@babel/types";
+import { BranchDistance as CoreBranchDistance } from "@syntest/core";
 
-export class BranchDistance {
+export class BranchDistance extends CoreBranchDistance {
   private K = 1; // punishment factor
 
   public static branchDistance(

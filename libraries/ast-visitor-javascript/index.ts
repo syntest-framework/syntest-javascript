@@ -17,5 +17,4 @@
  */
 
 export * from "./lib/AbstractSyntaxTreeVisitor";
-export * from "./lib/Element";
 export * from "./lib/Scope";

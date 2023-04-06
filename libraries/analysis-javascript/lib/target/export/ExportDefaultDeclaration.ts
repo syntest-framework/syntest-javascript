@@ -22,6 +22,7 @@ import * as t from "@babel/types";
 import { Export } from "./Export";
 
 export function extractExportsFromExportDefaultDeclaration(
+  filePath: string,
   path: NodePath<t.ExportDefaultDeclaration>
 ): Export {
   let name: string;
@@ -66,6 +67,7 @@ export function extractExportsFromExportDefaultDeclaration(
 
   return {
     scope: path.scope,
+    filePath,
     name: name,
     renamedTo: name,
     default: true,

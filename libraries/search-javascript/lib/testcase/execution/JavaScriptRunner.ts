@@ -138,9 +138,13 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
 
     // Retrieve execution traces
     const instrumentationData = <InstrumentationData>(
-      cloneDeep(<InstrumentationData>global.__coverage__)
+      cloneDeep(
+        (<{ __coverage__: InstrumentationData }>(<unknown>global)).__coverage__
+      )
     );
-    const metaData = <MetaData>cloneDeep(<MetaData>global.__meta__);
+    const metaData = <MetaData>(
+      cloneDeep((<{ __meta__: MetaData }>(<unknown>global)).__meta__)
+    );
 
     const traces: Datapoint[] = [];
     for (const key of Object.keys(instrumentationData)) {
@@ -254,21 +258,35 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
   }
 
   resetInstrumentationData() {
-    for (const key of Object.keys(<InstrumentationData>global.__coverage__)) {
+    for (const key of Object.keys(
+      (<{ __coverage__: InstrumentationData }>(<unknown>global)).__coverage__
+    )) {
       for (const statementKey of Object.keys(
-        (<InstrumentationData>global.__coverage__)[key].s
+        (<{ __coverage__: InstrumentationData }>(<unknown>global)).__coverage__[
+          key
+        ].s
       )) {
-        (<InstrumentationData>global.__coverage__)[key].s[statementKey] = 0;
+        (<{ __coverage__: InstrumentationData }>(<unknown>global)).__coverage__[
+          key
+        ].s[statementKey] = 0;
       }
       for (const functionKey of Object.keys(
-        (<InstrumentationData>global.__coverage__)[key].f
+        (<{ __coverage__: InstrumentationData }>(<unknown>global)).__coverage__[
+          key
+        ].f
       )) {
-        (<InstrumentationData>global.__coverage__)[key].f[functionKey] = 0;
+        (<{ __coverage__: InstrumentationData }>(<unknown>global)).__coverage__[
+          key
+        ].f[functionKey] = 0;
       }
       for (const branchKey of Object.keys(
-        (<InstrumentationData>global.__coverage__)[key].b
+        (<{ __coverage__: InstrumentationData }>(<unknown>global)).__coverage__[
+          key
+        ].b
       )) {
-        (<InstrumentationData>global.__coverage__)[key].b[branchKey] = [0, 0];
+        (<{ __coverage__: InstrumentationData }>(<unknown>global)).__coverage__[
+          key
+        ].b[branchKey] = [0, 0];
       }
     }
   }

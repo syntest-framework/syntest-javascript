@@ -29,9 +29,9 @@ export function readFile(absolutePath: string): string {
 export function getAllFiles(
   directory: string,
   extn: string,
-  files: string[] | undefined,
-  result: string[] | undefined,
-  regex: RegExp | undefined
+  files?: string[] | undefined,
+  result?: string[] | undefined,
+  regex?: RegExp | undefined
 ) {
   files = files || readdirSync(directory);
   result = result || [];

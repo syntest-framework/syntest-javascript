@@ -19,6 +19,7 @@ import { Scope as BabelScope } from "@babel/traverse";
 
 export interface Export {
   scope: BabelScope;
+  filePath: string;
   name: string;
   renamedTo: string;
   default: boolean;
