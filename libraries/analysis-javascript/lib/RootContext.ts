@@ -20,10 +20,7 @@ import { existsSync, lstatSync } from "node:fs";
 import * as path from "node:path";
 
 import * as t from "@babel/types";
-import {
-  RootContext as CoreRootContext,
-  SourceFactory,
-} from "@syntest/analysis";
+import { RootContext as CoreRootContext } from "@syntest/analysis";
 
 import { AbstractSyntaxTreeFactory } from "./ast/AbstractSyntaxTreeFactory";
 import { ControlFlowGraphFactory } from "./cfg/ControlFlowGraphFactory";

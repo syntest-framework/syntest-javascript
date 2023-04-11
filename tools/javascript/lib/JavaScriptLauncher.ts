@@ -19,11 +19,6 @@
 import { existsSync } from "node:fs";
 import * as path from "node:path";
 
-import {
-  collectCoverageData,
-  collectInitialVariables,
-  collectStatistics,
-} from "./collection";
 import { TestCommandOptions } from "./commands/test";
 import {
   Export,
@@ -42,7 +37,6 @@ import {
   ArgumentsObject,
   Launcher,
   createDirectoryStructure,
-  CONFIG,
   clearDirectory,
   ObjectiveManagerPlugin,
   CrossoverPlugin,
@@ -81,6 +75,7 @@ import { Instrumenter } from "@syntest/instrumentation-javascript";
 
 export type JavaScriptArguments = ArgumentsObject & TestCommandOptions;
 export class JavaScriptLauncher extends Launcher {
+  private arguments_: JavaScriptArguments;
   private moduleManager: ModuleManager;
   private userInterface: UserInterface;
 
@@ -94,8 +89,13 @@ export class JavaScriptLauncher extends Launcher {
 
   private coveredInPath = new Map<string, Archive<JavaScriptTestCase>>();
 
-  constructor(moduleManager: ModuleManager, userInterface: UserInterface) {
+  constructor(
+    arguments_: JavaScriptArguments,
+    moduleManager: ModuleManager,
+    userInterface: UserInterface
+  ) {
     super();
+    this.arguments_ = arguments_;
     this.moduleManager = moduleManager;
     this.userInterface = userInterface;
   }
@@ -112,7 +112,7 @@ export class JavaScriptLauncher extends Launcher {
     const targetFactory = new TargetFactory();
 
     const typeResolver: TypeResolver =
-      (<JavaScriptArguments>CONFIG).typeInferenceMode === "none"
+      this.arguments_.typeInferenceMode === "none"
         ? new TypeResolverUnknown()
         : new TypeResolverInference();
 
@@ -120,7 +120,7 @@ export class JavaScriptLauncher extends Launcher {
     const dependencyFactory = new DependencyFactory();
     const exportFactory = new ExportFactory();
     this.rootContext = new RootContext(
-      (<JavaScriptArguments>CONFIG).targetRootDirectory,
+      this.arguments_.targetRootDirectory,
       abstractSyntaxTreeFactory,
       controlFlowGraphFactory,
       targetFactory,
@@ -138,14 +138,17 @@ export class JavaScriptLauncher extends Launcher {
     // this.userInterface.report("property-set", [
     //   "Target Settings",
     //   <string>(
-    //     (<unknown>[["Target Root Directory", CONFIG.targetRootDirectory]])
+    //     (<unknown>[["Target Root Directory", this.arguments_.targetRootDirectory]])
     //   ),
     // ]);
   }
 
   async preprocess(): Promise<void> {
     const targetSelector = new TargetSelector(this.rootContext);
-    this.targets = targetSelector.loadTargets(CONFIG.include, CONFIG.exclude);
+    this.targets = targetSelector.loadTargets(
+      this.arguments_.include,
+      this.arguments_.exclude
+    );
 
     if (this.targets.length === 0) {
       // Shut server down
@@ -163,37 +166,37 @@ export class JavaScriptLauncher extends Launcher {
 
     // this.userInterface.report("targets", names);
 
-    // this.userInterface.report("header", ["CONFIGURATION"]);
+    // this.userInterface.report("header", ["this.arguments_URATION"]);
 
     // this.userInterface.report("single-property", ["Seed", getSeed()]);
     // this.userInterface.report("property-set", ["Budgets", <string>(<unknown>[
-    //     ["Iteration Budget", `${CONFIG.iterationBudget} iterations`],
-    //     ["Evaluation Budget", `${CONFIG.evaluationBudget} evaluations`],
-    //     ["Search Time Budget", `${CONFIG.searchTimeBudget} seconds`],
-    //     ["Total Time Budget", `${CONFIG.totalTimeBudget} seconds`],
+    //     ["Iteration Budget", `${this.arguments_.iterationBudget} iterations`],
+    //     ["Evaluation Budget", `${this.arguments_.evaluationBudget} evaluations`],
+    //     ["Search Time Budget", `${this.arguments_.searchTimeBudget} seconds`],
+    //     ["Total Time Budget", `${this.arguments_.totalTimeBudget} seconds`],
     //   ])]);
     // this.userInterface.report("property-set", ["Algorithm", <string>(<unknown>[
-    //     ["Algorithm", CONFIG.algorithm],
-    //     ["Population Size", CONFIG.populationSize],
+    //     ["Algorithm", this.arguments_.algorithm],
+    //     ["Population Size", this.arguments_.populationSize],
     //   ])]);
     // this.userInterface.report("property-set", [
     //   "Variation Probabilities",
     //   <string>(<unknown>[
-    //     ["Resampling", CONFIG.resampleGeneProbability],
-    //     ["Delta mutation", CONFIG.deltaMutationProbability],
-    //     ["Re-sampling from chromosome", CONFIG.sampleExistingValueProbability],
-    //     ["Crossover", CONFIG.crossoverProbability],
+    //     ["Resampling", this.arguments_.resampleGeneProbability],
+    //     ["Delta mutation", this.arguments_.deltaMutationProbability],
+    //     ["Re-sampling from chromosome", this.arguments_.sampleExistingValueProbability],
+    //     ["Crossover", this.arguments_.crossoverProbability],
     //   ]),
     // ]);
 
     // this.userInterface.report("property-set", ["Sampling", <string>(<unknown>[
-    //     ["Max Depth", CONFIG.maxDepth],
-    //     ["Explore Illegal Values", CONFIG.exploreIllegalValues],
+    //     ["Max Depth", this.arguments_.maxDepth],
+    //     ["Explore Illegal Values", this.arguments_.exploreIllegalValues],
     //     [
     //       "Sample FUNCTION Result as Argument",
-    //       CONFIG.sampleFunctionOutputAsArgument,
+    //       this.arguments_.sampleFunctionOutputAsArgument,
     //     ],
-    //     ["Crossover", CONFIG.crossoverProbability],
+    //     ["Crossover", this.arguments_.crossoverProbability],
     //   ])]);
 
     // this.userInterface.report("property-set", ["Type Inference", <string>(<
@@ -201,26 +204,26 @@ export class JavaScriptLauncher extends Launcher {
     //   >[
     //     [
     //       "Incorporate Execution Information",
-    //       (<JavaScriptArguments>CONFIG).incorporateExecutionInformation,
+    //       this.arguments_.incorporateExecutionInformation,
     //     ],
     //     [
     //       "Type Inference Mode",
-    //       (<JavaScriptArguments>CONFIG).typeInferenceMode,
+    //       this.arguments_.typeInferenceMode,
     //     ],
     //     [
     //       "Random Type Probability",
-    //       (<JavaScriptArguments>CONFIG).randomTypeProbability,
+    //       this.arguments_.randomTypeProbability,
     //     ],
     //   ])]);
 
     const instrumented = new Instrumenter();
     instrumented.instrumentAll(
       this.rootContext,
-      CONFIG.tempInstrumentedDirectory
+      this.arguments_.tempInstrumentedDirectory
     );
 
     // TODO types
-    // await this.rootContext.scanTargetRootDirectory(CONFIG.targetRootDirectory);
+    // await this.rootContext.scanTargetRootDirectory(this.arguments_.targetRootDirectory);
   }
 
   async process(): Promise<void> {
@@ -229,7 +232,7 @@ export class JavaScriptLauncher extends Launcher {
     this.dependencyMap = new Map();
 
     for (const target of this.targets) {
-      const archive = await this.testTarget(this.rootContext, target.path);
+      const archive = await this.testTarget(this.rootContext, target);
 
       const dependencies = this.rootContext.getDependencies(target.path);
       this.archive.merge(archive);
@@ -241,23 +244,23 @@ export class JavaScriptLauncher extends Launcher {
 
   async postprocess(): Promise<void> {
     const testDirectory = path.join(
-      CONFIG.syntestDirectory,
-      CONFIG.testDirectory
+      this.arguments_.syntestDirectory,
+      this.arguments_.testDirectory
     );
     const temporaryTestDirectory = path.join(
-      CONFIG.tempSyntestDirectory,
-      CONFIG.tempTestDirectory
+      this.arguments_.tempSyntestDirectory,
+      this.arguments_.tempTestDirectory
     );
     const temporaryLogDirectory = path.join(
-      CONFIG.tempSyntestDirectory,
-      CONFIG.tempLogDirectory
+      this.arguments_.tempSyntestDirectory,
+      this.arguments_.tempLogDirectory
     );
 
     clearDirectory(testDirectory);
 
     const decoder = new JavaScriptDecoder(
       this.exports,
-      CONFIG.targetRootDirectory,
+      this.arguments_.targetRootDirectory,
       temporaryLogDirectory
     );
     const runner = new JavaScriptRunner(decoder, temporaryTestDirectory);
@@ -275,14 +278,14 @@ export class JavaScriptLauncher extends Launcher {
     let paths = suiteBuilder.createSuite(
       reducedArchive,
       "../instrumented",
-      CONFIG.tempTestDirectory,
+      this.arguments_.tempTestDirectory,
       true,
       false
     );
     await suiteBuilder.runSuite(paths);
 
     // reset states
-    suiteBuilder.clearDirectory(CONFIG.tempTestDirectory);
+    suiteBuilder.clearDirectory(this.arguments_.tempTestDirectory);
 
     // run with assertions and report results
     for (const key of reducedArchive.keys()) {
@@ -292,7 +295,7 @@ export class JavaScriptLauncher extends Launcher {
     paths = suiteBuilder.createSuite(
       reducedArchive,
       "../instrumented",
-      CONFIG.tempTestDirectory,
+      this.arguments_.tempTestDirectory,
       false,
       true
     );
@@ -375,8 +378,11 @@ export class JavaScriptLauncher extends Launcher {
     );
 
     const originalSourceDirectory = path
-      .join("../../", path.relative(process.cwd(), CONFIG.targetRootDirectory))
-      .replace(path.basename(CONFIG.targetRootDirectory), "");
+      .join(
+        "../../",
+        path.relative(process.cwd(), this.arguments_.targetRootDirectory)
+      )
+      .replace(path.basename(this.arguments_.targetRootDirectory), "");
 
     this.userInterface.printTable("Coverage", table);
 
@@ -384,7 +390,7 @@ export class JavaScriptLauncher extends Launcher {
     suiteBuilder.createSuite(
       reducedArchive,
       originalSourceDirectory,
-      CONFIG.testDirectory,
+      this.arguments_.testDirectory,
       false,
       true
     );
@@ -394,42 +400,6 @@ export class JavaScriptLauncher extends Launcher {
     rootContext: RootContext,
     target: Target
   ): Promise<Archive<JavaScriptTestCase>> {
-    const cfg = rootContext.getControlFlowProgram(target.path);
-
-    const functionMap = rootContext.getFunctionMapSpecific(
-      target.path,
-      targetMeta.name
-    );
-
-    // couple types to parameters
-    // TODO do this type matching already in the target visitor
-    for (const function_ of functionMap.values()) {
-      for (const parameter of function_.parameters) {
-        if (function_.type === ActionType.FUNCTION) {
-          parameter.typeProbabilityMap = rootContext.typeResolver.getTyping(
-            function_.scope,
-            parameter.name
-          );
-        } else if (
-          function_.type === ActionType.METHOD ||
-          function_.type === ActionType.GET ||
-          function_.type === ActionType.SET ||
-          function_.type === ActionType.CONSTRUCTOR
-        ) {
-          parameter.typeProbabilityMap = rootContext.typeResolver.getTyping(
-            function_.scope,
-            parameter.name
-          );
-        } else {
-          throw new Error(
-            `Unimplemented action identifierDescription ${function_.type}`
-          );
-        }
-      }
-
-      // TODO return types
-    }
-
     const currentSubject = new JavaScriptSubject(target, this.rootContext);
 
     if (currentSubject.getActionableTargets().length === 0) {
@@ -443,17 +413,17 @@ export class JavaScriptLauncher extends Launcher {
     const exports = rootContext.getExports(target.path);
 
     const temporaryTestDirectory = path.join(
-      CONFIG.tempSyntestDirectory,
-      CONFIG.tempTestDirectory
+      this.arguments_.tempSyntestDirectory,
+      this.arguments_.tempTestDirectory
     );
     const temporaryLogDirectory = path.join(
-      CONFIG.tempSyntestDirectory,
-      CONFIG.tempLogDirectory
+      this.arguments_.tempSyntestDirectory,
+      this.arguments_.tempLogDirectory
     );
 
     const decoder = new JavaScriptDecoder(
       exports,
-      CONFIG.targetRootDirectory,
+      this.arguments_.targetRootDirectory,
       temporaryLogDirectory
     );
     const runner = new JavaScriptRunner(decoder, temporaryTestDirectory);
@@ -468,20 +438,20 @@ export class JavaScriptLauncher extends Launcher {
 
     const sampler = new JavaScriptRandomSampler(
       currentSubject,
-      (<TestCommandOptions>(<unknown>CONFIG)).typeInferenceMode,
-      (<TestCommandOptions>(<unknown>CONFIG)).randomTypeProbability,
-      (<TestCommandOptions>(<unknown>CONFIG)).incorporateExecutionInformation,
-      CONFIG.maxActionStatements,
-      CONFIG.stringAlphabet,
-      CONFIG.stringMaxLength,
-      CONFIG.resampleGeneProbability,
-      CONFIG.deltaMutationProbability,
-      CONFIG.exploreIllegalValues,
+      this.arguments_.typeInferenceMode,
+      this.arguments_.randomTypeProbability,
+      this.arguments_.incorporateExecutionInformation,
+      this.arguments_.maxActionStatements,
+      this.arguments_.stringAlphabet,
+      this.arguments_.stringMaxLength,
+      this.arguments_.resampleGeneProbability,
+      this.arguments_.deltaMutationProbability,
+      this.arguments_.exploreIllegalValues,
       rootContext
     );
 
     const secondaryObjectives = new Set(
-      CONFIG.secondaryObjectives.map((secondaryObjective) => {
+      this.arguments_.secondaryObjectives.map((secondaryObjective) => {
         return (<SecondaryObjectivePlugin<JavaScriptTestCase>>(
           this.moduleManager.getPlugin(
             PluginType.SecondaryObjective,
@@ -494,7 +464,7 @@ export class JavaScriptLauncher extends Launcher {
     const objectiveManager = (<ObjectiveManagerPlugin<JavaScriptTestCase>>(
       this.moduleManager.getPlugin(
         PluginType.ObjectiveManager,
-        CONFIG.objectiveManager
+        this.arguments_.objectiveManager
       )
     )).createObjectiveManager({
       runner: runner,
@@ -502,14 +472,21 @@ export class JavaScriptLauncher extends Launcher {
     });
 
     const crossover = (<CrossoverPlugin<JavaScriptTestCase>>(
-      this.moduleManager.getPlugin(PluginType.Crossover, CONFIG.crossover)
+      this.moduleManager.getPlugin(
+        PluginType.Crossover,
+        this.arguments_.crossover
+      )
     )).createCrossoverOperator({
-      crossoverEncodingProbability: CONFIG.crossoverProbability,
-      crossoverStatementProbability: CONFIG.multiPointCrossoverProbability,
+      crossoverEncodingProbability: this.arguments_.crossoverProbability,
+      crossoverStatementProbability:
+        this.arguments_.multiPointCrossoverProbability,
     });
 
     const procreation = (<ProcreationPlugin<JavaScriptTestCase>>(
-      this.moduleManager.getPlugin(PluginType.Crossover, CONFIG.crossover)
+      this.moduleManager.getPlugin(
+        PluginType.Crossover,
+        this.arguments_.crossover
+      )
     )).createProcreationOperator({
       crossover: crossover,
       mutateFunction: (
@@ -524,22 +501,22 @@ export class JavaScriptLauncher extends Launcher {
     const algorithm = (<SearchAlgorithmPlugin<JavaScriptTestCase>>(
       this.moduleManager.getPlugin(
         PluginType.SearchAlgorithm,
-        CONFIG.searchAlgorithm
+        this.arguments_.searchAlgorithm
       )
     )).createSearchAlgorithm({
       objectiveManager: objectiveManager,
       encodingSampler: sampler,
       procreation: procreation,
-      populationSize: CONFIG.populationSize,
+      populationSize: this.arguments_.populationSize,
     });
 
-    await suiteBuilder.clearDirectory(CONFIG.tempTestDirectory);
+    suiteBuilder.clearDirectory(this.arguments_.tempTestDirectory);
 
     // allocate budget manager
-    const iterationBudget = new IterationBudget(CONFIG.iterations);
-    const evaluationBudget = new EvaluationBudget(CONFIG.evaluations);
-    const searchBudget = new SearchTimeBudget(CONFIG.searchTime);
-    const totalTimeBudget = new TotalTimeBudget(CONFIG.totalTime);
+    const iterationBudget = new IterationBudget(this.arguments_.iterations);
+    const evaluationBudget = new EvaluationBudget(this.arguments_.evaluations);
+    const searchBudget = new SearchTimeBudget(this.arguments_.searchTime);
+    const totalTimeBudget = new TotalTimeBudget(this.arguments_.totalTime);
     const budgetManager = new BudgetManager();
     budgetManager.addBudget(BudgetType.ITERATION, iterationBudget);
     budgetManager.addBudget(BudgetType.EVALUATION, evaluationBudget);
@@ -549,7 +526,7 @@ export class JavaScriptLauncher extends Launcher {
     // Termination
     const terminationManager = new TerminationManager();
 
-    for (const trigger of CONFIG.terminationTriggers) {
+    for (const trigger of this.arguments_.terminationTriggers) {
       terminationManager.addTrigger(
         (<TerminationTriggerPlugin>(
           this.moduleManager.getPlugin(PluginType.TerminationTrigger, trigger)
@@ -558,62 +535,27 @@ export class JavaScriptLauncher extends Launcher {
           encodingSampler: sampler,
           runner: runner,
           crossover: crossover,
-          populationSize: CONFIG.populationSize,
+          populationSize: this.arguments_.populationSize,
         })
       );
     }
 
-    // Collector
-    const collector = new StatisticsCollector(totalTimeBudget);
-    collectInitialVariables(collector, currentSubject, targetPath);
-
-    // Statistics listener
-    const statisticsSearchListener = new StatisticsSearchListener(collector);
-    algorithm.addListener(statisticsSearchListener);
-
     // This searches for a covering population
-    const archive = await algorithm.search(
+    const archive = algorithm.search(
       currentSubject,
       budgetManager,
       terminationManager
     );
 
-    if (this.coveredInPath.has(targetPath)) {
-      archive.merge(this.coveredInPath.get(targetPath));
-      this.coveredInPath.set(targetPath, archive);
+    if (this.coveredInPath.has(target.path)) {
+      archive.merge(this.coveredInPath.get(target.path));
+      this.coveredInPath.set(target.path, archive);
     } else {
-      this.coveredInPath.set(targetPath, archive);
+      this.coveredInPath.set(target.path, archive);
     }
 
-    // Gather statistics after the search
-    collectStatistics(
-      collector,
-      currentSubject,
-      archive,
-      totalTimeBudget,
-      searchBudget,
-      iterationBudget,
-      evaluationBudget
-    );
-
-    collector.recordVariable(RuntimeVariable.INSTRUMENTATION_TIME, `unknown`);
-
-    collector.recordVariable(RuntimeVariable.TYPE_RESOLVING_TIME, `unknown`);
-
-    collectCoverageData(collector, archive, "branch");
-    collectCoverageData(collector, archive, "statement");
-    collectCoverageData(collector, archive, "function");
-
-    const statisticsDirectory = path.resolve(CONFIG.statisticsDirectory);
-
-    const summaryWriter = new SummaryWriter();
-    summaryWriter.write(collector, statisticsDirectory + "/statistics.csv");
-
-    const coverageWriter = new CoverageWriter();
-    coverageWriter.write(collector, statisticsDirectory + "/coverage.csv");
-
-    await clearDirectory(CONFIG.tempTestDirectory);
-    await clearDirectory(CONFIG.tempLogDirectory);
+    clearDirectory(this.arguments_.tempTestDirectory);
+    clearDirectory(this.arguments_.tempLogDirectory);
 
     return archive;
   }
@@ -621,6 +563,6 @@ export class JavaScriptLauncher extends Launcher {
   async exit(): Promise<void> {
     // TODO should be cleanup step in tool
     // Finish
-    await deleteTempDirectories();
+    deleteTemporaryDirectories();
   }
 }

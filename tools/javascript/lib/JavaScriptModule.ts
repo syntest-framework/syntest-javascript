@@ -27,7 +27,7 @@ import { MetricManager } from "@syntest/metric";
 export default class JavaScriptModule extends TestingToolModule {
   constructor() {
     // eslint-disable-next-line @typescript-eslint/no-var-requires, unicorn/prefer-module
-    super("javascript", require("../package.json").version);
+    super("javascript", require("../../package.json").version);
   }
 
   override register(

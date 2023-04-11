@@ -19,7 +19,7 @@ import { UserInterface } from "@syntest/cli-graphics";
 import { Command, ModuleManager } from "@syntest/module";
 import Yargs = require("yargs");
 
-import { JavaScriptLauncher } from "../JavaScriptLauncher";
+import { JavaScriptArguments, JavaScriptLauncher } from "../JavaScriptLauncher";
 
 export function getTestCommand(
   tool: string,
@@ -63,9 +63,13 @@ export function getTestCommand(
     "test",
     "Run the test case generation tool on a certain JavaScript project.",
     options,
-    async (_arguments_: Yargs.ArgumentsCamelCase) => {
-      const launcher = new JavaScriptLauncher(moduleManager, userInterface);
-      await launcher.run();
+    (arguments_: Yargs.ArgumentsCamelCase) => {
+      const launcher = new JavaScriptLauncher(
+        <JavaScriptArguments>(<unknown>arguments_),
+        moduleManager,
+        userInterface
+      );
+      launcher.run();
     }
   );
 }
