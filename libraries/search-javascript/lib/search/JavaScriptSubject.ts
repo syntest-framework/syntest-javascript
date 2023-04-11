@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { SubTarget } from "@syntest/analysis-javascript";
+import { RootContext, SubTarget, Target } from "@syntest/analysis-javascript";
 import { TargetType } from "@syntest/analysis";
 import { ControlFlowGraph, Edge } from "@syntest/cfg-core";
 import {
@@ -29,12 +29,11 @@ import {
 import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
 import { BranchDistance } from "../criterion/BranchDistance";
 
-export interface TypeScore {
-  types: string[];
-  failed: boolean;
-}
-
 export class JavaScriptSubject extends SearchSubject<JavaScriptTestCase> {
+  constructor(target: Target, rootContext: RootContext) {
+    super(target, rootContext);
+  }
+
   protected _extractObjectives(): void {
     const graph = this._rootContext.getControlFlowProgram(
       this._target.path
@@ -79,8 +78,7 @@ export class JavaScriptSubject extends SearchSubject<JavaScriptTestCase> {
         new ApproachLevel(),
         new BranchDistance(),
         this,
-        function_.id,
-        1 // deprecated in next version
+        function_.id
       );
       const childrenObject = this.findChildren(
         function_.graph,

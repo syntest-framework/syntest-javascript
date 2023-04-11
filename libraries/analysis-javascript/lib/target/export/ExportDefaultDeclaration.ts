@@ -20,17 +20,21 @@ import { NodePath } from "@babel/core";
 import * as t from "@babel/types";
 
 import { Export } from "./Export";
+import { ExportVisitor } from "./ExportVisitor";
 
 export function extractExportsFromExportDefaultDeclaration(
+  visitor: ExportVisitor,
   filePath: string,
   path: NodePath<t.ExportDefaultDeclaration>
 ): Export {
   let name: string;
+  let id: string;
 
   switch (path.node.declaration.type) {
     case "Identifier": {
       name = path.node.declaration.name;
-
+      const binding = visitor._getBinding(path.get("declaration"));
+      id = visitor._getNodeId(binding.path);
       break;
     }
     case "NewExpression": {
@@ -39,6 +43,8 @@ export function extractExportsFromExportDefaultDeclaration(
         throw new Error("Unsupported export default declaration");
       }
       name = path.node.declaration.callee.name;
+      // idk if this is correct
+      id = visitor._getNodeId(path.get("declaration"));
 
       break;
     }
@@ -47,7 +53,7 @@ export function extractExportsFromExportDefaultDeclaration(
       name = path.node.declaration.id
         ? path.node.declaration.id.name
         : "default";
-
+      id = visitor._getNodeId(path.get("declaration"));
       break;
     }
     default: {
@@ -66,7 +72,7 @@ export function extractExportsFromExportDefaultDeclaration(
   }
 
   return {
-    scope: path.scope,
+    id: id,
     filePath,
     name: name,
     renamedTo: name,

@@ -28,31 +28,36 @@ import { ActionStatement } from "./ActionStatement";
 /**
  * @author Dimitri Stallenberg
  */
-export class Getter extends ActionStatement {
-  private readonly _className: string;
-  private readonly _property: string;
+export class ObjectFunctionCall extends ActionStatement {
+  private readonly _objectName: string;
+  private readonly _functionName: string;
 
   /**
    * Constructor
    * @param identifierDescription the return type options of the function
-   * @param type the type of property
+   * @param type the return type of the function
    * @param uniqueId id of the gene
-   * @param property the name of the property
+   * @param methodName the name of the function
+   * @param args the arguments of the function
    */
   constructor(
     identifierDescription: IdentifierDescription,
     type: string,
     uniqueId: string,
-    className: string,
-    property: string
+    objectName: string,
+    functionName: string,
+    arguments_: Statement[]
   ) {
-    super(identifierDescription, type, uniqueId, []);
-    this._classType = "Getter";
-    this._className = className;
-    this._property = property;
+    super(identifierDescription, type, uniqueId, arguments_);
+    this._classType = "ObjectFunctionCall";
+    this._objectName = objectName;
+    this._functionName = functionName;
   }
 
-  mutate(sampler: JavaScriptTestCaseSampler, depth: number): Getter {
+  mutate(
+    sampler: JavaScriptTestCaseSampler,
+    depth: number
+  ): ObjectFunctionCall {
     const arguments_ = this.args.map((a: Statement) => a.copy());
 
     if (arguments_.length > 0) {
@@ -66,31 +71,35 @@ export class Getter extends ActionStatement {
         : arguments_[index].mutate(sampler, depth + 1);
     }
 
-    return new Getter(
+    return new ObjectFunctionCall(
       this.identifierDescription,
       this.type,
       prng.uniqueId(),
       this.className,
-      this.property
+      this.methodName,
+      arguments_
     );
   }
 
-  copy(): Getter {
-    return new Getter(
+  copy(): ObjectFunctionCall {
+    const deepCopyArguments = this.args.map((a: Statement) => a.copy());
+
+    return new ObjectFunctionCall(
       this.identifierDescription,
       this.type,
       this.id,
       this.className,
-      this.property
+      this.methodName,
+      deepCopyArguments
     );
   }
 
-  get property(): string {
-    return this._property;
+  get methodName(): string {
+    return this._functionName;
   }
 
   get className(): string {
-    return this._className;
+    return this._objectName;
   }
 
   decode(): Decoding[] {
@@ -103,7 +112,13 @@ export class Getter extends ActionStatement {
     options: { addLogs: boolean; exception: boolean },
     objectVariable: string
   ): Decoding[] {
-    let decoded = `const ${this.varName} = await ${objectVariable}.${this.property}`;
+    const arguments_ = this.args.map((a) => a.varName).join(", ");
+
+    const argumentStatements: Decoding[] = this.args.flatMap((a) =>
+      a.decode(decoder, id, options)
+    );
+
+    let decoded = `const ${this.varName} = await ${objectVariable}.${this.methodName}(${arguments_})`;
 
     if (options.addLogs) {
       const logDirectory = decoder.getLogDirectory(id, this.varName);
@@ -111,6 +126,7 @@ export class Getter extends ActionStatement {
     }
 
     return [
+      ...argumentStatements,
       {
         decoded: decoded,
         reference: this,
@@ -121,6 +137,7 @@ export class Getter extends ActionStatement {
 
   // TODO
   decodeErroring(objectVariable: string): string {
-    return `await expect(${objectVariable}.${this.property}).to.be.rejectedWith(Error);`;
+    const arguments_ = this.args.map((a) => a.varName).join(", ");
+    return `await expect(${objectVariable}.${this.methodName}(${arguments_})).to.be.rejectedWith(Error);`;
   }
 }

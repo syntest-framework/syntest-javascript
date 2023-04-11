@@ -114,7 +114,9 @@ export class JavaScriptSuiteBuilder {
     const stats = runner.stats;
 
     const instrumentationData = <InstrumentationData>(
-      cloneDeep(<InstrumentationData>global.__coverage__)
+      cloneDeep(
+        (<{ __coverage__: InstrumentationData }>(<unknown>global)).__coverage__
+      )
     );
 
     this.runner.resetInstrumentationData();

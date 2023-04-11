@@ -28,7 +28,6 @@ import { getLogger } from "@syntest/logging";
 import cloneDeep = require("lodash.clonedeep");
 import { Runner } from "mocha";
 import Mocha = require("mocha");
-import originalrequire = require("original-require");
 
 import {
   JavaScriptExecutionResult,
@@ -104,7 +103,8 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     });
 
     for (const _path of paths) {
-      delete originalrequire.cache[_path];
+      // eslint-disable-next-line unicorn/prefer-module
+      delete require.cache[_path];
       mocha.addFile(_path);
     }
 

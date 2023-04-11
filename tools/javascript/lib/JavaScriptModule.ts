@@ -16,20 +16,30 @@
  * limitations under the License.
  */
 
-import { Module, Plugin, Tool } from "@syntest/module";
+import { Module, ModuleManager, Tool } from "@syntest/module";
 import yargs = require("yargs");
 
 import { getTestCommand } from "./commands/test";
+import { TestingToolModule } from "@syntest/base-testing-tool";
+import { UserInterface } from "@syntest/cli-graphics";
+import { MetricManager } from "@syntest/metric";
 
-export default class JavaScriptModule extends Module {
+export default class JavaScriptModule extends TestingToolModule {
   constructor() {
     // eslint-disable-next-line @typescript-eslint/no-var-requires, unicorn/prefer-module
     super("javascript", require("../package.json").version);
   }
 
-  async getTools(): Promise<Tool[]> {
+  override register(
+    moduleManager: ModuleManager,
+    metricManager: MetricManager,
+    userInterface: UserInterface,
+    modules: Module[]
+  ): void {
+    super.register(moduleManager, metricManager, userInterface, modules);
+
     const labels = ["javascript", "testing"];
-    const commands = [getTestCommand(this.name, this.userInterface)];
+    const commands = [getTestCommand(this.name, moduleManager, userInterface)];
 
     const additionalOptions: Map<string, yargs.Options> = new Map();
 
@@ -41,9 +51,6 @@ export default class JavaScriptModule extends Module {
       additionalOptions
     );
 
-    return [javascriptTool];
-  }
-  async getPlugins(): Promise<Plugin[]> {
-    return [];
+    moduleManager.registerTool(this.name, javascriptTool);
   }
 }

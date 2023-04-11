@@ -17,4 +17,3 @@
  */
 
 export * from "./lib/AbstractSyntaxTreeVisitor";
-export * from "./lib/Scope";

@@ -1051,6 +1051,7 @@ describe("ControlFlowGraphVisitor test", () => {
 
     const cfg = cfgHelper(source);
 
-    console.log(cfg.functions[0]);
+    expect(cfg);
+    // console.log(cfg.functions[0]);
   });
 });

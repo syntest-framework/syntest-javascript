@@ -15,10 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Scope as BabelScope } from "@babel/traverse";
 
 export interface Export {
-  scope: BabelScope;
+  id: string;
   filePath: string;
   name: string;
   renamedTo: string;

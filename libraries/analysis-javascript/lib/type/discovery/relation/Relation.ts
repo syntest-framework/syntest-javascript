@@ -21,9 +21,19 @@
 
 export interface Relation {
   id: string;
-  relation: RelationType;
+  type: RelationType;
   involved: string[];
   computed?: boolean;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isRelation(object: any): object is Relation {
+  return (
+    object !== undefined &&
+    object.id !== undefined &&
+    object.type !== undefined &&
+    object.involved !== undefined
+  );
 }
 
 export enum RelationType {

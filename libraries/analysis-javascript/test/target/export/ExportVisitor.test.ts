@@ -77,7 +77,9 @@ describe("ExportVisitor test", () => {
   });
 
   it("export initialized declaration renamed", () => {
-    const source = `export const name1 = x, name2 = 2/*, … */; // also var, let`;
+    const source = `
+    const x = 1;
+    export const name1 = x, name2 = 2/*, … */; // also var, let`;
 
     const exports = exportHelper(source);
 
@@ -152,7 +154,10 @@ describe("ExportVisitor test", () => {
   });
 
   it("export ObjectPattern declaration rename", () => {
-    const source = `export const { name1, name2: bar } = { name1: x, name2: a};`;
+    const source = `
+    const x = 1;
+    const a = 2;
+    export const { name1, name2: bar } = { name1: x, name2: a};`;
 
     const exports = exportHelper(source);
 
@@ -218,7 +223,10 @@ describe("ExportVisitor test", () => {
   });
 
   it("export ArrayPattern declaration rename", () => {
-    const source = `export const [ name1, name2 ] = [x, a];`;
+    const source = `
+    const x = 1;
+    const a = 2;
+    export const [ name1, name2 ] = [x, a];`;
 
     const exports = exportHelper(source);
 
@@ -334,7 +342,9 @@ describe("ExportVisitor test", () => {
 
   // default exports
   it("export default expression", () => {
-    const source = `export default expression;`;
+    const source = `
+    const expression = 1
+    export default expression;`;
 
     const exports = exportHelper(source);
 
@@ -531,7 +541,10 @@ describe("ExportVisitor test", () => {
   });
 
   it("export module default object no init", () => {
-    const source = `module.exports = { a, b};`;
+    const source = `
+    const a = 1;
+    const b = 1;
+    module.exports = { a, b};`;
 
     const exports = exportHelper(source);
 
@@ -549,7 +562,10 @@ describe("ExportVisitor test", () => {
   });
 
   it("export module default array", () => {
-    const source = `module.exports = [ a, b ];`;
+    const source = `
+    const a = 1
+    const b = 1
+    module.exports = [ a, b ];`;
 
     const exports = exportHelper(source);
 
@@ -562,7 +578,9 @@ describe("ExportVisitor test", () => {
   });
 
   it("export module default identifier", () => {
-    const source = `module.exports = o;`;
+    const source = `
+    const o = {}
+    module.exports = o;`;
 
     const exports = exportHelper(source);
 
@@ -648,7 +666,9 @@ describe("ExportVisitor test", () => {
   });
 
   it("export exports.x equals a", () => {
-    const source = `exports.x = a`;
+    const source = `
+    const a = 1;
+    exports.x = a`;
 
     const exports = exportHelper(source);
 
@@ -661,7 +681,10 @@ describe("ExportVisitor test", () => {
   });
 
   it("export exports['x'] equals a", () => {
-    const source = `exports['x'] = a`;
+    const source = `
+    const a = 1;
+    exports['x'] = a
+    `;
 
     const exports = exportHelper(source);
 
@@ -674,13 +697,18 @@ describe("ExportVisitor test", () => {
   });
 
   it("export exports[x] equals a", () => {
-    const source = `exports[x] = a`;
+    const source = `
+    const a = 1;
+    exports[x] = a`;
 
     expect(() => exportHelper(source)).throw();
   });
 
   it("export module.x equals a", () => {
-    const source = `module.x = a`;
+    const source = `
+    const a = 1
+    module.x = a
+    `;
 
     const exports = exportHelper(source);
 
@@ -688,7 +716,10 @@ describe("ExportVisitor test", () => {
   });
 
   it("export module['exports'] equals a", () => {
-    const source = `module['exports'] = a`;
+    const source = `
+    const a = 1;
+    module['exports'] = a
+    `;
 
     const exports = exportHelper(source);
 
@@ -700,13 +731,19 @@ describe("ExportVisitor test", () => {
   });
 
   it("export module[exports] equals a", () => {
-    const source = `module[exports] = a`;
+    const source = `
+    const a = 1
+    module[exports] = a
+    `;
 
     expect(() => exportHelper(source)).throw();
   });
 
   it("export module.exports.x equals a", () => {
-    const source = `module.exports.x = a`;
+    const source = `
+    const a = 1;
+    module.exports.x = a
+    `;
 
     const exports = exportHelper(source);
 
@@ -718,7 +755,10 @@ describe("ExportVisitor test", () => {
   });
 
   it("export func().x equals a", () => {
-    const source = `func().x = a`;
+    const source = `
+    const a = 5;
+    func().x = a
+    `;
 
     const exports = exportHelper(source);
 
@@ -726,7 +766,10 @@ describe("ExportVisitor test", () => {
   });
 
   it("export module.x.x equals a", () => {
-    const source = `module.x.x = a`;
+    const source = `
+    const a = 5;
+    module.x.x = a
+    `;
 
     const exports = exportHelper(source);
 
@@ -734,7 +777,10 @@ describe("ExportVisitor test", () => {
   });
 
   it("export module.exports['x'] equals a", () => {
-    const source = `module.exports['x'] = a`;
+    const source = `
+    const a = 5;
+    module.exports['x'] = a
+    `;
 
     const exports = exportHelper(source);
 
@@ -806,7 +852,10 @@ describe("ExportVisitor test", () => {
   });
 
   it("export exports equals object expression with object property rename var", () => {
-    const source = `exports = { a: b }`;
+    const source = `
+      const b = 1;
+      exports = { a: b }
+    `;
 
     const exports = exportHelper(source);
 

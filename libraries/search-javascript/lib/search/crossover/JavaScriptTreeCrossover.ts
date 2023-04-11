@@ -21,6 +21,7 @@ import { Crossover, prng } from "@syntest/core";
 import { JavaScriptTestCase } from "../../testcase/JavaScriptTestCase";
 import { RootStatement } from "../../testcase/statements/root/RootStatement";
 import { Statement } from "../../testcase/statements/Statement";
+import { ActionStatement } from "../../testcase/statements/action/ActionStatement";
 
 interface QueueEntry {
   parent: Statement;
@@ -48,8 +49,8 @@ export class JavaScriptTreeCrossover extends Crossover<JavaScriptTestCase> {
       throw new Error("Expected exactly 2 parents, got: " + parents.length);
     }
 
-    const rootA: RootStatement = parents[0].copy().root;
-    const rootB: RootStatement = parents[1].copy().root;
+    const rootA: RootStatement = (<JavaScriptTestCase>parents[0].copy()).root;
+    const rootB: RootStatement = (<JavaScriptTestCase>parents[1].copy()).root;
 
     const queueA: QueueEntry[] = [];
 
@@ -94,8 +95,14 @@ export class JavaScriptTreeCrossover extends Crossover<JavaScriptTestCase> {
       const pair = crossoverChoice.p1;
       const donorTree = crossoverChoice.p2;
 
-      pair.parent.setChild(pair.childIndex, donorTree.child.copy());
-      donorTree.parent.setChild(donorTree.childIndex, pair.child.copy());
+      (<ActionStatement>pair.parent).setChild(
+        pair.childIndex,
+        donorTree.child.copy()
+      );
+      (<ActionStatement>donorTree.parent).setChild(
+        donorTree.childIndex,
+        pair.child.copy()
+      );
     }
 
     return [new JavaScriptTestCase(rootA), new JavaScriptTestCase(rootB)];

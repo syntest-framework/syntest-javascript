@@ -24,21 +24,14 @@ import {
   RootContext as CoreRootContext,
   SourceFactory,
 } from "@syntest/analysis";
-import { Element } from "@syntest/ast-visitor-javascript";
 
 import { AbstractSyntaxTreeFactory } from "./ast/AbstractSyntaxTreeFactory";
 import { ControlFlowGraphFactory } from "./cfg/ControlFlowGraphFactory";
 import { DependencyFactory } from "./dependency/DependencyFactory";
 import { Export } from "./target/export/Export";
 import { TargetFactory } from "./target/TargetFactory";
-import { ComplexType } from "./type/ComplexType";
-import { ObjectGenerator } from "./type/discovery/object/ObjectGenerator";
-import { Relation } from "./type/discovery/relation/Relation";
-import { VariableGenerator } from "./type/discovery/VariableGenerator";
-import { TypeEnum } from "./type/resolving/TypeEnum";
-import { TypeProbability } from "./type/resolving/TypeProbability";
 import { TypeResolver } from "./type/resolving/TypeResolver";
-import { getAllFiles, readFile } from "./utils/fileSystem";
+import { readFile } from "./utils/fileSystem";
 import { ExportFactory } from "./target/export/ExportFactory";
 
 export class RootContext extends CoreRootContext<t.Node> {
@@ -50,7 +43,6 @@ export class RootContext extends CoreRootContext<t.Node> {
 
   constructor(
     rootPath: string,
-    sourceFactory: SourceFactory,
     abstractSyntaxTreeFactory: AbstractSyntaxTreeFactory,
     controlFlowGraphFactory: ControlFlowGraphFactory,
     targetFactory: TargetFactory,
@@ -60,7 +52,7 @@ export class RootContext extends CoreRootContext<t.Node> {
   ) {
     super(
       rootPath,
-      sourceFactory,
+      undefined,
       abstractSyntaxTreeFactory,
       controlFlowGraphFactory,
       targetFactory,
@@ -126,6 +118,10 @@ export class RootContext extends CoreRootContext<t.Node> {
     }
 
     return this._exportMap.get(absolutePath);
+  }
+
+  getTypes(): TypeResolver {
+    return this._typeResolver;
   }
 
   // getTargetMap(targetPath: string): Map<string, JavaScriptTargetMetaData> {
@@ -239,193 +235,193 @@ export class RootContext extends CoreRootContext<t.Node> {
   //   return this._dependencyMaps.get(absoluteTargetPath);
   // }
 
-  scanTargetRootDirectory(targetRootDirectory: string): void {
-    const absoluteRootPath = path.resolve(targetRootDirectory);
+  // scanTargetRootDirectory(targetRootDirectory: string): void {
+  //   const absoluteRootPath = path.resolve(targetRootDirectory);
 
-    // TODO remove the filters
-    const files = getAllFiles(absoluteRootPath, ".js").filter(
-      (x) =>
-        !x.includes("/test/") &&
-        !x.includes(".test.js") &&
-        !x.includes("node_modules")
-    ); // maybe we should also take those into account
+  //   // TODO remove the filters
+  //   const files = getAllFiles(absoluteRootPath, ".js").filter(
+  //     (x) =>
+  //       !x.includes("/test/") &&
+  //       !x.includes(".test.js") &&
+  //       !x.includes("node_modules")
+  //   ); // maybe we should also take those into account
 
-    const objects: ComplexType[] = [];
-    const objectGenerator = new ObjectGenerator();
+  //   const objects: ComplexType[] = [];
+  //   const objectGenerator = new ObjectGenerator();
 
-    for (const file of files) {
-      const exports = this.getExports(file);
-      objects.push(
-        ...objectGenerator.generate(
-          file,
-          this.getAbstractSyntaxTree(file),
-          exports
-        )
-      );
-    }
+  //   for (const file of files) {
+  //     const exports = this.getExports(file);
+  //     objects.push(
+  //       ...objectGenerator.generate(
+  //         file,
+  //         this.getAbstractSyntaxTree(file),
+  //         exports
+  //       )
+  //     );
+  //   }
 
-    // standard stuff
-    // function https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function
-    objects.push(
-      {
-        name: "function",
-        properties: new Set([
-          "arguments",
-          "caller",
-          "displayName",
-          "length",
-          "name",
-        ]),
-        functions: new Set(["apply", "bind", "call", "toString"]),
-        propertyType: new Map<string, TypeProbability>([
-          ["arguments", new TypeProbability([[TypeEnum.ARRAY, 1, undefined]])],
-          ["caller", new TypeProbability([[TypeEnum.FUNCTION, 1, undefined]])],
-          [
-            "displayName",
-            new TypeProbability([[TypeEnum.STRING, 1, undefined]]),
-          ],
-          ["length", new TypeProbability([[TypeEnum.NUMERIC, 1, undefined]])],
-          ["name", new TypeProbability([[TypeEnum.STRING, 1, undefined]])],
-        ]),
-      },
+  //   // standard stuff
+  //   // function https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function
+  //   objects.push(
+  //     {
+  //       name: "function",
+  //       properties: new Set([
+  //         "arguments",
+  //         "caller",
+  //         "displayName",
+  //         "length",
+  //         "name",
+  //       ]),
+  //       functions: new Set(["apply", "bind", "call", "toString"]),
+  //       propertyType: new Map<string, TypeProbability>([
+  //         ["arguments", new TypeProbability([[TypeEnum.ARRAY, 1, undefined]])],
+  //         ["caller", new TypeProbability([[TypeEnum.FUNCTION, 1, undefined]])],
+  //         [
+  //           "displayName",
+  //           new TypeProbability([[TypeEnum.STRING, 1, undefined]]),
+  //         ],
+  //         ["length", new TypeProbability([[TypeEnum.NUMERIC, 1, undefined]])],
+  //         ["name", new TypeProbability([[TypeEnum.STRING, 1, undefined]])],
+  //       ]),
+  //     },
 
-      // array https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array
-      {
-        name: "array",
-        properties: new Set(["length"]),
-        functions: new Set([
-          "at",
-          "concat",
-          "copyWithin",
-          "entries",
-          "fill",
-          "filter",
-          "find",
-          "findIndex",
-          "flat",
-          "flatMap",
-          "includes",
-          "indexOf",
-          "join",
-          "keys",
-          "lastIndexOf",
-          "map",
-          "pop",
-          "push",
-          "reduce",
-          "reduceRight",
-          "reverse",
-          "shift",
-          "slice",
-          "toLocaleString",
-          "toString",
-          "unshift",
-          "values",
-        ]),
-        propertyType: new Map<string, TypeProbability>([
-          ["length", new TypeProbability([[TypeEnum.NUMERIC, 1, undefined]])],
-        ]),
-      },
+  //     // array https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array
+  //     {
+  //       name: "array",
+  //       properties: new Set(["length"]),
+  //       functions: new Set([
+  //         "at",
+  //         "concat",
+  //         "copyWithin",
+  //         "entries",
+  //         "fill",
+  //         "filter",
+  //         "find",
+  //         "findIndex",
+  //         "flat",
+  //         "flatMap",
+  //         "includes",
+  //         "indexOf",
+  //         "join",
+  //         "keys",
+  //         "lastIndexOf",
+  //         "map",
+  //         "pop",
+  //         "push",
+  //         "reduce",
+  //         "reduceRight",
+  //         "reverse",
+  //         "shift",
+  //         "slice",
+  //         "toLocaleString",
+  //         "toString",
+  //         "unshift",
+  //         "values",
+  //       ]),
+  //       propertyType: new Map<string, TypeProbability>([
+  //         ["length", new TypeProbability([[TypeEnum.NUMERIC, 1, undefined]])],
+  //       ]),
+  //     },
 
-      // string
-      {
-        name: "string",
-        properties: new Set(["length"]),
-        functions: new Set([
-          "at",
-          "charAt",
-          "charCodeAt",
-          "codePointAt",
-          "concat",
-          "includes",
-          "endsWith",
-          "indexOf",
-          "lastIndexOf",
-          "localeCompare",
-          "match",
-          "matchAll",
-          "normalize",
-          "padEnd",
-          "padStart",
-          "repeat",
-          "replace",
-          "replaceAll",
-          "search",
-          "slice",
-          "split",
-          "startsWith",
-          "substring",
-          "toLocaleLowerCase",
-          "toLocaleUpperCase",
-          "toLowerCase",
-          "toString",
-          "toUpperCase",
-          "trim",
-          "trimStart",
-          "trimEnd",
-          "valueOf",
-        ]),
-        propertyType: new Map<string, TypeProbability>([
-          ["length", new TypeProbability([[TypeEnum.NUMERIC, 1, undefined]])],
-        ]),
-      }
-    );
+  //     // string
+  //     {
+  //       name: "string",
+  //       properties: new Set(["length"]),
+  //       functions: new Set([
+  //         "at",
+  //         "charAt",
+  //         "charCodeAt",
+  //         "codePointAt",
+  //         "concat",
+  //         "includes",
+  //         "endsWith",
+  //         "indexOf",
+  //         "lastIndexOf",
+  //         "localeCompare",
+  //         "match",
+  //         "matchAll",
+  //         "normalize",
+  //         "padEnd",
+  //         "padStart",
+  //         "repeat",
+  //         "replace",
+  //         "replaceAll",
+  //         "search",
+  //         "slice",
+  //         "split",
+  //         "startsWith",
+  //         "substring",
+  //         "toLocaleLowerCase",
+  //         "toLocaleUpperCase",
+  //         "toLowerCase",
+  //         "toString",
+  //         "toUpperCase",
+  //         "trim",
+  //         "trimStart",
+  //         "trimEnd",
+  //         "valueOf",
+  //       ]),
+  //       propertyType: new Map<string, TypeProbability>([
+  //         ["length", new TypeProbability([[TypeEnum.NUMERIC, 1, undefined]])],
+  //       ]),
+  //     }
+  //   );
 
-    // TODO npm dependencies
-    // TODO get rid of duplicates
+  //   // TODO npm dependencies
+  //   // TODO get rid of duplicates
 
-    const finalObjects: ComplexType[] = [];
+  //   const finalObjects: ComplexType[] = [];
 
-    // eslint-disable-next-line unicorn/consistent-function-scoping
-    function eqSet(as: Set<unknown>, bs: Set<unknown>) {
-      if (as.size !== bs.size) return false;
-      for (const a of as) if (!bs.has(a)) return false;
-      return true;
-    }
+  //   // eslint-disable-next-line unicorn/consistent-function-scoping
+  //   function eqSet(as: Set<unknown>, bs: Set<unknown>) {
+  //     if (as.size !== bs.size) return false;
+  //     for (const a of as) if (!bs.has(a)) return false;
+  //     return true;
+  //   }
 
-    for (const o of objects) {
-      if (o.properties.size === 0 && o.functions.size === 0) {
-        continue;
-      }
+  //   for (const o of objects) {
+  //     if (o.properties.size === 0 && o.functions.size === 0) {
+  //       continue;
+  //     }
 
-      const found = finalObjects.find((o2) => {
-        return (
-          o.export === o2.export && // TODO not sure if you can compare exports like this
-          o.name === o2.name &&
-          eqSet(o.properties, o2.properties) &&
-          eqSet(o.functions, o2.functions)
-        );
-      });
+  //     const found = finalObjects.find((o2) => {
+  //       return (
+  //         o.export === o2.export && // TODO not sure if you can compare exports like this
+  //         o.name === o2.name &&
+  //         eqSet(o.properties, o2.properties) &&
+  //         eqSet(o.functions, o2.functions)
+  //       );
+  //     });
 
-      if (!found) {
-        finalObjects.push(o);
-      }
-    }
+  //     if (!found) {
+  //       finalObjects.push(o);
+  //     }
+  //   }
 
-    const generator = new VariableGenerator();
-    const elements: Element[] = [];
-    const relations: Relation[] = [];
-    const wrapperElementIsRelation: Map<string, Relation> = new Map();
+  //   const generator = new VariableGenerator();
+  //   const elements: Element[] = [];
+  //   const relations: Relation[] = [];
+  //   const wrapperElementIsRelation: Map<string, Relation> = new Map();
 
-    for (const file of files) {
-      const [_elements, _relations, _wrapperElementIsRelation] =
-        generator.generate(file, this.getAbstractSyntaxTree(file));
+  //   for (const file of files) {
+  //     const [_elements, _relations, _wrapperElementIsRelation] =
+  //       generator.generate(file, this.getAbstractSyntaxTree(file));
 
-      elements.push(..._elements);
-      relations.push(..._relations);
+  //     elements.push(..._elements);
+  //     relations.push(..._relations);
 
-      for (const key of _wrapperElementIsRelation.keys()) {
-        wrapperElementIsRelation.set(key, _wrapperElementIsRelation.get(key));
-      }
-    }
+  //     for (const key of _wrapperElementIsRelation.keys()) {
+  //       wrapperElementIsRelation.set(key, _wrapperElementIsRelation.get(key));
+  //     }
+  //   }
 
-    this._typeResolver.resolveTypes(
-      elements,
-      relations,
-      wrapperElementIsRelation,
-      finalObjects
-    );
-  }
+  //   this._typeResolver.resolveTypes(
+  //     elements,
+  //     relations,
+  //     wrapperElementIsRelation,
+  //     finalObjects
+  //   );
+  // }
 
   get typeResolver(): TypeResolver {
     return this._typeResolver;

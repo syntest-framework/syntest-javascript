@@ -1,7 +1,7 @@
 /*
  * Copyright 2020-2023 Delft University of Technology and SynTest contributors
  *
- * This file is part of SynTest Framework - SynTest Javascript.
+ * This file is part of SynTest Framework - SynTest JavaScript.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,22 @@
  * limitations under the License.
  */
 
-import { Export } from "../target/export/Export";
-import { TypeProbability } from "./resolving/TypeProbability";
+import { TypeEnum } from "./TypeEnum";
+import { TypeProbability } from "./TypeProbability";
 
-export interface ComplexType {
-  export?: Export;
-  id: string;
-  name: string;
-  properties: Set<string>;
-  functions: Set<string>;
-  propertyTypes: Map<string, TypeProbability>;
-  functionTypes: Map<string, TypeProbability>;
+export interface Type {
+  type: TypeEnum;
+}
+
+export interface FunctionType extends TypeProbability {
+  parameters: TypeProbability[];
+  returnType: TypeProbability;
+}
+
+export interface ObjectType extends TypeProbability {
+  properties: Map<string, TypeProbability>;
+}
+
+export interface ArrayType extends TypeProbability {
+  items: Map<string, TypeProbability>;
 }

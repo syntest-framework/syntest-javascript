@@ -19,110 +19,113 @@
 import { existsSync } from "node:fs";
 import * as path from "node:path";
 
-import { ControlFlowGraphGenerator } from "@syntest/analysis-javascript";
-import { AbstractSyntaxTreeGenerator } from "@syntest/ast-visitor-javascript";
-import {
-  ArgumentsObject,
-  clearDirectory,
-  CONFIG,
-  createDirectoryStructure,
-  createTempDirectoryStructure,
-  CrossoverPlugin,
-  deleteTempDirectories,
-  Launcher,
-  PluginType,
-  SearchAlgorithmPlugin,
-  TerminationPlugin,
-} from "@syntest/base-testing-tool";
-import { TableObject, UserInterface } from "@syntest/cli-graphics";
-import {
-  Archive,
-  BudgetManager,
-  CoverageWriter,
-  EvaluationBudget,
-  IterationBudget,
-  RuntimeVariable,
-  SearchTimeBudget,
-  StatisticsCollector,
-  StatisticsSearchListener,
-  SummaryWriter,
-  TerminationManager,
-  TotalTimeBudget,
-} from "@syntest/core";
-import { ModuleManager } from "@syntest/module";
-import {
-  ActionType,
-  Export,
-  ExportGenerator,
-  ImportGenerator,
-  JavaScriptDecoder,
-  JavaScriptRandomSampler,
-  JavaScriptRunner,
-  JavaScriptSubject,
-  JavaScriptSuiteBuilder,
-  JavaScriptTargetMetaData,
-  JavaScriptTargetPool,
-  JavaScriptTestCase,
-  TargetMapGenerator,
-  TypeResolver,
-  TypeResolverInference,
-  TypeResolverUnknown,
-} from "@syntest/search-javascript";
-
 import {
   collectCoverageData,
   collectInitialVariables,
   collectStatistics,
 } from "./collection";
 import { TestCommandOptions } from "./commands/test";
+import {
+  Export,
+  TypeResolver,
+  TypeResolverUnknown,
+  TypeResolverInference,
+  Target,
+  AbstractSyntaxTreeFactory,
+  TargetFactory,
+  RootContext,
+  ControlFlowGraphFactory,
+  ExportFactory,
+  DependencyFactory,
+} from "@syntest/analysis-javascript";
+import {
+  ArgumentsObject,
+  Launcher,
+  createDirectoryStructure,
+  CONFIG,
+  clearDirectory,
+  ObjectiveManagerPlugin,
+  CrossoverPlugin,
+  SearchAlgorithmPlugin,
+  createTemporaryDirectoryStructure,
+  deleteTemporaryDirectories,
+  TargetSelector,
+  PluginType,
+  SecondaryObjectivePlugin,
+  ProcreationPlugin,
+  TerminationTriggerPlugin,
+} from "@syntest/base-testing-tool";
+import { UserInterface, TableObject } from "@syntest/cli-graphics";
+import { ModuleManager } from "@syntest/module";
+import {
+  JavaScriptTestCase,
+  JavaScriptDecoder,
+  JavaScriptRunner,
+  JavaScriptSuiteBuilder,
+  JavaScriptSubject,
+  JavaScriptRandomSampler,
+  JavaScriptTestCaseSampler,
+} from "@syntest/search-javascript";
+import {
+  Archive,
+  BudgetManager,
+  BudgetType,
+  EncodingSampler,
+  EvaluationBudget,
+  IterationBudget,
+  SearchTimeBudget,
+  TerminationManager,
+  TotalTimeBudget,
+} from "@syntest/core";
+import { Instrumenter } from "@syntest/instrumentation-javascript";
 
-export interface JavaScriptArguments extends ArgumentsObject {
-  incorporateExecutionInformation: boolean;
-  typeInferenceMode: string;
-  randomTypeProbability: number;
-}
-
+export type JavaScriptArguments = ArgumentsObject & TestCommandOptions;
 export class JavaScriptLauncher extends Launcher {
+  private moduleManager: ModuleManager;
   private userInterface: UserInterface;
 
-  private rootContext: JavaScriptTargetPool;
+  private targets: Target[];
+
+  private rootContext: RootContext;
   private archive: Archive<JavaScriptTestCase>;
 
   private exports: Export[];
-  private dependencyMap: Map<string, Export[]>;
+  private dependencyMap: Map<string, string[]>;
 
   private coveredInPath = new Map<string, Archive<JavaScriptTestCase>>();
 
-  constructor(userInterface: UserInterface) {
+  constructor(moduleManager: ModuleManager, userInterface: UserInterface) {
     super();
+    this.moduleManager = moduleManager;
     this.userInterface = userInterface;
   }
 
   async initialize(): Promise<void> {
     if (existsSync(".syntest")) {
-      await deleteTempDirectories();
+      deleteTemporaryDirectories();
     }
 
-    await createDirectoryStructure();
-    await createTempDirectoryStructure();
+    createDirectoryStructure();
+    createTemporaryDirectoryStructure();
 
-    const abstractSyntaxTreeGenerator = new AbstractSyntaxTreeGenerator();
-    const targetMapGenerator = new TargetMapGenerator();
+    const abstractSyntaxTreeFactory = new AbstractSyntaxTreeFactory();
+    const targetFactory = new TargetFactory();
 
     const typeResolver: TypeResolver =
       (<JavaScriptArguments>CONFIG).typeInferenceMode === "none"
         ? new TypeResolverUnknown()
         : new TypeResolverInference();
 
-    const controlFlowGraphGenerator = new ControlFlowGraphGenerator();
-    const importGenerator = new ImportGenerator();
-    const exportGenerator = new ExportGenerator();
-    this.rootContext = new JavaScriptTargetPool(
-      abstractSyntaxTreeGenerator,
-      targetMapGenerator,
-      controlFlowGraphGenerator,
-      importGenerator,
-      exportGenerator,
+    const controlFlowGraphFactory = new ControlFlowGraphFactory();
+    const dependencyFactory = new DependencyFactory();
+    const exportFactory = new ExportFactory();
+    this.rootContext = new RootContext(
+      (<JavaScriptArguments>CONFIG).targetRootDirectory,
+      abstractSyntaxTreeFactory,
+      controlFlowGraphFactory,
+      targetFactory,
+      dependencyFactory,
+      exportFactory,
       typeResolver
     );
 
@@ -141,9 +144,10 @@ export class JavaScriptLauncher extends Launcher {
   }
 
   async preprocess(): Promise<void> {
-    this.rootContext.loadTargets(CONFIG.include, CONFIG.exclude);
+    const targetSelector = new TargetSelector(this.rootContext);
+    this.targets = targetSelector.loadTargets(CONFIG.include, CONFIG.exclude);
 
-    if (this.rootContext.targets.length === 0) {
+    if (this.targets.length === 0) {
       // Shut server down
       this.userInterface.printError(
         `No targets where selected! Try changing the 'include' parameter`
@@ -153,10 +157,9 @@ export class JavaScriptLauncher extends Launcher {
 
     const names: string[] = [];
 
-    for (const target of this.rootContext.targets)
-      names.push(
-        `${path.basename(target.canonicalPath)} -> ${target.targetName}`
-      );
+    for (const target of this.targets) {
+      names.push(`${path.basename(target.path)} -> ${target.name}`);
+    }
 
     // this.userInterface.report("targets", names);
 
@@ -210,11 +213,14 @@ export class JavaScriptLauncher extends Launcher {
     //     ],
     //   ])]);
 
-    await this.rootContext.prepareAndInstrument(
-      CONFIG.targetRootDirectory,
+    const instrumented = new Instrumenter();
+    instrumented.instrumentAll(
+      this.rootContext,
       CONFIG.tempInstrumentedDirectory
     );
-    await this.rootContext.scanTargetRootDirectory(CONFIG.targetRootDirectory);
+
+    // TODO types
+    // await this.rootContext.scanTargetRootDirectory(CONFIG.targetRootDirectory);
   }
 
   async process(): Promise<void> {
@@ -222,22 +228,14 @@ export class JavaScriptLauncher extends Launcher {
     this.exports = [];
     this.dependencyMap = new Map();
 
-    for (const target of this.rootContext.targets) {
-      const archive = await this.testTarget(
-        this.rootContext,
-        target.canonicalPath,
-        this.rootContext
-          .getTargetMap(target.canonicalPath)
-          .get(target.targetName)
-      );
+    for (const target of this.targets) {
+      const archive = await this.testTarget(this.rootContext, target.path);
 
-      const dependencies = this.rootContext.getDependencies(
-        target.canonicalPath
-      );
+      const dependencies = this.rootContext.getDependencies(target.path);
       this.archive.merge(archive);
 
-      this.dependencyMap.set(target.targetName, dependencies);
-      this.exports.push(...this.rootContext.getExports(target.canonicalPath));
+      this.dependencyMap.set(target.name, dependencies);
+      this.exports.push(...this.rootContext.getExports(target.path));
     }
   }
 
@@ -255,11 +253,9 @@ export class JavaScriptLauncher extends Launcher {
       CONFIG.tempLogDirectory
     );
 
-    await clearDirectory(testDirectory);
+    clearDirectory(testDirectory);
 
     const decoder = new JavaScriptDecoder(
-      this.rootContext,
-      this.dependencyMap,
       this.exports,
       CONFIG.targetRootDirectory,
       temporaryLogDirectory
@@ -276,7 +272,7 @@ export class JavaScriptLauncher extends Launcher {
 
     const reducedArchive = suiteBuilder.reduceArchive(this.archive);
 
-    let paths = await suiteBuilder.createSuite(
+    let paths = suiteBuilder.createSuite(
       reducedArchive,
       "../instrumented",
       CONFIG.tempTestDirectory,
@@ -286,13 +282,14 @@ export class JavaScriptLauncher extends Launcher {
     await suiteBuilder.runSuite(paths);
 
     // reset states
-    await suiteBuilder.clearDirectory(CONFIG.tempTestDirectory);
+    suiteBuilder.clearDirectory(CONFIG.tempTestDirectory);
 
     // run with assertions and report results
     for (const key of reducedArchive.keys()) {
-      await suiteBuilder.gatherAssertions(reducedArchive.get(key));
+      suiteBuilder.gatherAssertions(reducedArchive.get(key));
     }
-    paths = await suiteBuilder.createSuite(
+
+    paths = suiteBuilder.createSuite(
       reducedArchive,
       "../instrumented",
       CONFIG.tempTestDirectory,
@@ -322,8 +319,8 @@ export class JavaScriptLauncher extends Launcher {
     let totalStatements = 0;
     let totalFunctions = 0;
     for (const file of Object.keys(instrumentationData)) {
-      const target = this.rootContext.targets.find(
-        (target: Target) => target.canonicalPath === file
+      const target = this.targets.find(
+        (target: Target) => target.path === file
       );
       if (!target) {
         continue;
@@ -359,11 +356,11 @@ export class JavaScriptLauncher extends Launcher {
       totalFunctions += Object.keys(data.f).length;
 
       table.rows.push([
-        `${path.basename(target.canonicalPath)}: ${target.targetName}`,
+        `${path.basename(target.path)}: ${target.name}`,
         summary["statement"] + " / " + Object.keys(data.s).length,
         summary["branch"] + " / " + Object.keys(data.b).length * 2,
         summary["function"] + " / " + Object.keys(data.f).length,
-        target.canonicalPath,
+        target.path,
       ]);
     }
 
@@ -384,7 +381,7 @@ export class JavaScriptLauncher extends Launcher {
     this.userInterface.printTable("Coverage", table);
 
     // create final suite
-    await suiteBuilder.createSuite(
+    suiteBuilder.createSuite(
       reducedArchive,
       originalSourceDirectory,
       CONFIG.testDirectory,
@@ -394,14 +391,13 @@ export class JavaScriptLauncher extends Launcher {
   }
 
   private async testTarget(
-    rootContext: JavaScriptTargetPool,
-    targetPath: string,
-    targetMeta: JavaScriptTargetMetaData
+    rootContext: RootContext,
+    target: Target
   ): Promise<Archive<JavaScriptTestCase>> {
-    const cfg = rootContext.getCFG(targetPath, targetMeta.name);
+    const cfg = rootContext.getControlFlowProgram(target.path);
 
     const functionMap = rootContext.getFunctionMapSpecific(
-      targetPath,
+      target.path,
       targetMeta.name
     );
 
@@ -434,22 +430,17 @@ export class JavaScriptLauncher extends Launcher {
       // TODO return types
     }
 
-    const currentSubject = new JavaScriptSubject(
-      path.basename(targetPath),
-      targetMeta,
-      cfg,
-      [...functionMap.values()]
-    );
+    const currentSubject = new JavaScriptSubject(target, this.rootContext);
 
-    if (currentSubject.getPossibleActions().length === 0) {
+    if (currentSubject.getActionableTargets().length === 0) {
       // report skipped
       return new Archive();
     }
 
-    const dependencies = rootContext.getDependencies(targetPath);
-    const dependencyMap = new Map<string, Export[]>();
-    dependencyMap.set(targetMeta.name, dependencies);
-    const exports = rootContext.getExports(targetPath);
+    const dependencies = rootContext.getDependencies(target.path);
+    const dependencyMap = new Map<string, string[]>();
+    dependencyMap.set(target.name, dependencies);
+    const exports = rootContext.getExports(target.path);
 
     const temporaryTestDirectory = path.join(
       CONFIG.tempSyntestDirectory,
@@ -461,8 +452,6 @@ export class JavaScriptLauncher extends Launcher {
     );
 
     const decoder = new JavaScriptDecoder(
-      rootContext,
-      dependencyMap,
       exports,
       CONFIG.targetRootDirectory,
       temporaryLogDirectory
@@ -491,53 +480,79 @@ export class JavaScriptLauncher extends Launcher {
       rootContext
     );
 
+    const secondaryObjectives = new Set(
+      CONFIG.secondaryObjectives.map((secondaryObjective) => {
+        return (<SecondaryObjectivePlugin<JavaScriptTestCase>>(
+          this.moduleManager.getPlugin(
+            PluginType.SecondaryObjective,
+            secondaryObjective
+          )
+        )).createSecondaryObjective();
+      })
+    );
+
     const objectiveManager = (<ObjectiveManagerPlugin<JavaScriptTestCase>>(
-      ModuleManager.instance.getPlugin(
+      this.moduleManager.getPlugin(
         PluginType.ObjectiveManager,
         CONFIG.objectiveManager
       )
     )).createObjectiveManager({
       runner: runner,
+      secondaryObjectives: secondaryObjectives,
     });
+
     const crossover = (<CrossoverPlugin<JavaScriptTestCase>>(
-      ModuleManager.instance.getPlugin(PluginType.Crossover, CONFIG.crossover)
+      this.moduleManager.getPlugin(PluginType.Crossover, CONFIG.crossover)
     )).createCrossoverOperator({
-      crossoverProbability: CONFIG.crossoverProbability,
+      crossoverEncodingProbability: CONFIG.crossoverProbability,
+      crossoverStatementProbability: CONFIG.multiPointCrossoverProbability,
+    });
+
+    const procreation = (<ProcreationPlugin<JavaScriptTestCase>>(
+      this.moduleManager.getPlugin(PluginType.Crossover, CONFIG.crossover)
+    )).createProcreationOperator({
+      crossover: crossover,
+      mutateFunction: (
+        sampler: EncodingSampler<JavaScriptTestCase>,
+        encoding: JavaScriptTestCase
+      ) => {
+        return encoding.mutate(<JavaScriptTestCaseSampler>(<unknown>sampler));
+      },
+      sampler: sampler,
     });
 
     const algorithm = (<SearchAlgorithmPlugin<JavaScriptTestCase>>(
-      ModuleManager.instance.getPlugin(
+      this.moduleManager.getPlugin(
         PluginType.SearchAlgorithm,
-        CONFIG.algorithm
+        CONFIG.searchAlgorithm
       )
     )).createSearchAlgorithm({
       objectiveManager: objectiveManager,
       encodingSampler: sampler,
-      runner: runner,
-      crossover: crossover,
+      procreation: procreation,
       populationSize: CONFIG.populationSize,
     });
 
     await suiteBuilder.clearDirectory(CONFIG.tempTestDirectory);
 
     // allocate budget manager
-    const iterationBudget = new IterationBudget(CONFIG.iterationBudget);
-    const evaluationBudget = new EvaluationBudget();
-    const searchBudget = new SearchTimeBudget(CONFIG.searchTimeBudget);
-    const totalTimeBudget = new TotalTimeBudget(CONFIG.totalTimeBudget);
+    const iterationBudget = new IterationBudget(CONFIG.iterations);
+    const evaluationBudget = new EvaluationBudget(CONFIG.evaluations);
+    const searchBudget = new SearchTimeBudget(CONFIG.searchTime);
+    const totalTimeBudget = new TotalTimeBudget(CONFIG.totalTime);
     const budgetManager = new BudgetManager();
-    budgetManager.addBudget(iterationBudget);
-    budgetManager.addBudget(evaluationBudget);
-    budgetManager.addBudget(searchBudget);
-    budgetManager.addBudget(totalTimeBudget);
+    budgetManager.addBudget(BudgetType.ITERATION, iterationBudget);
+    budgetManager.addBudget(BudgetType.EVALUATION, evaluationBudget);
+    budgetManager.addBudget(BudgetType.SEARCH_TIME, searchBudget);
+    budgetManager.addBudget(BudgetType.TOTAL_TIME, totalTimeBudget);
 
     // Termination
     const terminationManager = new TerminationManager();
 
     for (const trigger of CONFIG.terminationTriggers) {
       terminationManager.addTrigger(
-        (<TerminationPlugin<JavaScriptTestCase>>(
-          ModuleManager.instance.getPlugin(PluginType.Termination, trigger)
+        (<TerminationTriggerPlugin>(
+          this.moduleManager.getPlugin(PluginType.TerminationTrigger, trigger)
         )).createTerminationTrigger({
           objectiveManager: objectiveManager,
           encodingSampler: sampler,

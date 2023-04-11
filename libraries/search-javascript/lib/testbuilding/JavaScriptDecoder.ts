@@ -18,7 +18,7 @@
 
 import * as path from "node:path";
 
-import { Export, JavaScriptRootContext } from "@syntest/analysis-javascript";
+import { Export } from "@syntest/analysis-javascript";
 import { Decoder } from "@syntest/core";
 
 import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
@@ -28,21 +28,15 @@ import { RootStatement } from "../testcase/statements/root/RootStatement";
 import { Decoding } from "../testcase/statements/Statement";
 
 export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
-  private rootContext: JavaScriptRootContext;
-  private dependencies: Map<string, Export[]>;
   private exports: Export[];
   private targetRootDirectory: string;
   private tempLogDirectory: string;
 
   constructor(
-    rootContext: JavaScriptRootContext,
-    dependencies: Map<string, Export[]>,
     exports: Export[],
     targetRootDirectory: string,
     temporaryLogDirectory: string
   ) {
-    this.rootContext = rootContext;
-    this.dependencies = dependencies;
     this.exports = exports;
     this.targetRootDirectory = targetRootDirectory;
     this.tempLogDirectory = temporaryLogDirectory;
@@ -217,13 +211,12 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
           : gene instanceof ConstructorCall
           ? gene.constructorName
           : gene.type;
-      const complexObject =
-        gene.identifierDescription.typeProbabilityMap.getObjectDescription(
-          importName
-        );
-      const export_: Export =
-        complexObject?.export ||
-        this.exports.find((x) => x.name === importName);
+
+      // TODO how to get the export of a variable?
+      // the below does not work with duplicate exports
+      const export_: Export = this.exports.find(
+        (x) => (x.renamedTo || x.name) === importName
+      );
 
       if (!export_) {
         throw new Error(

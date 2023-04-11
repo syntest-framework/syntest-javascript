@@ -18,8 +18,8 @@
 import { NodePath } from "@babel/core";
 import { Scope as BabelScope, TraverseOptions } from "@babel/traverse";
 import * as t from "@babel/types";
+import { Binding } from "@babel/traverse";
 
-import { Scope } from "./Scope";
 import { getLogger } from "@syntest/logging";
 
 export class AbstractSyntaxTreeVisitor implements TraverseOptions {
@@ -54,7 +54,7 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
     return (<{ uid: number }>(<unknown>scope))["uid"];
   }
 
-  protected _getNodeId(path: NodePath<t.Node>): string {
+  public _getNodeId(path: NodePath<t.Node>): string {
     if (path.node.loc === undefined) {
       throw new Error(
         `Node ${path.type} in file '${this._filePath}' does not have a location`
@@ -65,7 +65,20 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
       .index;
     const endIndex = (<{ index: number }>(<unknown>path.node.loc.end)).index;
 
-    return `${this._filePath}:${startIndex}-${endIndex}`;
+    return `${this._filePath}::${startIndex}-${endIndex}`;
+  }
+
+  public _getBinding(path: NodePath<t.Node>): Binding {
+    if (path.parentPath.isMemberExpression()) {
+      // TODO
+      return this._getBinding(path.parentPath.get("object"));
+    }
+
+    if (!path.isIdentifier()) {
+      throw new Error("Cannot get binding for non-identifier");
+    }
+
+    return path.scope.getBinding(path.node.name);
   }
 
   enter = (path: NodePath<t.Node>) => {
@@ -154,111 +167,111 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
     return "anon";
   }
 
-  _getScope(path: NodePath<t.Node>): Scope {
-    switch (path.node.type) {
-      case "ThisExpression": {
-        return {
-          uid: `${this._getCurrentThisScopeId() - this.scopeIdOffset}`,
-          filePath: this.filePath,
-        };
-      }
-      case "MemberExpression": {
-        const propertyName: string = this._getNameFromNode(path.node.property);
+  // _getScope(path: NodePath<t.Node>): Scope {
+  //   switch (path.node.type) {
+  //     case "ThisExpression": {
+  //       return {
+  //         uid: `${this._getCurrentThisScopeId() - this.scopeIdOffset}`,
+  //         filePath: this.filePath,
+  //       };
+  //     }
+  //     case "MemberExpression": {
+  //       const propertyName: string = this._getNameFromNode(path.node.property);
 
-        const objectScope: Scope = this._getScope(<NodePath>path.get("object"));
+  //       const objectScope: Scope = this._getScope(<NodePath>path.get("object"));
 
-        objectScope.uid += "-" + propertyName;
+  //       objectScope.uid += "-" + propertyName;
 
-        return objectScope;
-      }
-      case "CallExpression": {
-        return this._getScope(<NodePath>path.get("callee"));
-      }
+  //       return objectScope;
+  //     }
+  //     case "CallExpression": {
+  //       return this._getScope(<NodePath>path.get("callee"));
+  //     }
 
-      // No default
-    }
+  //     // No default
+  //   }
 
-    /**
-     * If the parent is a member expression and the current node is the property
-     * then we need to get use scope of the object and append the property name
-     */
-    if (
-      path.parent.type === "MemberExpression" &&
-      path.parentPath.get("property") === path
-    ) {
-      const propertyName: string = this._getNameFromNode(path.node);
+  //   /**
+  //    * If the parent is a member expression and the current node is the property
+  //    * then we need to get use scope of the object and append the property name
+  //    */
+  //   if (
+  //     path.parent.type === "MemberExpression" &&
+  //     path.parentPath.get("property") === path
+  //   ) {
+  //     const propertyName: string = this._getNameFromNode(path.node);
 
-      const objectScope: Scope = this._getScope(
-        <NodePath>path.parentPath.get("object")
-      );
+  //     const objectScope: Scope = this._getScope(
+  //       <NodePath>path.parentPath.get("object")
+  //     );
 
-      objectScope.uid += "-" + propertyName;
+  //     objectScope.uid += "-" + propertyName;
 
-      return objectScope;
-    }
+  //     return objectScope;
+  //   }
 
-    if (path.node.type === "Identifier") {
-      if (path.scope.hasGlobal(path.node.name)) {
-        return {
-          uid: "global",
-          filePath: this.filePath,
-        };
-      }
+  //   if (path.node.type === "Identifier") {
+  //     if (path.scope.hasGlobal(path.node.name)) {
+  //       return {
+  //         uid: "global",
+  //         filePath: this.filePath,
+  //       };
+  //     }
 
-      if (
-        path.scope.hasBinding(path.node.name) &&
-        path.scope.getBinding(path.node.name)
-      ) {
-        const variableScope = path.scope.getBinding(path.node.name).scope;
+  //     if (
+  //       path.scope.hasBinding(path.node.name) &&
+  //       path.scope.getBinding(path.node.name)
+  //     ) {
+  //       const variableScope = path.scope.getBinding(path.node.name).scope;
 
-        return {
-          uid: `${this._getUidFromScope(variableScope) - this.scopeIdOffset}`,
-          filePath: this.filePath,
-        };
-      }
+  //       return {
+  //         uid: `${this._getUidFromScope(variableScope) - this.scopeIdOffset}`,
+  //         filePath: this.filePath,
+  //       };
+  //     }
 
-      // TODO these might be wrong
-      if (
-        path.parent.type === "ClassMethod" ||
-        path.parent.type === "ObjectMethod" ||
-        path.parent.type === "AssignmentExpression" ||
-        path.parent.type === "FunctionExpression" ||
-        path.parent.type === "ObjectProperty" ||
-        path.parent.type === "MetaProperty"
-      ) {
-        const uid = this._getUidFromScope(path.scope.getBlockParent());
+  //     // TODO these might be wrong
+  //     if (
+  //       path.parent.type === "ClassMethod" ||
+  //       path.parent.type === "ObjectMethod" ||
+  //       path.parent.type === "AssignmentExpression" ||
+  //       path.parent.type === "FunctionExpression" ||
+  //       path.parent.type === "ObjectProperty" ||
+  //       path.parent.type === "MetaProperty"
+  //     ) {
+  //       const uid = this._getUidFromScope(path.scope.getBlockParent());
 
-        return {
-          filePath: this.filePath,
-          uid: `${uid - this.scopeIdOffset}`,
-        };
-      }
+  //       return {
+  //         filePath: this.filePath,
+  //         uid: `${uid - this.scopeIdOffset}`,
+  //       };
+  //     }
 
-      throw new Error(
-        `Cannot find scope of Identifier ${path.node.name}\n${
-          this.filePath
-        }\n${path.getSource()}`
-      );
-    }
+  //     throw new Error(
+  //       `Cannot find scope of Identifier ${path.node.name}\n${
+  //         this.filePath
+  //       }\n${path.getSource()}`
+  //     );
+  //   }
 
-    // TODO super should be handled like this actually (kind off)
-    if (
-      path.node.type === "Super" ||
-      path.node.type.includes("Expression") ||
-      path.node.type.includes("Literal")
-    ) {
-      const uid = this._getUidFromScope(path.scope.getBlockParent());
+  //   // TODO super should be handled like this actually (kind off)
+  //   if (
+  //     path.node.type === "Super" ||
+  //     path.node.type.includes("Expression") ||
+  //     path.node.type.includes("Literal")
+  //   ) {
+  //     const uid = this._getUidFromScope(path.scope.getBlockParent());
 
-      return {
-        filePath: this.filePath,
-        uid: `${uid - this.scopeIdOffset}`,
-      };
-    }
+  //     return {
+  //       filePath: this.filePath,
+  //       uid: `${uid - this.scopeIdOffset}`,
+  //     };
+  //   }
 
-    throw new Error(
-      `Cannot find scope of element of type ${path.node.type}\n${
-        this.filePath
-      }\n${path.getSource()}`
-    );
-  }
+  //   throw new Error(
+  //     `Cannot find scope of element of type ${path.node.type}\n${
+  //       this.filePath
+  //     }\n${path.getSource()}`
+  //   );
+  // }
 }

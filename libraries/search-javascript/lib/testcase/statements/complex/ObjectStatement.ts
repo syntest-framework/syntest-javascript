@@ -49,7 +49,7 @@ export class ObjectStatement extends Statement {
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): ObjectStatement {
-    const keys = this._keys.map((a: Statement) => a.copy());
+    const keys = this._keys.map((a: StringStatement) => a.copy());
     const values = this._values.map((a: Statement) => a.copy());
 
     //
@@ -115,14 +115,11 @@ export class ObjectStatement extends Statement {
           finalKeys.push(keys[index]);
 
           if (sampler.resampleGeneProbability) {
-            const propertyType = this.identifierDescription.typeProbabilityMap
-              .getPropertyTypes(this.type)
-              .get(keys[index].varName);
             finalValues.push(
-              sampler.sampleArgument(depth + 1, {
-                name: keys[index].varName,
-                typeProbabilityMap: propertyType,
-              })
+              sampler.sampleArgument(
+                depth + 1,
+                values[index].identifierDescription
+              )
             );
           } else {
             finalValues.push(values[index].mutate(sampler, depth + 1));

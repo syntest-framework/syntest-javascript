@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { ElementType } from "@syntest/ast-visitor-javascript";
+import { ElementType } from "../discovery/element/Element";
 
 export enum TypeEnum {
   ANY = "any",
@@ -33,13 +33,8 @@ export enum TypeEnum {
   FUNCTION = "function",
 }
 
-export function elementTypeToTypingType(
-  elementType: ElementType
-): TypeEnum | void {
+export function elementTypeToTypingType(elementType: ElementType): TypeEnum {
   switch (elementType) {
-    case ElementType.BooleanLiteral: {
-      return TypeEnum.BOOLEAN;
-    }
     case ElementType.StringLiteral: {
       return TypeEnum.STRING;
     }
@@ -49,11 +44,23 @@ export function elementTypeToTypingType(
     case ElementType.NullLiteral: {
       return TypeEnum.NULL;
     }
-    case ElementType.Undefined: {
-      return TypeEnum.UNDEFINED;
+    case ElementType.BooleanLiteral: {
+      return TypeEnum.BOOLEAN;
     }
     case ElementType.RegExpLiteral: {
       return TypeEnum.REGEX;
     }
+    case ElementType.TemplateLiteral: {
+      return TypeEnum.STRING;
+    }
+    case ElementType.BigIntLiteral: {
+      return TypeEnum.NUMERIC;
+    }
+
+    case ElementType.Undefined: {
+      return TypeEnum.UNDEFINED;
+    }
   }
+
+  throw new Error("Unknown element type");
 }

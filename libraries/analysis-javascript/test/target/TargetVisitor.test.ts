@@ -431,6 +431,7 @@ describe("TargetVisitor test", () => {
 
   it("FunctionExpression: assignment computed", () => {
     const source = `
+        const x = {}
         x[y] = function name1() {}
         `;
 
@@ -439,6 +440,7 @@ describe("TargetVisitor test", () => {
 
   it("FunctionExpression: assignment memberexpression", () => {
     const source = `
+        const x = {}
         x.y = function name1() {}
         `;
 
@@ -452,6 +454,7 @@ describe("TargetVisitor test", () => {
 
   it("ObjectFunction: assignment memberexpression using literal", () => {
     const source = `
+        const x = {}
         x['y'] = function name1() {}
         x['z'] = async () => {}
         `;
@@ -482,6 +485,7 @@ describe("TargetVisitor test", () => {
 
   it("ObjectFunction: assignment memberexpression using literal", () => {
     const source = `
+        const x = {}
         x['y'] = function name1() {}
         module.exports = x
         `;

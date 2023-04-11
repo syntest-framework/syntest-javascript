@@ -24,6 +24,8 @@ import { Relation } from "./relation/Relation";
 import { Element } from "./element/Element";
 import { ElementVisitor } from "./element/ElementVisitor";
 import { RelationVisitor } from "./relation/RelationVisitor";
+import { ComplexTypeVisitor } from "./complex-type/ComplexTypeVisitor";
+import { ComplexType } from "./complex-type/ComplexType";
 
 /**
  * Todo rename
@@ -40,15 +42,24 @@ export class VariableGenerator {
   generate(
     filePath: string,
     AST: t.Node
-  ): { elementMap: Map<string, Element>; relationMap: Map<string, Relation> } {
+  ): {
+    elementMap: Map<string, Element>;
+    relationMap: Map<string, Relation>;
+    complexTypeMap: Map<string, ComplexType>;
+  } {
     const elementVisitor = new ElementVisitor(filePath);
     const relationVisitor = new RelationVisitor(filePath);
+    const complexTypeVisitor = new ComplexTypeVisitor(filePath);
 
-    traverse(AST, visitors.merge([elementVisitor, relationVisitor]));
+    traverse(
+      AST,
+      visitors.merge([elementVisitor, relationVisitor, complexTypeVisitor])
+    );
 
     return {
       elementMap: elementVisitor.elementMap,
       relationMap: relationVisitor.relationMap,
+      complexTypeMap: complexTypeVisitor.complexTypeMap,
     };
   }
 }

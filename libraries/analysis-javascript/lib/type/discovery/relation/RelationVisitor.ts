@@ -40,7 +40,7 @@ export class RelationVisitor extends AbstractSyntaxTreeVisitor {
   ) {
     const relation: Relation = {
       id: this._getNodeId(path),
-      relation: type,
+      type: type,
       involved: involved.map((p) => {
         if (p === undefined || p === null) {
           return "anonymous"; // TODO we should look into this

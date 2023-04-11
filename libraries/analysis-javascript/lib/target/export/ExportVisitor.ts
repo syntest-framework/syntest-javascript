@@ -44,7 +44,7 @@ export class ExportVisitor extends AbstractSyntaxTreeVisitor {
     }
 
     this._exports.push(
-      ...extractExportsFromExportNamedDeclaration(this.filePath, path)
+      ...extractExportsFromExportNamedDeclaration(this, this.filePath, path)
     );
   };
 
@@ -53,7 +53,7 @@ export class ExportVisitor extends AbstractSyntaxTreeVisitor {
     path: NodePath<t.ExportDefaultDeclaration>
   ) => void = (path) => {
     this._exports.push(
-      extractExportsFromExportDefaultDeclaration(this.filePath, path)
+      extractExportsFromExportDefaultDeclaration(this, this.filePath, path)
     );
   };
 
@@ -66,6 +66,7 @@ export class ExportVisitor extends AbstractSyntaxTreeVisitor {
       }
 
       const exports = extractExportsFromExpressionStatement(
+        this,
         this.filePath,
         path
       );

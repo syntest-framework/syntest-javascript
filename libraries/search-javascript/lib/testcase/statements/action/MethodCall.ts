@@ -29,26 +29,29 @@ import { ActionStatement } from "./ActionStatement";
  * @author Dimitri Stallenberg
  */
 export class MethodCall extends ActionStatement {
-  private readonly _functionName: string;
+  private readonly _className: string;
+  private readonly _methodName: string;
 
   /**
    * Constructor
    * @param identifierDescription the return type options of the function
    * @param type the return type of the function
    * @param uniqueId id of the gene
-   * @param functionName the name of the function
+   * @param methodName the name of the function
    * @param args the arguments of the function
    */
   constructor(
     identifierDescription: IdentifierDescription,
     type: string,
     uniqueId: string,
-    functionName: string,
+    className: string,
+    methodName: string,
     arguments_: Statement[]
   ) {
     super(identifierDescription, type, uniqueId, arguments_);
     this._classType = "MethodCall";
-    this._functionName = functionName;
+    this._className = className;
+    this._methodName = methodName;
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): MethodCall {
@@ -69,7 +72,8 @@ export class MethodCall extends ActionStatement {
       this.identifierDescription,
       this.type,
       prng.uniqueId(),
-      this.functionName,
+      this.className,
+      this.methodName,
       arguments_
     );
   }
@@ -81,13 +85,18 @@ export class MethodCall extends ActionStatement {
       this.identifierDescription,
       this.type,
       this.id,
-      this.functionName,
+      this.className,
+      this.methodName,
       deepCopyArguments
     );
   }
 
-  get functionName(): string {
-    return this._functionName;
+  get methodName(): string {
+    return this._methodName;
+  }
+
+  get className(): string {
+    return this._className;
   }
 
   decode(): Decoding[] {
@@ -106,7 +115,7 @@ export class MethodCall extends ActionStatement {
       a.decode(decoder, id, options)
     );
 
-    let decoded = `const ${this.varName} = await ${objectVariable}.${this.functionName}(${arguments_})`;
+    let decoded = `const ${this.varName} = await ${objectVariable}.${this.methodName}(${arguments_})`;
 
     if (options.addLogs) {
       const logDirectory = decoder.getLogDirectory(id, this.varName);
@@ -126,6 +135,6 @@ export class MethodCall extends ActionStatement {
   // TODO
   decodeErroring(objectVariable: string): string {
     const arguments_ = this.args.map((a) => a.varName).join(", ");
-    return `await expect(${objectVariable}.${this.functionName}(${arguments_})).to.be.rejectedWith(Error);`;
+    return `await expect(${objectVariable}.${this.methodName}(${arguments_})).to.be.rejectedWith(Error);`;
   }
 }

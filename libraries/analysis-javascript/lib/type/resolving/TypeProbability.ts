@@ -18,7 +18,10 @@
 
 import { prng } from "@syntest/core";
 
-import { ComplexType } from "../ComplexType";
+import {
+  ComplexType,
+  isComplexType,
+} from "../discovery/complex-type/ComplexType";
 
 import { TypeEnum } from "./TypeEnum";
 
@@ -31,48 +34,50 @@ import { TypeEnum } from "./TypeEnum";
 
 export class TypeProbability {
   private id: string;
-  objectDescription: Map<string, ComplexType>;
-  private objectPropertyTypes: Map<string, Map<string, TypeProbability>>;
 
   private scores: Map<string, number>;
   private probabilities: Map<string, number>;
 
   private typeIsTypeProbability: Map<string, TypeProbability>;
+  private typeIsComplexType: Map<string, ComplexType>;
 
   totalScores: number;
   scoresChanged: boolean;
 
   private executionScores: Map<string, number>;
 
-  getObjectDescription(type: string): ComplexType {
-    return this.objectDescription.get(type);
-  }
-
-  getPropertyTypes(type: string): Map<string, TypeProbability> {
-    return this.objectPropertyTypes.get(type);
-  }
-
   /**
    * Constructor
    */
-  constructor(
-    initialTypes?: [string | TypeProbability, number, ComplexType | null][]
-  ) {
+  constructor() {
     this.id = prng.uniqueId();
 
-    this.objectDescription = new Map();
-    this.objectPropertyTypes = new Map();
     this.scores = new Map();
     this.probabilities = new Map();
+
     this.typeIsTypeProbability = new Map();
+    this.typeIsComplexType = new Map();
+
     this.totalScores = 0;
     this.scoresChanged = true;
 
     this.executionScores = new Map();
+  }
 
-    if (initialTypes) {
-      for (const x of initialTypes) this.addType(x[0], x[1], x[2]);
-    }
+  isComplexType(id: string): boolean {
+    return this.typeIsComplexType.has(id);
+  }
+
+  getComplexType(id: string): ComplexType {
+    return this.typeIsComplexType.get(id);
+  }
+
+  isTypeProbability(id: string): boolean {
+    return this.typeIsTypeProbability.has(id);
+  }
+
+  getTypeProbability(id: string): TypeProbability {
+    return this.typeIsTypeProbability.get(id);
   }
 
   /**
@@ -80,12 +85,7 @@ export class TypeProbability {
    * @param type the (new) identifierDescription
    * @param score the score of identifierDescription (higher score means higher probability)
    */
-  addType(
-    type: string | TypeProbability,
-    score: number,
-    objectDescription?: ComplexType | undefined,
-    propertyTypes?: Map<string, TypeProbability> | undefined
-  ) {
+  addType(type: string | TypeProbability | ComplexType, score: number) {
     if (score <= 0) {
       throw new Error("Type must be compatible");
     }
@@ -96,20 +96,14 @@ export class TypeProbability {
       this.typeIsTypeProbability.set(id, type);
 
       type = id;
+    } else if (isComplexType(type)) {
+      this.typeIsComplexType.set(type.id, type);
+
+      type = type.id;
     }
 
     if (!this.scores.has(type)) {
       this.scores.set(type, 0);
-    }
-
-    if (objectDescription) {
-      this.objectDescription.set(type, objectDescription);
-
-      if (propertyTypes) {
-        this.objectPropertyTypes.set(type, propertyTypes);
-      } else {
-        this.objectPropertyTypes.set(type, new Map<string, TypeProbability>());
-      }
     }
 
     this.scores.set(type, this.scores.get(type) + score);

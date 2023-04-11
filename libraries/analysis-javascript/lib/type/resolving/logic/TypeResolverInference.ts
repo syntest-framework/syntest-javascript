@@ -16,382 +16,344 @@
  * limitations under the License.
  */
 
-import { Scope } from "@syntest/ast-visitor-javascript";
-
-import { ComplexType } from "../../ComplexType";
 import { Relation, RelationType } from "../../discovery/relation/Relation";
 import { elementTypeToTypingType, TypeEnum } from "../TypeEnum";
 import { TypeProbability } from "../TypeProbability";
 import { TypeResolver } from "../TypeResolver";
 
-import { createAnonObject } from "./ObjectMatcher";
-import { Element } from "../../discovery/element/Element";
+import { Element, ElementType } from "../../discovery/element/Element";
 
 export class TypeResolverInference extends TypeResolver {
-  /**
-   * This function resolves constant elements such as numerical constants or other primitives
-   * @param elements the elements to resolve
-   */
-  resolvePrimitiveElements(elements: Element[]): boolean {
-    let somethingSolved = false;
-    for (const element of elements) {
-      const typingsType = elementTypeToTypingType(element.type);
+  private _totalElementsMap: Map<string, Element>;
+  private _totalRelationsMap: Map<string, Relation>;
 
-      if (typingsType) {
-        this._setElementType(element, typingsType, 1);
-        somethingSolved = true;
-      }
-    }
-    return somethingSolved;
-  }
+  private _idRefersToIdMap: Map<string, string>;
 
-  resolveRelations(elements: Element[], relations: Relation[]): boolean {
-    let somethingSolved = false;
-    for (const relation of relations) {
-      if (this.relationFullyResolved.has(relation)) {
-        continue;
-      }
+  private _idToTypeMap: Map<string, TypeProbability>;
 
-      this.resolveRelationElements(relation);
+  // private _complexTypes: ComplexType[];
+  // private _idMightBeComplexTypeMap: Map<string, ComplexType>;
 
-      const involved: TypeProbability[] = relation.involved.map((element) =>
-        this.getElementType(element)
-      );
+  private _processedIds: Set<string>;
 
-      const relationResolved = this.resolveRelation(relation, involved);
+  constructor() {
+    super();
 
-      if (relationResolved) {
-        somethingSolved = true;
-        this.relationFullyResolved.add(relation);
-      }
-    }
-    return somethingSolved;
-  }
+    this._totalElementsMap = new Map();
+    this._totalRelationsMap = new Map();
 
-  resolveComplexElements(
-    elements: Element[],
-    relations: Relation[],
-    wrapperElementIsRelation: Map<string, Relation>,
-    objects: ComplexType[]
-  ): boolean {
-    let somethingSolved = false;
+    this._idRefersToIdMap = new Map();
 
-    // filter relations by property accessors
-    // we cannot do anything with computed propertyAccessors since we don't know the computed value
-    const propertyAccessors = relations.filter(
-      (r) => r.relation === RelationType.PropertyAccessor && !r.computed
-    );
+    this._idToTypeMap = new Map();
 
-    for (const element of elements) {
-      const isRelation =
-        element.type === "relation" &&
-        wrapperElementIsRelation.has(element.value);
-      if (isRelation) {
-        const relation = wrapperElementIsRelation.get(element.value);
-
-        if (relation.relation !== RelationType.PropertyAccessor) {
-          continue;
-        }
-      } else if (element.type !== "identifier" || element.value === "this") {
-        continue;
-      }
-
-      let properties_ = propertyAccessors.filter(
-        (r) => r.involved[0].scope.filePath === element.scope.filePath
-      );
-
-      properties_ = properties_.filter(
-        (r) => r.involved[0].scope.uid === element.scope.uid
-      );
-
-      properties_ = properties_.filter((r) => {
-        if (
-          isRelation &&
-          r.involved[0].type === "relation" &&
-          wrapperElementIsRelation.has(r.involved[0].value)
-        ) {
-          const elementRelation = wrapperElementIsRelation.get(element.value);
-          const propertyRelation = wrapperElementIsRelation.get(
-            r.involved[0].value
-          );
-          if (propertyRelation.relation === RelationType.PropertyAccessor) {
-            return (
-              propertyRelation.involved[0].value ===
-                elementRelation.involved[0].value &&
-              propertyRelation.involved[1].value ===
-                elementRelation.involved[1].value
-            );
-          }
-        }
-        return r.involved[0].value === element.value;
-      });
-
-      const properties = properties_
-        .map((r) => r.involved[1])
-
-        // remove duplicates
-        // eslint-disable-next-line unicorn/no-array-reduce
-        .reduce((unique: Element[], item) => {
-          const found = unique.find((uniqueItem: Element) => {
-            return (
-              uniqueItem.value === item.value &&
-              uniqueItem.scope.uid === item.scope.uid
-            );
-
-            // && uniqueItem.scope.type === item.scope.type
-          });
-          return found ? unique : [...unique, item];
-        }, []);
-
-      if (properties.length === 0) {
-        continue;
-      }
-
-      // TODO find out wether function property or regular property
-
-      // TODO can be improved by comparing property types
-
-      const objects_ = [
-        createAnonObject(
-          properties,
-          wrapperElementIsRelation,
-          this.elementTyping
-        ),
-        ...objects,
-      ];
-
-      // find matching objects
-      for (const object of objects_) {
-        let score = 0;
-        for (const property of properties) {
-          if (
-            object.properties.has(property.value) ||
-            object.functions.has(property.value)
-          ) {
-            score += 1;
-          }
-        }
-
-        // atleast score of one
-        if (score > 0) {
-          let type: string;
-
-          switch (object.name) {
-            case "function": {
-              type = TypeEnum.FUNCTION;
-
-              break;
-            }
-            case "string": {
-              type = TypeEnum.STRING;
-
-              break;
-            }
-            case "array": {
-              type = TypeEnum.ARRAY;
-
-              break;
-            }
-            default: {
-              type =
-                object.name === "anon" || !object.name
-                  ? TypeEnum.OBJECT
-                  : object.name;
-            }
-          }
-
-          const propertyTypings: Map<string, TypeProbability> = new Map();
-
-          for (const function_ of object.functions) {
-            const typeMap = new TypeProbability([
-              [TypeEnum.FUNCTION, 1, undefined],
-            ]);
-
-            propertyTypings.set(function_, typeMap);
-          }
-
-          for (const property of object.properties) {
-            if (object.propertyType && object.propertyType.has(property)) {
-              const typeMap = new TypeProbability([
-                [object.propertyType.get(property), 1, undefined],
-              ]);
-              propertyTypings.set(property, typeMap);
-              continue;
-            }
-
-            // TODO scope?
-            const element = properties.find((p) => p.value === property);
-
-            if (element) {
-              propertyTypings.set(element.value, this.getElementType(element));
-              continue;
-            }
-
-            // get type info from the object definition
-            const relevantRelations = relations
-              .filter((r) => r.relation === RelationType.PropertyAccessor)
-              .filter(
-                (r) => r.involved[1].scope.filePath === object.export?.filePath
-              )
-              .filter((r) =>
-                r.involved[1].scope.uid.split("-").includes(object.name)
-              )
-              .filter((r) => r.involved[0].value === "this")
-              .filter((r) => r.involved[1].value === property)
-              .filter((r) => r.involved[1].type === "identifier");
-
-            elements = relevantRelations.map((r) => r.involved[1]);
-
-            if (elements.length > 2) {
-              const element1 = elements[0];
-
-              for (const element2 of elements) {
-                if (element1 !== element2) {
-                  throw new Error(
-                    `Elements are not equal! \n${JSON.stringify(
-                      element1
-                    )} \n${JSON.stringify(element2)}`
-                  );
-                }
-              }
-            }
-
-            if (elements.length > 0) {
-              propertyTypings.set(
-                elements[0].value,
-                this.getElementType(elements[0])
-              );
-              continue;
-            }
-          }
-
-          // properties.forEach((p) => {
-          //   if (this.elementTyping.has(p)) {
-          //     found += 1
-          //     propertyTypings.set(p.value, this.elementTyping.get(p))
-          //   } else {
-          //     const typeMap = new TypeProbabilityMap()
-          //     // standard types
-          //     if (object.functions.has(p.value)) {
-          //       found += 1
-          //       typeMap.addType({
-          //         type: TypeEnum.FUNCTION
-          //       })
-          //     } else if (object.propertyType && object.propertyType.has(p.value)) {
-          //       found += 1
-          //       typeMap.addType(object.propertyType.get(p.value))
-          //     }
-          //
-          //     propertyTypings.set(p.value, typeMap)
-          //   }
-          // })
-
-          this._setElementType(element, type, score, object, propertyTypings);
-
-          somethingSolved = true; // TODO should be here right?
-        }
-      }
-    }
-
-    return somethingSolved;
+    this._processedIds = new Set();
   }
 
   resolveTypes(
-    elements: Element[],
-    relations: Relation[],
-    wrapperElementIsRelation: Map<string, Relation>,
-    objects: ComplexType[]
+    elementMap: Map<string, Element>,
+    relationMap: Map<string, Relation>
   ) {
-    this.wrapperElementIsRelation = wrapperElementIsRelation;
+    this._totalElementsMap = new Map([
+      ...this._totalElementsMap,
+      ...elementMap,
+    ]);
+    this._totalRelationsMap = new Map([
+      ...this._totalRelationsMap,
+      ...relationMap,
+    ]);
 
-    this.resolvePrimitiveElements(elements);
-    this.resolveRelations(elements, relations);
-    this.resolveComplexElements(
-      elements,
-      relations,
-      wrapperElementIsRelation,
-      objects
-    );
+    this.createLiteralTypeMaps(elementMap);
+    this.createIdentifierTypeMaps(elementMap);
+    this.createRelationTypeMaps(relationMap);
+
+    // this.create objects
+
+    this.inferRelationReturnTypes(relationMap);
+    this.inferRelationArgumentTypes(relationMap);
   }
 
-  getTyping(scope: Scope, variableName: string): TypeProbability {
-    const elements = this.elements.filter((element) => !!element.scope);
+  createLiteralTypeMaps(elementMap: Map<string, Element>) {
+    for (const element of elementMap.values()) {
+      if (element.type === ElementType.Identifier) {
+        continue;
+      }
 
-    const correctFile = elements.filter(
-      (element) => element.scope.filePath === scope.filePath
-    );
+      const typeProbability = new TypeProbability();
+      typeProbability.addType(elementTypeToTypingType(element.type), 1);
+      this._idToTypeMap.set(element.id, typeProbability);
+    }
+  }
 
-    const correctVariable = correctFile.filter(
-      (element) => element.value === variableName
-    );
+  createIdentifierTypeMaps(elementMap: Map<string, Element>) {
+    for (const element of elementMap.values()) {
+      if (element.type !== ElementType.Identifier) {
+        continue;
+      }
 
-    const correctScope = correctVariable.find(
-      (element) => `${element.scope.uid}` === `${scope.uid}`
-    );
+      this._idRefersToIdMap.set(element.id, element.bindingId);
+      if (this._idToTypeMap.has(element.bindingId)) {
+        continue;
+      }
 
-    const element = correctScope;
+      const typeProbability = new TypeProbability();
+      this._idToTypeMap.set(element.bindingId, typeProbability);
+    }
+  }
 
-    if (!element) {
-      // throw new Error("Invalid!")
-      return new TypeProbability();
+  createRelationTypeMaps(relationMap: Map<string, Relation>) {
+    for (const relation of relationMap.values()) {
+      const typeProbability = new TypeProbability();
+      this._idToTypeMap.set(relation.id, typeProbability);
+    }
+  }
+
+  // findComplexTypes(relationMap: Map<string, Relation>) {
+  //   const complexTypes = new Map<string, ComplexType>();
+
+  //   for (const relation of relationMap.values()) {
+  //     if (relation.type === RelationType.PropertyAccessor || relation.type === RelationType.OptionalPropertyAccessor) {
+  //       let objectId = relation.involved[0]
+  //       objectId = this._idRefersToIdMap.has(objectId) ? this._idRefersToIdMap.get(objectId) : objectId
+
+  //       const propertyId = relation.involved[1]
+
+  //       const object = this._totalElementsMap.has(objectId) ? this._totalElementsMap.get(objectId) : this._totalRelationsMap.get(objectId);
+  //       const property = this._totalElementsMap.has(propertyId) ? this._totalElementsMap.get(propertyId) : this._totalRelationsMap.get(propertyId);
+
+  //       if (object === undefined || property === undefined) {
+  //         throw new Error(`Object or property not found object: ${object}, property: ${property}`);
+  //       }
+
+  //       if (!complexTypes.has(objectId)) {
+  //         complexTypes.set(objectId, {
+  //           id: objectId,
+  //           properties: new Map()
+  //         });
+  //       }
+
+  //       if (isRelation(property)) { // i.e. property is a function
+  //         // check wether the relation is actually a function of some sort
+  //         const functionId = property.involved[0]
+  //         const functionElement = this._totalElementsMap.get(functionId)
+  //         const propertyName = "name" in functionElement ? functionElement.name : functionElement.value
+
+  //         // TODO or function id?
+  //         complexTypes.get(objectId).properties.set(propertyName, this.getTyping(property.id))
+  //       } else {
+  //         const propertyName = "name" in property ? property.name : property.value
+  //         complexTypes.get(objectId).properties.set(propertyName, this.getTyping(property.id))
+  //       }
+  //     } else if (relation.type === RelationType.ObjectPattern) {
+  //       const properties = new Map<string, TypeProbability>()
+
+  //       for (const elementId of relation.involved) {
+  //         const subRelation = this._totalRelationsMap.get(elementId)
+
+  //         if (subRelation === undefined) {
+  //           throw new Error(`Subrelation not found ${elementId}`);
+  //         }
+
+  //         if (subRelation.type === RelationType.ObjectProperty) {
+  //           const propertyId = subRelation.involved[0]
+  //           const property = this._totalElementsMap.get(propertyId)
+
+  //           if (property === undefined) {
+  //             throw new Error(`Property not found ${propertyId}`);
+  //           }
+
+  //           const propertyName = "name" in property ? property.name : property.value
+
+  //           const valueId = subRelation.involved[1]
+  //           properties.set(propertyName, this.getTyping(valueId))
+  //         } else if (subRelation.type === RelationType.ObjectMethod) {
+  //           const propertyId = subRelation.involved[0]
+  //           const property = this._totalElementsMap.get(propertyId)
+
+  //           if (property === undefined) {
+  //             throw new Error(`Property not found ${propertyId}`);
+  //           }
+
+  //           const propertyName = "name" in property ? property.name : property.value
+
+  //           properties.set(propertyName, this.getTyping(propertyId))
+  //         }
+  //       }
+
+  //       complexTypes.set(relation.id, {
+  //         id: relation.id,
+  //         properties: properties
+  //       });
+  //     } else if (relation.type === RelationType.ClassDefinition) {
+
+  //     }
+
+  //   }
+  // }
+
+  inferRelationReturnTypes(relationMap: Map<string, Relation>) {
+    for (const relation of relationMap.values()) {
+      const involved: TypeProbability[] = relation.involved.map((elementId) =>
+        this.getTyping(elementId)
+      );
+
+      this.resolveRelation(relation, involved);
+    }
+  }
+
+  inferRelationArgumentTypes(relationMap: Map<string, Relation>) {
+    for (const relation of relationMap.values()) {
+      this.resolveRelationElements(relation);
+    }
+  }
+
+  getTyping(id: string): TypeProbability {
+    return this._idToTypeMap.get(this._idRefersToIdMap.get(id));
+  }
+
+  getElement(id: string): Element {
+    return this._totalElementsMap.get(id);
+  }
+
+  getRelation(id: string): Relation {
+    return this._totalRelationsMap.get(id);
+  }
+
+  addType(
+    id: string,
+    type: TypeEnum | TypeProbability | (TypeEnum | TypeProbability)[]
+  ): boolean {
+    if (this._processedIds.has(id)) {
+      return false;
     }
 
-    return this.getElementType(element);
+    this._processedIds.add(id);
+
+    if (this._totalElementsMap.has(id)) {
+      const element = this._totalElementsMap.get(id);
+
+      if (element.type === ElementType.Identifier) {
+        id = element.bindingId;
+      }
+    }
+
+    const typeProbability = this.getTyping(id);
+
+    if (typeProbability === undefined) {
+      throw new Error(`Type probability not found for ${id}`);
+    }
+
+    if (Array.isArray(type)) {
+      for (const t of type) {
+        typeProbability.addType(t, 1);
+      }
+    } else {
+      typeProbability.addType(type, 1);
+    }
+
+    return true;
   }
 
   resolveRelationElements(relation: Relation): boolean {
-    const relationType: RelationType = relation.relation;
-    const involved: Element[] = relation.involved;
+    const relationType: RelationType = relation.type;
+    const involved: string[] = relation.involved;
 
     switch (relationType) {
-      case RelationType.Await: {
-        // often function?
-        this.setElementType(relation, involved[0], TypeEnum.FUNCTION, 1);
-        this.setProcessed(relation, involved[0]);
-        return true;
+      case RelationType.Return: {
+        return this.addType(involved[0], TypeEnum.FUNCTION);
+      }
+      case RelationType.Call: {
+        return this.addType(involved[0], TypeEnum.FUNCTION);
+      }
+      case RelationType.PrivateName: {
+        return false;
+      }
+      case RelationType.ObjectProperty: {
+        return false;
+      }
+      case RelationType.ObjectMethod: {
+        return this.addType(involved[0], TypeEnum.FUNCTION);
       }
 
-      case RelationType.FunctionDefinition: {
-        // could be multiple things
-        // but we do know that the first involved element is a function
-        this.setElementType(relation, involved[0], TypeEnum.FUNCTION, 1);
-        this.setProcessed(relation, involved[0]);
+      case RelationType.ClassProperty: {
+        return this.addType(involved[0], TypeEnum.OBJECT);
+      }
+      case RelationType.StaticClassProperty: {
+        return this.addType(involved[0], TypeEnum.OBJECT);
+      }
+      case RelationType.ClassMethod:
+      case RelationType.AsyncClassMethod:
+      case RelationType.StaticClassMethod:
+      case RelationType.StaticAsyncClassMethod:
+      case RelationType.ClassConstructor: {
+        return (
+          this.addType(involved[0], TypeEnum.OBJECT) ||
+          this.addType(involved[0], TypeEnum.FUNCTION)
+        );
+      }
+      case RelationType.ClassGetter: {
+        return this.addType(involved[0], TypeEnum.OBJECT);
+      }
+      case RelationType.ClassSetter: {
+        return (
+          this.addType(involved[0], TypeEnum.OBJECT) ||
+          this.addType(involved[0], TypeEnum.FUNCTION)
+        );
+      }
+
+      case RelationType.ArrayPattern: {
         return false;
+      }
+      case RelationType.ObjectPattern: {
+        return false;
+      }
+      case RelationType.RestElement: {
+        return this.addType(involved[0], TypeEnum.ARRAY);
+      }
+
+      // Primary Expressions
+      case RelationType.This: {
+        return this.addType(involved[0], TypeEnum.OBJECT);
+      }
+      case RelationType.ArrayInitializer: {
+        return false;
+      }
+      case RelationType.ObjectInitializer: {
+        return false;
+      }
+      case RelationType.FunctionDefinition: {
+        return this.addType(involved[0], TypeEnum.FUNCTION);
       }
       case RelationType.ClassDefinition: {
-        this.setElementType(relation, involved[0], TypeEnum.OBJECT, 1);
-        this.setProcessed(relation, involved[0]);
-        return true;
+        return this.addType(involved[0], TypeEnum.OBJECT);
       }
-
-      case RelationType.Object: // could be multiple things
-      case RelationType.ObjectProperty: // could be multiple things
-      case RelationType.Array: // could be multiple things
+      case RelationType.FunctionStarDefinition:
+      case RelationType.AsyncFunctionDefinition:
+      case RelationType.AsyncFunctionStarDefinition: {
+        return this.addType(involved[0], TypeEnum.FUNCTION);
+      }
+      case RelationType.TemplateLiteral: {
+        return false;
+      }
       case RelationType.Sequence: {
-        // could be multiple things
         return false;
       }
 
-      case RelationType.PropertyAccessor: {
+      // Left-hand-side Expressions
+      case RelationType.PropertyAccessor:
+      case RelationType.OptionalPropertyAccessor: {
         // could be multiple things
         // although the first has to an object/array
-        this.setElementType(relation, involved[0], TypeEnum.OBJECT, 1);
-        this.setElementType(relation, involved[0], TypeEnum.ARRAY, 1);
-        this.setElementType(relation, involved[0], TypeEnum.FUNCTION, 1);
-        this.setElementType(relation, involved[0], TypeEnum.STRING, 1);
-        this.setProcessed(relation, involved[0]);
-        return false;
+        return this.addType(involved[0], [
+          TypeEnum.OBJECT,
+          TypeEnum.ARRAY,
+          TypeEnum.FUNCTION,
+          TypeEnum.STRING,
+        ]);
       }
+
       case RelationType.New: {
         //
         return false;
-      }
-      case RelationType.Spread: {
-        // should be iterable
-        this.setElementType(relation, involved[0], TypeEnum.OBJECT, 1);
-        this.setElementType(relation, involved[0], TypeEnum.ARRAY, 1);
-        this.setProcessed(relation, involved[0]);
-        return true;
       }
 
       case RelationType.PlusPlusPrefix: // must be numerical
@@ -399,9 +361,7 @@ export class TypeResolverInference extends TypeResolver {
       case RelationType.PlusPlusPostFix: // must be numerical
       case RelationType.MinusMinusPostFix: {
         // must be numerical
-        this.setElementType(relation, involved[0], TypeEnum.NUMERIC, 1);
-        this.setProcessed(relation, involved[0]);
-        return true;
+        return this.addType(involved[0], TypeEnum.NUMERIC);
       }
 
       // Unary
@@ -433,16 +393,17 @@ export class TypeResolverInference extends TypeResolver {
         // could be multiple things
         return false;
       }
+      case RelationType.Await: {
+        // often function?
+        return this.addType(involved[0], TypeEnum.FUNCTION);
+      }
 
       // binary
       case RelationType.Addition: {
-        this.setElementType(relation, involved[0], TypeEnum.NUMERIC, 1);
-        this.setElementType(relation, involved[0], TypeEnum.STRING, 1);
-        this.setElementType(relation, involved[1], TypeEnum.NUMERIC, 1);
-        this.setElementType(relation, involved[1], TypeEnum.STRING, 1);
-        this.setProcessed(relation, involved[0]);
-        this.setProcessed(relation, involved[1]);
-        return false;
+        return (
+          this.addType(involved[0], [TypeEnum.NUMERIC, TypeEnum.STRING]) ||
+          this.addType(involved[1], [TypeEnum.NUMERIC, TypeEnum.STRING])
+        );
       } // could be multiple things
       case RelationType.Subtraction: // must be numerical
       case RelationType.Division: // must be numerical
@@ -450,24 +411,19 @@ export class TypeResolverInference extends TypeResolver {
       case RelationType.Remainder: // must be numerical
       case RelationType.Exponentiation: {
         // must be numerical
-        this.setElementType(relation, involved[0], TypeEnum.NUMERIC, 1);
-        this.setElementType(relation, involved[1], TypeEnum.NUMERIC, 1);
-        this.setProcessed(relation, involved[0]);
-        this.setProcessed(relation, involved[1]);
-        return true;
+        return (
+          this.addType(involved[0], TypeEnum.NUMERIC) ||
+          this.addType(involved[1], TypeEnum.NUMERIC)
+        );
       }
 
       case RelationType.In: {
-        // could be multiple things
-        this.setElementType(relation, involved[1], TypeEnum.OBJECT, 1);
-        this.setProcessed(relation, involved[1]);
-        return false;
+        // could be multiple things      /// TODO or array?
+        return this.addType(involved[1], [TypeEnum.OBJECT, TypeEnum.ARRAY]);
       }
       case RelationType.InstanceOf: {
         // could be multiple things
-        this.setElementType(relation, involved[1], TypeEnum.STRING, 1);
-        this.setProcessed(relation, involved[1]);
-        return false;
+        return this.addType(involved[1], TypeEnum.STRING);
       }
       case RelationType.Less: // must be numeric
       case RelationType.Greater: // must be numeric
@@ -475,11 +431,10 @@ export class TypeResolverInference extends TypeResolver {
       case RelationType.GreaterOrEqual: {
         // must be numeric
         // TODO not actually true this can also be other things
-        this.setElementType(relation, involved[0], TypeEnum.NUMERIC, 1);
-        this.setElementType(relation, involved[1], TypeEnum.NUMERIC, 1);
-        this.setProcessed(relation, involved[0]);
-        this.setProcessed(relation, involved[1]);
-        return true;
+        return (
+          this.addType(involved[0], TypeEnum.NUMERIC) ||
+          this.addType(involved[1], TypeEnum.NUMERIC)
+        );
       }
 
       case RelationType.Equality: // could be multiple things
@@ -487,11 +442,14 @@ export class TypeResolverInference extends TypeResolver {
       case RelationType.StrictEquality: // could be multiple things
       case RelationType.StrictInequality: {
         // could be multiple things
-        this.setElementTypeToElement(relation, involved[0], involved[1], 1);
-        this.setElementTypeToElement(relation, involved[1], involved[0], 1);
-        this.setProcessed(relation, involved[0]);
-        this.setProcessed(relation, involved[1]);
-        return true;
+
+        // get types
+        const typeOfInvolved0 = this.getTyping(involved[0]);
+        const typeOfInvolved1 = this.getTyping(involved[1]);
+        return (
+          this.addType(involved[0], typeOfInvolved1) ||
+          this.addType(involved[1], typeOfInvolved0)
+        );
       }
 
       case RelationType.BitwiseLeftShift: // must be numeric
@@ -502,11 +460,10 @@ export class TypeResolverInference extends TypeResolver {
       case RelationType.BitwiseOr: // must be numeric
       case RelationType.BitwiseXor: {
         // must be numeric
-        this.setElementType(relation, involved[0], TypeEnum.NUMERIC, 1);
-        this.setElementType(relation, involved[1], TypeEnum.NUMERIC, 1);
-        this.setProcessed(relation, involved[0]);
-        this.setProcessed(relation, involved[1]);
-        return true;
+        return (
+          this.addType(involved[0], TypeEnum.NUMERIC) ||
+          this.addType(involved[1], TypeEnum.NUMERIC)
+        );
       }
 
       case RelationType.LogicalAnd: // could be multiple things
@@ -526,11 +483,13 @@ export class TypeResolverInference extends TypeResolver {
 
       case RelationType.Assignment: {
         // must be the same
-        this.setElementTypeToElement(relation, involved[0], involved[1], 1);
-        this.setElementTypeToElement(relation, involved[1], involved[0], 1);
-        this.setProcessed(relation, involved[0]);
-        this.setProcessed(relation, involved[1]);
-        return true;
+        // get types
+        const typeOfInvolved0 = this.getTyping(involved[0]);
+        const typeOfInvolved1 = this.getTyping(involved[1]);
+        return (
+          this.addType(involved[0], typeOfInvolved1) ||
+          this.addType(involved[1], typeOfInvolved0)
+        );
       }
       case RelationType.MultiplicationAssignment: // must be numeric
       case RelationType.ExponentiationAssignment: // must be numeric
@@ -544,23 +503,17 @@ export class TypeResolverInference extends TypeResolver {
       case RelationType.BitwiseXorAssignment: // must be numeric
       case RelationType.BitwiseOrAssignment: {
         // must be numeric
-        this.setElementType(relation, involved[0], TypeEnum.NUMERIC, 1);
-        this.setElementType(relation, involved[1], TypeEnum.NUMERIC, 1);
-        this.setProcessed(relation, involved[0]);
-        this.setProcessed(relation, involved[1]);
-
-        return true;
+        return (
+          this.addType(involved[0], TypeEnum.NUMERIC) ||
+          this.addType(involved[1], TypeEnum.NUMERIC)
+        );
       }
       case RelationType.AdditionAssignment: {
         // must be numeric or string
-        this.setElementType(relation, involved[0], TypeEnum.NUMERIC, 1);
-        this.setElementType(relation, involved[1], TypeEnum.NUMERIC, 1);
-        this.setElementType(relation, involved[0], TypeEnum.STRING, 1);
-        this.setElementType(relation, involved[1], TypeEnum.STRING, 1);
-        this.setProcessed(relation, involved[0]);
-        this.setProcessed(relation, involved[1]);
-
-        return true;
+        return (
+          this.addType(involved[0], [TypeEnum.NUMERIC, TypeEnum.STRING]) ||
+          this.addType(involved[1], [TypeEnum.NUMERIC, TypeEnum.STRING])
+        );
       }
 
       case RelationType.LogicalAndAssignment: // could be multiple things
@@ -569,67 +522,128 @@ export class TypeResolverInference extends TypeResolver {
         // could be multiple things
         // left is boolean
         // right is probably boolean
-        this.setElementType(relation, involved[0], TypeEnum.BOOLEAN, 1);
-        this.setProcessed(relation, involved[0]);
+        return this.addType(involved[0], TypeEnum.BOOLEAN);
+      }
+
+      case RelationType.Yield:
+      case RelationType.YieldStar: {
         return false;
       }
 
-      case RelationType.Return: // could be multiple things
-
-      // multi
-      case RelationType.Call: {
-        // could be multiple things
-        // but we do know that the first involved element is a function
-        this.setElementType(relation, involved[0], TypeEnum.FUNCTION, 1);
-        this.setProcessed(relation, involved[0]);
-        return false;
+      case RelationType.Spread: {
+        // should be iterable
+        return this.addType(involved[0], [TypeEnum.OBJECT, TypeEnum.ARRAY]);
       }
 
-      case RelationType.PrivateName: {
+      case RelationType.Comma: {
         return false;
       }
     }
   }
 
-  resolveRelation(relation: Relation, involved: TypeProbability[]): boolean {
-    // TODO
+  resolveRelation(
+    relation: Relation,
+    involvedTypes: TypeProbability[]
+  ): boolean {
+    const involved: string[] = relation.involved;
 
-    switch (relation.relation) {
-      case RelationType.Await: {
-        // It should be equal to the result of the function return type
+    switch (relation.type) {
+      case RelationType.Return: {
+        return this.addType(relation.id, involvedTypes[1]);
+      }
+      case RelationType.Call: {
+        // TODO should be the return of the function
+        return false; //this.addType(relation.id, involved[0]);
+      }
+      case RelationType.PrivateName: {
         return false;
       }
+      case RelationType.ObjectProperty: {
+        // should create a property on an object
+        return false;
+      }
+      case RelationType.ObjectMethod: {
+        // should create a property on an object
+        return false;
+      }
+
+      case RelationType.ClassProperty: {
+        // should create a property on an object
+        return false;
+      }
+      case RelationType.StaticClassProperty: {
+        // should create a property on an object
+        return false;
+      }
+      case RelationType.ClassMethod:
+      case RelationType.AsyncClassMethod:
+      case RelationType.StaticClassMethod:
+      case RelationType.StaticAsyncClassMethod:
+      case RelationType.ClassConstructor: {
+        // should create a property on an object
+        return false;
+      }
+      case RelationType.ClassGetter: {
+        // should create a property on an object
+        return false;
+      }
+      case RelationType.ClassSetter: {
+        // should create a property on an object
+        return false;
+      }
+
+      case RelationType.ArrayPattern: {
+        return false;
+      }
+      case RelationType.ObjectPattern: {
+        return false;
+      }
+      case RelationType.RestElement: {
+        return false;
+      }
+
+      // Primary Expressions
+      case RelationType.This: {
+        return this.addType(relation.id, TypeEnum.OBJECT);
+      }
+      case RelationType.ArrayInitializer: {
+        return this.addType(relation.id, TypeEnum.ARRAY);
+      }
+      case RelationType.ObjectInitializer: {
+        return this.addType(relation.id, TypeEnum.OBJECT);
+      }
       case RelationType.FunctionDefinition: {
-        this.setRelationType(relation, TypeEnum.FUNCTION, 1);
-        return true;
+        return this.addType(relation.id, TypeEnum.FUNCTION);
       }
       case RelationType.ClassDefinition: {
-        this.setRelationType(relation, TypeEnum.OBJECT, 1);
-        return true;
+        return this.addType(relation.id, TypeEnum.OBJECT);
+      }
+      case RelationType.FunctionStarDefinition:
+      case RelationType.AsyncFunctionDefinition:
+      case RelationType.AsyncFunctionStarDefinition: {
+        return this.addType(relation.id, TypeEnum.FUNCTION);
+      }
+      case RelationType.TemplateLiteral: {
+        return this.addType(relation.id, TypeEnum.STRING);
+      }
+      case RelationType.Sequence: {
+        return false;
       }
 
       // Unary
-      case RelationType.PropertyAccessor: {
-        // must be equal to the identifierDescription of the member element
-        this.setRelationType(relation, involved[1], 1);
-        return true;
+      case RelationType.PropertyAccessor:
+      case RelationType.OptionalPropertyAccessor: {
+        // must be equal to the identifierDescription of the property element
+        const typeOfRelation = this.getTyping(relation.id);
+        const typeOfInvolved = involvedTypes[1];
+        return (
+          this.addType(relation.id, typeOfInvolved) ||
+          this.addType(involved[1], typeOfRelation)
+        );
       }
       case RelationType.New: {
         // always an object
-        this.setRelationType(relation, TypeEnum.OBJECT, 1);
-        this.setRelationType(relation, involved[0], 1);
-        return true;
-      }
-      case RelationType.Spread: {
-        // must be array i think
-        this.setRelationType(relation, TypeEnum.ARRAY, 1);
-        return true;
-      }
-
-      case RelationType.ObjectProperty: // could be multiple things
-      case RelationType.Sequence: {
-        // could be multiple things
-        return false;
+        return this.addType(relation.id, [TypeEnum.OBJECT, involvedTypes[0]]);
       }
 
       case RelationType.PlusPlusPostFix: // must be numerical
@@ -637,31 +651,26 @@ export class TypeResolverInference extends TypeResolver {
       case RelationType.PlusPlusPrefix: // must be numerical
       case RelationType.MinusMinusPrefix: {
         // must be numerical
-        this.setRelationType(relation, TypeEnum.NUMERIC, 1);
-        return true;
+        return this.addType(relation.id, TypeEnum.NUMERIC);
       }
 
       case RelationType.Delete: {
         // must be void
-        this.setRelationType(relation, TypeEnum.UNDEFINED, 1);
-        return true;
+        return this.addType(relation.id, TypeEnum.UNDEFINED);
       }
       case RelationType.Void: {
         // must be void
-        this.setRelationType(relation, TypeEnum.UNDEFINED, 1);
-        return true;
+        return this.addType(relation.id, TypeEnum.UNDEFINED);
       }
 
       case RelationType.TypeOf: {
         // must be string
-        this.setRelationType(relation, TypeEnum.STRING, 1);
-        return true;
+        return this.addType(relation.id, TypeEnum.STRING);
       }
       case RelationType.PlusUnary: // must be numerical
       case RelationType.MinusUnary: {
         // must be numerical
-        this.setRelationType(relation, TypeEnum.NUMERIC, 1);
-        return true;
+        return this.addType(relation.id, TypeEnum.NUMERIC);
       }
       case RelationType.BitwiseNotUnary: {
         // todo
@@ -669,17 +678,18 @@ export class TypeResolverInference extends TypeResolver {
       }
       case RelationType.LogicalNotUnary: {
         // must be boolean
-        this.setRelationType(relation, TypeEnum.BOOLEAN, 1);
-        return true;
+        return this.addType(relation.id, TypeEnum.BOOLEAN);
+      }
+      case RelationType.Await: {
+        // TODO It should be equal to the result of the function return type
+        return false;
       }
 
       // binary
       case RelationType.Addition: {
         // TODO can be more
         // TODO should be based on what the involved values are
-        this.setRelationType(relation, TypeEnum.NUMERIC, 1);
-        this.setRelationType(relation, TypeEnum.STRING, 1);
-        return true;
+        return this.addType(relation.id, [TypeEnum.NUMERIC, TypeEnum.STRING]);
       }
       case RelationType.Subtraction: // must be numerical
       case RelationType.Division: // must be numerical
@@ -687,8 +697,7 @@ export class TypeResolverInference extends TypeResolver {
       case RelationType.Remainder: // must be numerical
       case RelationType.Exponentiation: {
         // must be numerical
-        this.setRelationType(relation, TypeEnum.NUMERIC, 1);
-        return true;
+        return this.addType(relation.id, TypeEnum.NUMERIC);
       } // todo
 
       case RelationType.In: // must be boolean
@@ -698,8 +707,7 @@ export class TypeResolverInference extends TypeResolver {
       case RelationType.LessOrEqual: // must be boolean
       case RelationType.GreaterOrEqual: {
         // must be boolean
-        this.setRelationType(relation, TypeEnum.BOOLEAN, 1);
-        return true;
+        return this.addType(relation.id, TypeEnum.BOOLEAN);
       }
 
       case RelationType.Equality: // must be boolean
@@ -707,38 +715,31 @@ export class TypeResolverInference extends TypeResolver {
       case RelationType.StrictEquality: // must be boolean
       case RelationType.StrictInequality: {
         // must be boolean
-        this.setRelationType(relation, TypeEnum.BOOLEAN, 1);
-        return true;
+        return this.addType(relation.id, TypeEnum.BOOLEAN);
       }
 
       case RelationType.BitwiseLeftShift: // must be numeric
       case RelationType.BitwiseRightShift: // must be numeric
       case RelationType.BitwiseUnsignedRightShift: {
         // must be numeric
-        this.setRelationType(relation, TypeEnum.NUMERIC, 1);
-        return true;
+        return this.addType(relation.id, TypeEnum.NUMERIC);
       }
 
       case RelationType.BitwiseAnd: // must be numeric
       case RelationType.BitwiseOr: // must be numeric
       case RelationType.BitwiseXor: {
         // must be numeric
-        this.setRelationType(relation, TypeEnum.NUMERIC, 1);
-        return true;
+        return this.addType(relation.id, TypeEnum.NUMERIC);
       }
 
       case RelationType.LogicalOr: {
         // can be the identifierDescription of the first or second one depending on if the first is not false/null/undefined
-        this.setRelationType(relation, involved[0], 1);
-        this.setRelationType(relation, involved[1], 1);
-        return true;
+        return this.addType(relation.id, [involvedTypes[0], involvedTypes[1]]);
       }
 
       case RelationType.LogicalAnd: {
         //can be the boolean or the identifierDescription of the second one depending on if the first and second are not false/null/undefined
-        this.setRelationType(relation, involved[0], 1);
-        this.setRelationType(relation, involved[1], 1);
-        return true;
+        return this.addType(relation.id, [involvedTypes[0], involvedTypes[1]]);
       }
       case RelationType.NullishCoalescing: {
         //??
@@ -748,9 +749,7 @@ export class TypeResolverInference extends TypeResolver {
       // ternary
       case RelationType.Conditional: {
         // could be multiple things
-        this.setRelationType(relation, involved[0], 1);
-        this.setRelationType(relation, involved[1], 1);
-        return true;
+        return this.addType(relation.id, [involvedTypes[1], involvedTypes[2]]);
       }
 
       case RelationType.Assignment: // no relation identifierDescription
@@ -770,33 +769,20 @@ export class TypeResolverInference extends TypeResolver {
       case RelationType.LogicalOrAssignment: // no relation identifierDescription
       case RelationType.LogicalNullishAssignment: {
         // no relation identifierDescription
-        this.setRelationType(relation, TypeEnum.UNDEFINED, 1);
-        return true;
+        return this.addType(relation.id, TypeEnum.UNDEFINED);
       }
 
-      // TODO
-
-      case RelationType.Return: {
-        // must be equal to the identifierDescription of the returned element
-        this.setRelationType(relation, involved[1], 1);
-        return true;
-      }
-
-      case RelationType.Call: {
-        // must be the return identifierDescription of the called function
+      case RelationType.Yield:
+      case RelationType.YieldStar: {
         return false;
       }
-      case RelationType.Object: {
-        // could be multiple things
-        this.setRelationType(relation, TypeEnum.OBJECT, 1);
-        return true;
+
+      case RelationType.Spread: {
+        // results in a sequence of the type of the spread
+        return false;
       }
-      case RelationType.Array: {
-        // could be multiple things
-        this.setRelationType(relation, TypeEnum.ARRAY, 1);
-        return true;
-      }
-      case RelationType.PrivateName: {
+
+      case RelationType.Comma: {
         return false;
       }
     }

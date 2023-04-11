@@ -50,7 +50,8 @@
     "@syntest/cli-graphics": "beta",
     "@syntest/search-javascript": "*",
     "@syntest/logging": "beta",
-    "@syntest/module": "beta"
+    "@syntest/module": "beta",
+    "@syntest/core": "beta"
   },
   "engines": {
     "node": ">=10.24.0"

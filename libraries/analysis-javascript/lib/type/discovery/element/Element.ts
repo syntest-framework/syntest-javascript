@@ -16,18 +16,31 @@
  * limitations under the License.
  */
 
-import { Scope } from "@syntest/ast-visitor-javascript";
+import { Binding } from "@babel/traverse";
 
-export interface Element {
+export type Element = Identifier | Literal;
+
+export interface Identifier {
   id: string;
-  scope: Scope;
-  type: ElementType;
-  value: string;
+  type: ElementType.Identifier;
+  binding: Binding;
+  bindingId: string;
+  name: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isInstanceOfElement(object: any): object is Element {
-  return "scope" in object && "type" in object && "value" in object;
+export interface Literal {
+  id: string;
+  type:
+    | ElementType.StringLiteral
+    | ElementType.NumericalLiteral
+    | ElementType.NullLiteral
+    | ElementType.BooleanLiteral
+    | ElementType.RegExpLiteral
+    | ElementType.TemplateLiteral
+    | ElementType.BigIntLiteral
+    | ElementType.DecimalLiteral
+    | ElementType.Undefined;
+  value: string;
 }
 
 export enum ElementType {
@@ -43,11 +56,4 @@ export enum ElementType {
   Undefined = "undefined",
 
   Identifier = "identifier",
-}
-
-export function getElementId(element: Element): string {
-  if (!element.scope) {
-    return `scope=null,type=${element.type},value=${element.value}`;
-  }
-  return `scope=(id=${element.scope.uid},filePath=${element.scope.filePath}),type=${element.type},value=${element.value}`;
 }

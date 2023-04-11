@@ -21,8 +21,12 @@ export * from "./lib/ast/defaultBabelConfig";
 export * from "./lib/cfg/ControlFlowGraphFactory";
 export * from "./lib/cfg/ControlFlowGraphVisitor";
 
+export * from "./lib/dependency/DependencyFactory";
+export * from "./lib/dependency/DependencyVisitor";
+
 export * from "./lib/target/export/Export";
 export * from "./lib/target/export/ExportDefaultDeclaration";
+export * from "./lib/target/export/ExportFactory";
 export * from "./lib/target/export/ExportNamedDeclaration";
 export * from "./lib/target/export/ExportVisitor";
 export * from "./lib/target/export/ExpressionStatement";
@@ -33,16 +37,11 @@ export * from "./lib/target/TargetFactory";
 export * from "./lib/target/TargetVisitor";
 export * from "./lib/target/VisibilityType";
 
-export * from "./lib/type/ComplexType";
-export * from "./lib/type/discovery/object/ObjectGenerator";
-export * from "./lib/type/discovery/object/ObjectVisitor";
+export * from "./lib/type/discovery/complex-type/ComplexType";
 
-export * from "./lib/type/discovery/element/ElementTypeMap";
 export * from "./lib/type/discovery/relation/Relation";
 export * from "./lib/type/discovery/VariableGenerator";
-export * from "./lib/type/discovery/VariableVisitor";
 
-export * from "./lib/type/resolving/logic/ObjectMatcher";
 export * from "./lib/type/resolving/logic/TypeResolverInference";
 
 export * from "./lib/type/resolving/TypeEnum";

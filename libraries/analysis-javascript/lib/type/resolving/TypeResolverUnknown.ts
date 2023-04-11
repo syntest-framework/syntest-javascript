@@ -16,12 +16,22 @@
  * limitations under the License.
  */
 
+import { Element } from "../discovery/element/Element";
+import { Relation } from "../discovery/relation/Relation";
 import { TypeProbability } from "./TypeProbability";
 import { TypeResolver } from "./TypeResolver";
 
 export class TypeResolverUnknown extends TypeResolver {
   getTyping(): TypeProbability {
     return new TypeProbability();
+  }
+
+  getElement(): Element {
+    throw new Error("Method not implemented.");
+  }
+
+  getRelation(): Relation {
+    throw new Error("Method not implemented.");
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function

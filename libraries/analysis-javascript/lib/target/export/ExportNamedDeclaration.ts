@@ -16,51 +16,56 @@
  * limitations under the License.
  */
 import { NodePath } from "@babel/core";
-import { Scope as BabelScope } from "@babel/traverse";
 import * as t from "@babel/types";
 
 import { Export } from "./Export";
+import { ExportVisitor } from "./ExportVisitor";
 
 function extractFromIdentifier(
+  visitor: ExportVisitor,
   filePath: string,
-  scope: BabelScope,
-  node: t.Identifier,
-  init?: t.Node
+  path: NodePath<t.Identifier>,
+  initPath?: NodePath<t.Node>
 ): Export {
-  return init && init.type === "Identifier"
-    ? {
-        scope: scope,
-        filePath,
-        name: init.name,
-        renamedTo: node.name,
-        default: false,
-        module: false,
-      }
-    : {
-        scope: scope,
-        filePath,
-        name: node.name,
-        renamedTo: node.name,
-        default: false,
-        module: false,
-      };
+  if (initPath && initPath.isIdentifier()) {
+    const binding = visitor._getBinding(initPath);
+
+    return {
+      id: visitor._getNodeId(binding.path),
+      filePath,
+      name: initPath.node.name,
+      renamedTo: path.node.name,
+      default: false,
+      module: false,
+    };
+  } else {
+    // not sure about this id
+    return {
+      id: visitor._getNodeId(path),
+      filePath,
+      name: path.node.name,
+      renamedTo: path.node.name,
+      default: false,
+      module: false,
+    };
+  }
 }
 
 function extractFromObjectPattern(
+  visitor: ExportVisitor,
   filePath: string,
-  scope: BabelScope,
-  node: t.ObjectPattern,
-  init: t.Node
+  path: NodePath<t.ObjectPattern>,
+  initPath: NodePath<t.Node>
 ): Export[] {
   const exports: Export[] = [];
 
-  if (init.type !== "ObjectExpression") {
+  if (!initPath.isObjectExpression()) {
     // unsupported
     // e.g. export const {a} = o
     throw new Error("Property init is not an object expression");
   }
 
-  if (node.properties.length !== init.properties.length) {
+  if (path.get("properties").length !== initPath.get("properties").length) {
     // unsupported
     // e.g. export const {a, b} = {a: 1}
     // the number of properties in the object pattern should be the same as the number of properties in the object expression
@@ -69,132 +74,144 @@ function extractFromObjectPattern(
     );
   }
 
-  for (const property of node.properties) {
-    if (property.type === "RestElement") {
+  for (const property of path.get("properties")) {
+    if (property.isRestElement()) {
       // unsupported
       // e.g. export const {a, ...b} = objectA
       // if we have a rest element, we bassically export all the properties of the rest element so it is not possible to know what is exported
       throw new Error("RestElement is not supported");
     }
 
-    if (property.key.type !== "Identifier") {
-      // unsupported
-      // not possible i think
-      throw new Error("Property key is not an identifier");
-    }
-
-    const propertyName = property.key.name;
-
-    // find the property in the object expression that has the same name as the property in the object pattern
-    const match = init.properties.find((_property) => {
-      if (_property.type === "SpreadElement") {
-        // unsupported
-        // e.g. export const {a, b} = {a, ...o}
-        // if we have a sperad element, we bassically export all the properties of the spread element so it is not possible to know what is exported
-        throw new Error("SpreadElement is not supported");
-      }
-
-      if (_property.key.type !== "Identifier") {
+    if (property.isObjectProperty()) {
+      const key = property.get("key");
+      if (!key.isIdentifier()) {
         // unsupported
         // not possible i think
         throw new Error("Property key is not an identifier");
       }
 
-      // so we want to find the property that has the same name as the property in the object pattern
-      // e.g. export const {a} = {a: 1}
-      return _property.key.name === propertyName;
-    });
+      const propertyName = key.node.name;
 
-    if (!match) {
-      throw new Error("Property not found");
-    }
+      // find the property in the object expression that has the same name as the property in the object pattern
+      const match = initPath.get("properties").find((_property) => {
+        if (_property.node.type === "SpreadElement") {
+          // unsupported
+          // e.g. export const {a, b} = {a, ...o}
+          // if we have a sperad element, we bassically export all the properties of the spread element so it is not possible to know what is exported
+          throw new Error("SpreadElement is not supported");
+        }
 
-    // stupid hack to make typescript happy (is already checked above)
-    if (match.type === "SpreadElement") {
-      // unsupported
-      // should never happen
-      // if we have a sperad element, we bassically export all the properties of the spread element so it is not possible to know what is exported
-      throw new Error("SpreadElement is not supported");
-    }
+        if (_property.node.key.type !== "Identifier") {
+          // unsupported
+          // not possible i think
+          throw new Error("Property key is not an identifier");
+        }
 
-    if (match.type === "ObjectMethod") {
-      // unsupported
-      // no idea what this is
-      throw new Error("ObjectMethod is not supported");
-    }
-
-    if (match.key.type !== "Identifier") {
-      // unsupported
-      // should never happen
-      throw new Error("Property key is not an identifier");
-    }
-
-    if (match.value.type === "Identifier") {
-      // if the value assigned is an identifier we rename the identifier
-      // e.g. export const {a} = {a: b}
-      // in the above example we rename b to a (as the export)
-      exports.push({
-        scope: scope,
-        filePath,
-        name: match.value.name,
-        renamedTo: property.key.name,
-        default: false,
-        module: false,
+        // so we want to find the property that has the same name as the property in the object pattern
+        // e.g. export const {a} = {a: 1}
+        return _property.node.key.name === propertyName;
       });
-    } else {
-      // no rename, probably a literal
-      // e.g. export const {a} = {a: 1}
-      exports.push({
-        scope: scope,
-        filePath,
-        name: property.key.name,
-        renamedTo: property.key.name,
-        default: false,
-        module: false,
-      });
+
+      if (!match) {
+        throw new Error("Property not found");
+      }
+
+      // stupid hack to make typescript happy (is already checked above)
+      if (match.isSpreadElement()) {
+        // unsupported
+        // should never happen
+        // if we have a sperad element, we bassically export all the properties of the spread element so it is not possible to know what is exported
+        throw new Error("SpreadElement is not supported");
+      }
+
+      if (match.isObjectMethod()) {
+        // unsupported
+        // no idea what this is
+        throw new Error("ObjectMethod is not supported");
+      }
+
+      if (!key.isIdentifier()) {
+        // unsupported
+        // should never happen
+        throw new Error("Property key is not an identifier");
+      }
+
+      if (match.isObjectProperty()) {
+        if (match.node.value.type === "Identifier") {
+          // if the value assigned is an identifier we rename the identifier
+          // e.g. export const {a} = {a: b}
+          // in the above example we rename b to a (as the export)
+
+          // get the binding of the local variable b
+          const binding = visitor._getBinding(match.get("value"));
+
+          exports.push({
+            id: visitor._getNodeId(binding.path),
+            filePath,
+            name: match.node.value.name,
+            renamedTo: key.node.name,
+            default: false,
+            module: false,
+          });
+        } else {
+          // no rename, probably a literal
+          // e.g. export const {a} = {a: 1}
+          exports.push({
+            id: visitor._getNodeId(match.get("value")),
+            filePath,
+            name: key.node.name,
+            renamedTo: key.node.name,
+            default: false,
+            module: false,
+          });
+        }
+      }
     }
   }
   return exports;
 }
 
 function extractFromArrayPattern(
+  visitor: ExportVisitor,
   filePath: string,
-  scope: BabelScope,
-  node: t.ArrayPattern,
-  init: t.Node
+  path: NodePath<t.ArrayPattern>,
+  initPath: NodePath<t.Node>
 ): Export[] {
   const exports: Export[] = [];
 
-  if (init.type !== "ArrayExpression") {
+  if (!initPath.isArrayExpression()) {
     // unsupported
     // e.g. export const [a] = o
-    throw new Error("Property init is not an object expression");
+    throw new Error("Property init is not an array expression");
   }
 
-  if (node.elements.length !== init.elements.length) {
+  if (path.get("elements").length !== initPath.get("elements").length) {
     // unsupported
     // e.g. export const [a, b] = [1]
     throw new Error("Array length does not match");
   }
 
-  for (let index = 0; index < node.elements.length; index++) {
-    const element = node.elements[index];
-    const initElement = init.elements[index];
+  for (let index = 0; index < path.get("elements").length; index++) {
+    const element = path.get("elements")[index];
+    const initElement = initPath.get("elements")[index];
 
-    if (element.type !== "Identifier") {
+    if (!element.isIdentifier()) {
       // unsupported
       throw new Error("Array element is not an identifier");
     }
 
-    if (initElement.type === "Identifier") {
+    if (initElement.isIdentifier()) {
       // if the value assigned is an identifier we rename the identifier
       // e.g. export const [a] = [b]
       // in the above example we rename b to a (as the export)
+
+      // get the binding of the local name
+      const binding = visitor._getBinding(initElement);
       exports.push({
-        scope: scope,
+        id: visitor._getNodeId(binding.path),
         filePath,
-        name: initElement.name,
-        renamedTo: element.name,
+        name: initElement.node.name,
+        renamedTo: element.node.name,
         default: false,
         module: false,
       });
@@ -202,10 +219,10 @@ function extractFromArrayPattern(
       // no rename, probably a literal
       // e.g. export const [a] = [1]
       exports.push({
-        scope: scope,
+        id: visitor._getNodeId(initElement),
         filePath,
-        name: element.name,
-        renamedTo: element.name,
+        name: element.node.name,
+        renamedTo: element.node.name,
         default: false,
         module: false,
       });
@@ -216,66 +233,42 @@ function extractFromArrayPattern(
 }
 
 export function extractExportsFromExportNamedDeclaration(
+  visitor: ExportVisitor,
   filePath: string,
   path: NodePath<t.ExportNamedDeclaration>
 ): Export[] {
   const exports: Export[] = [];
 
-  if (path.node.declaration) {
+  if (path.has("declaration")) {
+    const declaration = path.get("declaration");
+
     if (
-      path.node.declaration.type === "FunctionDeclaration" ||
-      path.node.declaration.type === "ClassDeclaration"
+      declaration.isFunctionDeclaration() ||
+      declaration.isClassDeclaration()
     ) {
       exports.push({
-        scope: path.scope,
+        id: visitor._getNodeId(declaration),
         filePath,
-        name: path.node.declaration.id.name,
-        renamedTo: path.node.declaration.id.name,
+        name: declaration.node.id.name,
+        renamedTo: declaration.node.id.name,
         default: false,
         module: false,
       });
-    } else if (path.node.declaration.type === "VariableDeclaration") {
-      for (const declaration of path.node.declaration.declarations) {
-        switch (declaration.id.type) {
-          case "Identifier": {
-            exports.push(
-              extractFromIdentifier(
-                filePath,
-                path.scope,
-                declaration.id,
-                declaration.init
-              )
-            );
+    } else if (declaration.isVariableDeclaration()) {
+      for (const declaration_ of declaration.get("declarations")) {
+        const id = declaration_.get("id");
+        const init = declaration_.get("init");
 
-            break;
-          }
-          case "ObjectPattern": {
-            exports.push(
-              ...extractFromObjectPattern(
-                filePath,
-                path.scope,
-                declaration.id,
-                declaration.init
-              )
-            );
-
-            break;
-          }
-          case "ArrayPattern": {
-            exports.push(
-              ...extractFromArrayPattern(
-                filePath,
-                path.scope,
-                declaration.id,
-                declaration.init
-              )
-            );
-
-            break;
-          }
-          default: {
-            throw new Error("Unsupported declaration type");
-          }
+        if (id.isIdentifier()) {
+          exports.push(extractFromIdentifier(visitor, filePath, id, init));
+        } else if (id.isObjectPattern()) {
+          exports.push(
+            ...extractFromObjectPattern(visitor, filePath, id, init)
+          );
+        } else if (id.isArrayPattern()) {
+          exports.push(...extractFromArrayPattern(visitor, filePath, id, init));
+        } else {
+          throw new Error("Unsupported declaration type");
         }
       }
     } else {
@@ -283,19 +276,22 @@ export function extractExportsFromExportNamedDeclaration(
       throw new Error("Unsupported declaration type");
     }
   } else if (path.node.specifiers) {
-    for (const specifier of path.node.specifiers) {
-      if (specifier.type === "ExportSpecifier") {
+    for (const specifierPath of path.get("specifiers")) {
+      if (specifierPath.isExportSpecifier()) {
         // e.g. export {a as b}
         // e.g. export {a as "b"}
         // e.g. export {a}
+        // get the binding of the local name
+        const binding = visitor._getBinding(specifierPath.get("local"));
+
         exports.push({
-          scope: path.scope,
+          id: visitor._getNodeId(binding.path),
           filePath,
-          name: specifier.local.name,
+          name: specifierPath.node.local.name,
           renamedTo:
-            specifier.exported.type === "Identifier"
-              ? specifier.exported.name
-              : specifier.exported.value,
+            specifierPath.node.exported.type === "Identifier"
+              ? specifierPath.node.exported.name
+              : specifierPath.node.exported.value,
           default: false,
           module: false,
         });

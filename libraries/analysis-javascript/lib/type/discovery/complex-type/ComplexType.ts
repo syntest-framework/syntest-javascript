@@ -15,7 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export interface Scope {
-  uid: string;
-  filePath: string;
+
+export interface ComplexType {
+  id: string;
+  // name -> id
+  properties: Map<string, string>;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isComplexType(object: any): object is ComplexType {
+  return (
+    object !== null &&
+    typeof object === "object" &&
+    "id" in object &&
+    "properties" in object
+  );
 }

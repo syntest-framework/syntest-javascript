@@ -95,6 +95,13 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
           // e.g. class A { x = function () {} }
           // e.g. class A { x = () => {} }
           return parentNode.key.name;
+        } else if (parentNode.key.type.includes("Literal")) {
+          // e.g. class A { "x" = class {} }
+          // e.g. class A { "x" = function () {} }
+          // e.g. class A { "x" = () => {} }
+          return "value" in parentNode.key
+            ? parentNode.key.value.toString()
+            : "null";
         } else {
           // e.g. const {x} = class {}
           // e.g. const {x} = function {}

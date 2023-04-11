@@ -37,12 +37,20 @@ export class ElementVisitor extends AbstractSyntaxTreeVisitor {
     type: ElementType,
     value: string
   ) {
-    const element: Element = {
-      id: this._getNodeId(path),
-      scope: this._getScope(path),
-      type,
-      value,
-    };
+    const element: Element =
+      type === ElementType.Identifier
+        ? {
+            id: this._getNodeId(path),
+            type: ElementType.Identifier,
+            binding: this._getBinding(path),
+            bindingId: this._getNodeId(this._getBinding(path).path),
+            name: value,
+          }
+        : {
+            id: this._getNodeId(path),
+            type: type,
+            value,
+          };
     this._elementMap.set(element.id, element);
   }
 

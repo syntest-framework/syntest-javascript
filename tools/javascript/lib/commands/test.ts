@@ -16,13 +16,14 @@
  * limitations under the License.
  */
 import { UserInterface } from "@syntest/cli-graphics";
-import { Command } from "@syntest/module";
+import { Command, ModuleManager } from "@syntest/module";
 import Yargs = require("yargs");
 
 import { JavaScriptLauncher } from "../JavaScriptLauncher";
 
 export function getTestCommand(
   tool: string,
+  moduleManager: ModuleManager,
   userInterface: UserInterface
 ): Command {
   const options = new Map<string, Yargs.Options>();
@@ -63,7 +64,7 @@ export function getTestCommand(
     "Run the test case generation tool on a certain JavaScript project.",
     options,
     async (_arguments_: Yargs.ArgumentsCamelCase) => {
-      const launcher = new JavaScriptLauncher(userInterface);
+      const launcher = new JavaScriptLauncher(moduleManager, userInterface);
       await launcher.run();
     }
   );

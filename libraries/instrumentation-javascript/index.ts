@@ -16,8 +16,9 @@
  * limitations under the License.
  */
 
-export * from "./lib/instrumentation/InstrumentationData";
+export * from "./lib/datastructures/InstrumentationData";
+export * from "./lib/datastructures/MetaData";
+
 export * from "./lib/instrumentation/Instrumenter";
-export * from "./lib/instrumentation/MetaData";
 export * from "./lib/instrumentation/Visitor";
 export * from "./lib/instrumentation/VisitState";

@@ -37,12 +37,12 @@ export abstract class ActionStatement extends Statement {
     this._args = arguments_;
   }
 
-  abstract mutate(
+  abstract override mutate(
     sampler: EncodingSampler<Encoding>,
     depth: number
   ): ActionStatement;
 
-  abstract copy(): ActionStatement;
+  abstract override copy(): ActionStatement;
 
   setChild(index: number, newChild: Statement) {
     this.args[index] = newChild;

@@ -29,6 +29,7 @@ import { ActionStatement } from "./ActionStatement";
  * @author Dimitri Stallenberg
  */
 export class Setter extends ActionStatement {
+  private readonly _className: string;
   private readonly _property: string;
 
   /**
@@ -43,11 +44,13 @@ export class Setter extends ActionStatement {
     identifierDescription: IdentifierDescription,
     type: string,
     uniqueId: string,
+    className: string,
     property: string,
     argument: Statement
   ) {
     super(identifierDescription, type, uniqueId, [argument]);
     this._classType = "Setter";
+    this._className = className;
     this._property = property;
   }
 
@@ -62,6 +65,7 @@ export class Setter extends ActionStatement {
       this.identifierDescription,
       this.type,
       prng.uniqueId(),
+      this.className,
       this.property,
       argument
     );
@@ -74,6 +78,7 @@ export class Setter extends ActionStatement {
       this.identifierDescription,
       this.type,
       this.id,
+      this.className,
       this.property,
       deepCopyArgument
     );
@@ -81,6 +86,10 @@ export class Setter extends ActionStatement {
 
   get property(): string {
     return this._property;
+  }
+
+  get className(): string {
+    return this._className;
   }
 
   decode(): Decoding[] {

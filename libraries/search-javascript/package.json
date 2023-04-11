@@ -63,7 +63,6 @@
     "istanbul-lib-instrument": "5.1.0",
     "lodash.clonedeep": "4.5.0",
     "mocha": "10.2.0",
-    "original-require": "1.0.1",
     "regenerator-runtime": "0.13.9"
   },
   "engines": {

@@ -29,6 +29,8 @@ import { NumericStatement } from "../statements/primitive/NumericStatement";
 import { StringStatement } from "../statements/primitive/StringStatement";
 import { ConstructorCall } from "../statements/root/ConstructorCall";
 import { Statement } from "../statements/Statement";
+import { RootObject } from "../statements/root/RootObject";
+import { ObjectFunctionCall } from "../statements/action/ObjectFunctionCall";
 
 /**
  * JavaScriptRandomSampler class
@@ -70,16 +72,25 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
     this._exploreIllegalValues = exploreIllegalValues;
   }
 
-  abstract sampleConstructor(depth: number): ConstructorCall;
-  abstract sampleMethodCall(depth: number): MethodCall | Getter | Setter;
+  abstract sampleClass(depth: number): ConstructorCall;
+  abstract sampleMethodCall(
+    depth: number,
+    className: string
+  ): MethodCall | Getter | Setter;
+
+  abstract sampleRootObject(depth: number): RootObject;
+  abstract sampleObjectFunctionCall(
+    depth: number,
+    objectName: string
+  ): ObjectFunctionCall;
+  // TODO
+  // abstract sampleStaticMethodCall(depth: number): MethodCall;
+  // abstract sampleFunctionCall(depth: number): FunctionCall;
+
   abstract sampleArgument(
     depth: number,
     type: IdentifierDescription
   ): Statement;
-
-  // TODO
-  // abstract sampleStaticMethodCall(depth: number): MethodCall;
-  // abstract sampleFunctionCall(depth: number): FunctionCall;
 
   abstract sampleString(
     identifierDescription?: IdentifierDescription,

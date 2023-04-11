@@ -18,6 +18,7 @@
 
 import { IdentifierDescription } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/core";
+import { TargetType } from "@syntest/analysis";
 
 import { JavaScriptSubject } from "../../../search/JavaScriptSubject";
 import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
@@ -99,15 +100,18 @@ export class ConstructorCall extends RootStatement {
     }
 
     const methodsAvailable =
-      (<JavaScriptSubject>sampler.subject).getPossibleActions(ActionType.METHOD)
-        .length > 0;
+      (<JavaScriptSubject>sampler.subject).getActionableTargetsByType(
+        TargetType.METHOD
+      ).length > 0;
 
     const finalCalls = [];
 
     // if there are no calls, add one if there are methods available
     if (calls.length === 0 && methodsAvailable) {
       // add a call
-      finalCalls.push(sampler.sampleMethodCall(depth + 1));
+      finalCalls.push(
+        sampler.sampleMethodCall(depth + 1, this._constructorName)
+      );
       return new ConstructorCall(
         this.identifierDescription,
         this.type,
@@ -126,13 +130,18 @@ export class ConstructorCall extends RootStatement {
 
         if (choice < 0.1 && methodsAvailable) {
           // 10% chance to add a call on this position
-          finalCalls.push(sampler.sampleMethodCall(depth + 1), calls[index]);
+          finalCalls.push(
+            sampler.sampleMethodCall(depth + 1, this._constructorName),
+            calls[index]
+          );
         } else if (choice < 0.2) {
           // 10% chance to delete the call
         } else {
           // 80% chance to just mutate the call
           if (sampler.resampleGeneProbability) {
-            finalCalls.push(sampler.sampleMethodCall(depth + 1));
+            finalCalls.push(
+              sampler.sampleMethodCall(depth + 1, this._constructorName)
+            );
           } else {
             finalCalls.push(calls[index].mutate(sampler, depth + 1));
           }
@@ -179,8 +188,8 @@ export class ConstructorCall extends RootStatement {
       a.decode(decoder, id, options)
     );
 
-    const childStatements: Decoding[] = this.children.flatMap((a: MethodCall) =>
-      a.decodeWithObject(decoder, id, options, this.varName)
+    const childStatements: Decoding[] = this.children.flatMap((a) =>
+      (<MethodCall>a).decodeWithObject(decoder, id, options, this.varName)
     );
 
     let decoded = `const ${this.varName} = new ${this.constructorName}(${arguments_})`;

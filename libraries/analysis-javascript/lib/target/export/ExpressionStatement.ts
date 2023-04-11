@@ -21,6 +21,7 @@ import * as t from "@babel/types";
 import { shouldNeverHappen } from "@syntest/core";
 
 import { Export } from "./Export";
+import { ExportVisitor } from "./ExportVisitor";
 
 function getName(node: t.Node): string {
   switch (node.type) {
@@ -48,16 +49,20 @@ function getName(node: t.Node): string {
 }
 
 export function extractExportsFromExpressionStatement(
+  visitor: ExportVisitor,
   filePath: string,
   path: NodePath<t.ExpressionStatement>
 ): Export[] | undefined {
-  if (path.node.expression.type !== "AssignmentExpression") {
+  const expression = path.get("expression");
+  if (!expression.isAssignmentExpression()) {
     // cannot happen (because we check this in the visitor)
     return undefined;
   }
 
-  const assigned = path.node.expression.left;
-  const init = path.node.expression.right;
+  const assigned = expression.node.left;
+  const init = expression.node.right;
+
+  const initPath = expression.get("right");
 
   let name: string;
   let default_ = false;
@@ -177,14 +182,15 @@ export function extractExportsFromExpressionStatement(
   const exports: Export[] = [];
 
   if (default_) {
-    if (init.type === "ObjectExpression") {
+    if (initPath.isObjectExpression()) {
       // e.g. exports = { a: ? }
       // e.g. module.exports = { a: ? }
-      for (const property of init.properties) {
-        if (property.type === "ObjectMethod") {
+      for (const property of initPath.get("properties")) {
+        if (property.isObjectMethod()) {
           // e.g. exports = { a() {} }
 
-          if (property.key.type !== "Identifier") {
+          const key = property.get("key");
+          if (!key.isIdentifier()) {
             // e.g. exports = { () {} }
             // unsupported
             // not possible i think
@@ -192,41 +198,46 @@ export function extractExportsFromExpressionStatement(
           }
 
           exports.push({
-            scope: path.scope,
+            id: visitor._getNodeId(property),
             filePath,
-            name: property.key.name,
-            renamedTo: property.key.name,
+            name: key.node.name,
+            renamedTo: key.node.name,
             default: false,
             module: true,
           });
-        } else if (property.type === "SpreadElement") {
+        } else if (property.isSpreadElement()) {
           // e.g. exports = { ...a }
           // unsupported
           throw new Error("Unsupported export declaration");
-        } else {
+        } else if (property.isObjectProperty()) {
+          const keyPath = property.get("key");
+          const valuePath = property.get("value");
+
           let key: string;
-          if (property.key.type.includes("Literal")) {
+          if (keyPath.node.type.includes("Literal")) {
             // e.g. exports = { "a": ? }
             // e.g. exports = { 1: ? }
             // e.g. exports = { true: ? }
             // e.g. exports = { null: ? }
             // eslint-disable-next-line unicorn/no-null
-            key = `${"value" in property.key ? property.key.value : null}`;
-          } else if (property.key.type === "Identifier") {
+            key = `${"value" in keyPath.node ? keyPath.node.value : null}`;
+          } else if (keyPath.isIdentifier()) {
             // e.g. exports = { a: ? }
-            key = property.key.name;
+            key = keyPath.node.name;
           } else {
             // e.g. exports = { 1: ? }
             // unsupported
             throw new Error("Unsupported export declaration");
           }
 
-          if (property.value.type === "Identifier") {
+          if (valuePath.isIdentifier()) {
             // e.g. exports = { a: b }
+            // get binding of b
+            const binding = visitor._getBinding(valuePath);
             exports.push({
-              scope: path.scope,
+              id: visitor._getNodeId(binding.path),
               filePath,
-              name: property.value.name,
+              name: valuePath.node.name,
               renamedTo: key,
               default: false,
               module: true,
@@ -234,7 +245,7 @@ export function extractExportsFromExpressionStatement(
           } else {
             // e.g. exports = { a: 1 }
             exports.push({
-              scope: path.scope,
+              id: visitor._getNodeId(valuePath),
               filePath,
               name: key,
               renamedTo: key,
@@ -245,24 +256,44 @@ export function extractExportsFromExpressionStatement(
         }
       }
     } else {
-      // e.g. exports = obj
-      // e.g. module.exports = obj
-      exports.push({
-        scope: path.scope,
-        filePath,
-        name: name,
-        renamedTo: name,
-        default: default_,
-        module: true,
-      });
+      // e.g. exports = ?
+
+      if (initPath.isIdentifier()) {
+        // e.g. exports = obj
+        // e.g. module.exports = obj
+        // get binding of obj
+        const binding = visitor._getBinding(initPath);
+
+        exports.push({
+          id: visitor._getNodeId(binding.path),
+          filePath,
+          name: name,
+          renamedTo: name,
+          default: default_,
+          module: true,
+        });
+      } else {
+        // e.g. exports = 1
+        // e.g. module.exports = 1
+        exports.push({
+          id: visitor._getNodeId(initPath),
+          filePath,
+          name: name,
+          renamedTo: name,
+          default: default_,
+          module: true,
+        });
+      }
     }
   } else {
     // e.g. exports.a = ??
     // e.g. module.exports.a = ??
     if (init.type === "Identifier") {
       // e.g. exports.a = b
+      // get binding of b
+      const binding = visitor._getBinding(initPath);
       exports.push({
-        scope: path.scope,
+        id: visitor._getNodeId(binding.path),
         filePath,
         name: init.name,
         renamedTo: name,
@@ -272,7 +303,7 @@ export function extractExportsFromExpressionStatement(
     } else {
       // e.g. exports.a = 1
       exports.push({
-        scope: path.scope,
+        id: visitor._getNodeId(initPath),
         filePath,
         name: name,
         renamedTo: name,
