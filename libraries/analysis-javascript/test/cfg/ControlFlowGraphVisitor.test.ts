@@ -26,7 +26,7 @@ const expect = chai.expect;
 
 function cfgHelper(source: string) {
   const generator = new AbstractSyntaxTreeFactory();
-  const ast = generator.convert(source);
+  const ast = generator.convert("", source);
 
   const visitor = new ControlFlowGraphVisitor("");
   traverse(ast, visitor);

@@ -93,9 +93,7 @@ export class RootContext extends CoreRootContext<t.Node> {
         }
       }
 
-      return readFile(absoluteTargetPath);
-
-      // this._sources.set(absoluteTargetPath, readFile(absoluteTargetPath));
+      this._sources.set(absoluteTargetPath, readFile(absoluteTargetPath));
     }
 
     return this._sources.get(absoluteTargetPath);

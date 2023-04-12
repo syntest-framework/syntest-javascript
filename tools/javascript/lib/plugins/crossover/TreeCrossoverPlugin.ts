@@ -16,25 +16,26 @@
  * limitations under the License.
  */
 import { CrossoverOptions, CrossoverPlugin } from "@syntest/base-testing-tool";
-import {
-  JavaScriptTestCase,
-  JavaScriptTreeCrossover,
-} from "@syntest/search-javascript";
+import { JavaScriptTestCase, TreeCrossover } from "@syntest/search-javascript";
 
 /**
- * Plugin for SignalTerminationTrigger
+ * Plugin for Tree Crossover
  *
  * @author Dimitri Stallenberg
  */
-export class JavaScriptTreeCrossoverPlugin extends CrossoverPlugin<JavaScriptTestCase> {
+export class TreeCrossoverPlugin extends CrossoverPlugin<JavaScriptTestCase> {
   constructor() {
     super("javascript-tree", "A JavaScript tree crossover plugin");
   }
 
-  createCrossoverOperator(options: CrossoverOptions): JavaScriptTreeCrossover {
-    return new JavaScriptTreeCrossover(
+  createCrossoverOperator(options: CrossoverOptions): TreeCrossover {
+    return new TreeCrossover(
       options.crossoverEncodingProbability,
       options.crossoverStatementProbability
     );
+  }
+
+  override getOptions() {
+    return new Map();
   }
 }

@@ -46,12 +46,12 @@
     "test:watch": "mocha --config ../../.mocharc.json --watch"
   },
   "dependencies": {
-    "@syntest/base-testing-tool": "beta",
-    "@syntest/cli-graphics": "beta",
+    "@syntest/base-testing-tool": "*",
+    "@syntest/cli-graphics": "*",
     "@syntest/search-javascript": "*",
-    "@syntest/logging": "beta",
-    "@syntest/module": "beta",
-    "@syntest/core": "beta"
+    "@syntest/logging": "*",
+    "@syntest/module": "*",
+    "@syntest/core": "*"
   },
   "engines": {
     "node": ">=10.24.0"

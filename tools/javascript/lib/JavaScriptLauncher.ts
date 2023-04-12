@@ -41,13 +41,12 @@ import {
   ObjectiveManagerPlugin,
   CrossoverPlugin,
   SearchAlgorithmPlugin,
-  createTemporaryDirectoryStructure,
-  deleteTemporaryDirectories,
   TargetSelector,
   PluginType,
   SecondaryObjectivePlugin,
   ProcreationPlugin,
   TerminationTriggerPlugin,
+  deleteDirectories,
 } from "@syntest/base-testing-tool";
 import { UserInterface, TableObject } from "@syntest/cli-graphics";
 import { ModuleManager } from "@syntest/module";
@@ -70,6 +69,7 @@ import {
   SearchTimeBudget,
   TerminationManager,
   TotalTimeBudget,
+  initializePseudoRandomNumberGenerator,
 } from "@syntest/core";
 import { Instrumenter } from "@syntest/instrumentation-javascript";
 
@@ -101,12 +101,27 @@ export class JavaScriptLauncher extends Launcher {
   }
 
   async initialize(): Promise<void> {
+    initializePseudoRandomNumberGenerator(this.arguments_.randomSeed);
     if (existsSync(".syntest")) {
-      deleteTemporaryDirectories();
+      deleteDirectories([
+        this.arguments_.tempTestDirectory,
+        this.arguments_.tempLogDirectory,
+        this.arguments_.tempInstrumentedDirectory,
+        this.arguments_.tempSyntestDirectory,
+      ]);
     }
 
-    createDirectoryStructure();
-    createTemporaryDirectoryStructure();
+    createDirectoryStructure([
+      this.arguments_.statisticsDirectory,
+      this.arguments_.logDirectory,
+      this.arguments_.testDirectory,
+    ]);
+    createDirectoryStructure([
+      this.arguments_.tempTestDirectory,
+      this.arguments_.tempLogDirectory,
+      this.arguments_.tempInstrumentedDirectory,
+      this.arguments_.tempSyntestDirectory,
+    ]);
 
     const abstractSyntaxTreeFactory = new AbstractSyntaxTreeFactory();
     const targetFactory = new TargetFactory();
@@ -219,6 +234,7 @@ export class JavaScriptLauncher extends Launcher {
     const instrumented = new Instrumenter();
     instrumented.instrumentAll(
       this.rootContext,
+      this.targets,
       this.arguments_.tempInstrumentedDirectory
     );
 
@@ -446,9 +462,10 @@ export class JavaScriptLauncher extends Launcher {
       this.arguments_.stringMaxLength,
       this.arguments_.resampleGeneProbability,
       this.arguments_.deltaMutationProbability,
-      this.arguments_.exploreIllegalValues,
-      rootContext
+      this.arguments_.exploreIllegalValues
     );
+
+    sampler.rootContext = rootContext;
 
     const secondaryObjectives = new Set(
       this.arguments_.secondaryObjectives.map((secondaryObjective) => {
@@ -484,8 +501,8 @@ export class JavaScriptLauncher extends Launcher {
 
     const procreation = (<ProcreationPlugin<JavaScriptTestCase>>(
       this.moduleManager.getPlugin(
-        PluginType.Crossover,
-        this.arguments_.crossover
+        PluginType.Procreation,
+        this.arguments_.procreation
       )
     )).createProcreationOperator({
       crossover: crossover,
@@ -563,6 +580,11 @@ export class JavaScriptLauncher extends Launcher {
   async exit(): Promise<void> {
     // TODO should be cleanup step in tool
     // Finish
-    deleteTemporaryDirectories();
+    deleteDirectories([
+      this.arguments_.tempTestDirectory,
+      this.arguments_.tempLogDirectory,
+      this.arguments_.tempInstrumentedDirectory,
+      this.arguments_.tempSyntestDirectory,
+    ]);
   }
 }

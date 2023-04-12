@@ -21,10 +21,10 @@ import * as t from "@babel/types";
 import { Binding } from "@babel/traverse";
 
 import { getLogger } from "@syntest/logging";
+import { Logger } from "winston";
 
 export class AbstractSyntaxTreeVisitor implements TraverseOptions {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected static LOGGER: any;
+  protected static LOGGER: Logger;
 
   protected _filePath: string;
 

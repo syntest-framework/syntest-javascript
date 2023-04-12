@@ -25,7 +25,7 @@ import { defaultBabelOptions } from "./defaultBabelConfig";
 export class AbstractSyntaxTreeFactory
   implements CoreAbstractSyntaxTreeFactory<t.Node>
 {
-  convert(source: string): t.Node {
+  convert(filepath: string, source: string): t.Node {
     const options: unknown = JSON.parse(JSON.stringify(defaultBabelOptions));
 
     const codeMap = transformSync(source, options);

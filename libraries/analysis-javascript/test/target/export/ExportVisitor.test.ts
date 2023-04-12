@@ -25,7 +25,7 @@ const expect = chai.expect;
 
 function exportHelper(source: string) {
   const generator = new AbstractSyntaxTreeFactory();
-  const ast = generator.convert(source);
+  const ast = generator.convert("", source);
 
   const visitor = new ExportVisitor("");
 

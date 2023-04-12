@@ -202,6 +202,14 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
           throw new Error("unknown class expression");
         }
       }
+      case "ReturnStatement": {
+        // e.g. return class {}
+        // e.g. return function () {}
+        // e.g. return () => {}
+        return "id" in path.node && path.node.id
+          ? path.node.id.name
+          : "anonymous";
+      }
       default: {
         // e.g. class {}
         // e.g. function () {}
@@ -251,7 +259,6 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
 
       const objectTarget: ObjectTarget = {
         type: TargetType.OBJECT,
-        scope: path.parentPath.scope,
         name: parentNode.left.object.name,
         id: `${this._getNodeId(path)}`,
         exported: !!export_,
@@ -261,7 +268,6 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
       const objectFunctionTarget: ObjectFunctionTarget = {
         type: TargetType.OBJECT_FUNCTION,
         objectName: parentNode.left.object.name,
-        scope: path.parentPath.scope,
         name: functionName,
         id: `${this._getNodeId(path)}`,
         isAsync: path.node.async,
@@ -272,7 +278,6 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
       const export_ = this._getExport(path, targetName);
 
       const target: FunctionTarget = {
-        scope: path.parentPath.scope,
         id: `${this._getNodeId(path)}`,
         name: targetName,
         type: TargetType.FUNCTION,
@@ -293,7 +298,6 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
       const export_ = this._getExport(path, targetName);
 
       const target: FunctionTarget = {
-        scope: path.parentPath.scope,
         id: `${this._getNodeId(path)}`,
         name: targetName,
         type: TargetType.FUNCTION,
@@ -314,7 +318,6 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
 
     const target: ClassTarget = {
       id: `${this._getNodeId(path)}`,
-      scope: path.parentPath.scope,
       name: targetName,
       type: TargetType.CLASS,
       exported: !!export_,
@@ -334,7 +337,6 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
 
     const target: ClassTarget = {
       id: `${this._getNodeId(path)}`,
-      scope: path.parentPath.scope,
       name: targetName,
       type: TargetType.CLASS,
       exported: !!export_,
@@ -445,7 +447,6 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
 
     const target: MethodTarget = {
       id: `${this._getNodeId(path)}`,
-      scope: path.parentPath.scope,
       name: targetName,
       type: TargetType.METHOD,
       className: parentClassName,
@@ -496,7 +497,6 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
 
       const objectTarget: ObjectTarget = {
         type: TargetType.OBJECT,
-        scope: path.parentPath.scope,
         name: parentNode.left.object.name,
         id: `${this._getNodeId(path)}`,
         exported: !!export_,
@@ -506,7 +506,6 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
       const objectFunctionTarget: ObjectFunctionTarget = {
         type: TargetType.OBJECT_FUNCTION,
         objectName: parentNode.left.object.name,
-        scope: path.parentPath.scope,
         name: functionName,
         id: `${this._getNodeId(path)}`,
         isAsync: path.node.async,
@@ -532,7 +531,6 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
       // }
 
       const target: MethodTarget = {
-        scope: path.parentPath.scope,
         id: `${this._getNodeId(path)}`,
         className: parentClassName,
         name: targetName,
@@ -548,7 +546,6 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
       const export_ = this._getExport(path, targetName);
 
       const target: FunctionTarget = {
-        scope: path.parentPath.scope,
         id: `${this._getNodeId(path)}`,
         name: targetName,
         type: TargetType.FUNCTION,
@@ -781,16 +778,14 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
     this._subTargets = this._subTargets
       .reverse()
       .filter((subTarget, index, self) => {
-        if ("name" in subTarget && "scope" in subTarget) {
+        if ("name" in subTarget) {
           return (
             index ===
             self.findIndex((t) => {
               return (
                 "name" in t &&
-                "scope" in t &&
                 t.type === subTarget.type &&
                 t.name === subTarget.name &&
-                t.scope === subTarget.scope &&
                 (t.type === TargetType.METHOD
                   ? (<MethodTarget>t).methodType ===
                       (<MethodTarget>subTarget).methodType &&

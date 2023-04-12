@@ -39,15 +39,17 @@ import { JavaScriptTestCase } from "../JavaScriptTestCase";
 
 import { ExecutionInformationIntegrator } from "./ExecutionInformationIntegrator";
 import { SilentMochaReporter } from "./SilentMochaReporter";
+import { Logger } from "winston";
 
 export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
-  private static LOGGER = getLogger("JavaScriptRunner");
+  protected static LOGGER: Logger;
 
   protected decoder: JavaScriptDecoder;
   protected tempTestDirectory: string;
   protected executionInformationIntegrator: ExecutionInformationIntegrator;
 
   constructor(decoder: JavaScriptDecoder, temporaryTestDirectory: string) {
+    JavaScriptRunner.LOGGER = getLogger(JavaScriptRunner.name);
     this.decoder = decoder;
     this.tempTestDirectory = temporaryTestDirectory;
     this.executionInformationIntegrator = new ExecutionInformationIntegrator();

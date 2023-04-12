@@ -38,12 +38,18 @@ export class RelationVisitor extends AbstractSyntaxTreeVisitor {
     involved: NodePath<t.Node>[],
     computed = false
   ) {
+    const id = this._getNodeId(path);
     const relation: Relation = {
-      id: this._getNodeId(path),
+      id: id,
       type: type,
       involved: involved.map((p) => {
-        if (p === undefined || p === null) {
-          return "anonymous"; // TODO we should look into this
+        if (
+          p === undefined ||
+          p === null ||
+          p.node === null ||
+          p.node === undefined
+        ) {
+          return `${id}::anonymous`; // TODO we should look into this
         }
         return this._getNodeId(p);
       }),

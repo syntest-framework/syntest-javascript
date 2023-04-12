@@ -18,7 +18,11 @@
 
 import { transformSync } from "@babel/core";
 import { Visitor } from "./Visitor";
-import { RootContext, defaultBabelOptions } from "@syntest/analysis-javascript";
+import {
+  RootContext,
+  Target,
+  defaultBabelOptions,
+} from "@syntest/analysis-javascript";
 import * as path from "node:path";
 import { copySync, outputFileSync } from "fs-extra";
 
@@ -31,6 +35,7 @@ export class Instrumenter {
   // TODO maybe the instrumenter should not be responsible for copying the files
   async instrumentAll(
     rootContext: RootContext,
+    targets: Target[],
     temporaryInstrumentedDirectory: string
   ): Promise<void> {
     const absoluteRootPath = path.resolve(rootContext.rootPath);
@@ -45,9 +50,7 @@ export class Instrumenter {
 
     // overwrite the stuff that needs instrumentation
 
-    const targetPaths = [...rootContext.targets.values()].map(
-      (target) => target.path
-    );
+    const targetPaths = [...targets.values()].map((target) => target.path);
 
     for (const targetPath of targetPaths) {
       const source = rootContext.getSource(targetPath);

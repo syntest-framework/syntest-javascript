@@ -21,8 +21,6 @@ import {
   TargetType,
 } from "@syntest/analysis";
 
-import { Scope as BabelScope } from "@babel/traverse";
-
 import { VisibilityType } from "./VisibilityType";
 
 export interface Target extends CoreTarget {
@@ -37,7 +35,6 @@ export interface SubTarget extends CoreSubTarget {
 }
 
 export interface NamedSubTarget extends SubTarget {
-  scope: BabelScope;
   name: string;
 }
 

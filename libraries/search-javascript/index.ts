@@ -18,7 +18,7 @@
 
 export * from "./lib/criterion/BranchDistance";
 
-export * from "./lib/search/crossover/JavaScriptTreeCrossover";
+export * from "./lib/search/crossover/TreeCrossover";
 
 export * from "./lib/search/JavaScriptExecutionResult";
 export * from "./lib/search/JavaScriptSubject";

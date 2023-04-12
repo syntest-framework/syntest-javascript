@@ -43,7 +43,7 @@ interface QueueEntry {
  * @author Dimitri Stallenberg
  */
 // TODO check if this still works
-export class JavaScriptTreeCrossover extends Crossover<JavaScriptTestCase> {
+export class TreeCrossover extends Crossover<JavaScriptTestCase> {
   public crossOver(parents: JavaScriptTestCase[]): JavaScriptTestCase[] {
     if (parents.length !== 2) {
       throw new Error("Expected exactly 2 parents, got: " + parents.length);

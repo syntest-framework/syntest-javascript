@@ -21,6 +21,7 @@ import { getLogger } from "@syntest/logging";
 
 import { RootStatement } from "./statements/root/RootStatement";
 import { JavaScriptTestCaseSampler } from "./sampling/JavaScriptTestCaseSampler";
+import { Logger } from "winston";
 
 /**
  * JavaScriptTestCase class
@@ -28,7 +29,8 @@ import { JavaScriptTestCaseSampler } from "./sampling/JavaScriptTestCaseSampler"
  * @author Dimitri Stallenberg
  */
 export class JavaScriptTestCase extends Encoding {
-  private static LOGGER = getLogger("JavaScriptTestCase");
+  protected static LOGGER: Logger;
+
   private _root: RootStatement;
 
   /**
@@ -38,6 +40,7 @@ export class JavaScriptTestCase extends Encoding {
    */
   constructor(root: RootStatement) {
     super();
+    JavaScriptTestCase.LOGGER = getLogger(JavaScriptTestCase.name);
     this._root = root;
   }
 

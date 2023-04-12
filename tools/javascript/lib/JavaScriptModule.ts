@@ -20,9 +20,12 @@ import { Module, ModuleManager, Tool } from "@syntest/module";
 import yargs = require("yargs");
 
 import { getTestCommand } from "./commands/test";
-import { TestingToolModule } from "@syntest/base-testing-tool";
+import { Configuration, TestingToolModule } from "@syntest/base-testing-tool";
 import { UserInterface } from "@syntest/cli-graphics";
 import { MetricManager } from "@syntest/metric";
+import { RandomSamplerPlugin } from "./plugins/sampler/RandomSamplerPlugin";
+import { TreeCrossoverPlugin } from "./plugins/crossover/TreeCrossoverPlugin";
+// import { JavaScriptTreeCrossoverPlugin } from "./plugins/crossover/JavaScriptTreeCrossoverPlugin";
 
 export default class JavaScriptModule extends TestingToolModule {
   constructor() {
@@ -36,12 +39,16 @@ export default class JavaScriptModule extends TestingToolModule {
     userInterface: UserInterface,
     modules: Module[]
   ): void {
-    super.register(moduleManager, metricManager, userInterface, modules);
-
     const labels = ["javascript", "testing"];
     const commands = [getTestCommand(this.name, moduleManager, userInterface)];
 
     const additionalOptions: Map<string, yargs.Options> = new Map();
+
+    const configuration = new Configuration();
+
+    for (const [key, value] of Object.entries(configuration.getOptions())) {
+      additionalOptions.set(key, value);
+    }
 
     const javascriptTool = new Tool(
       this.name,
@@ -52,5 +59,10 @@ export default class JavaScriptModule extends TestingToolModule {
     );
 
     moduleManager.registerTool(this.name, javascriptTool);
+
+    moduleManager.registerPlugin(this.name, new TreeCrossoverPlugin());
+    moduleManager.registerPlugin(this.name, new RandomSamplerPlugin());
+
+    super.register(moduleManager, metricManager, userInterface, modules);
   }
 }

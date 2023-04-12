@@ -22,7 +22,7 @@ import { createHash } from "crypto";
 import { NodePath, template } from "@babel/core";
 import * as t from "@babel/types";
 
-const { name } = require("../../package.json");
+const name = "syntest";
 
 // increment this version if there are schema changes
 // that are not backwards compatible:

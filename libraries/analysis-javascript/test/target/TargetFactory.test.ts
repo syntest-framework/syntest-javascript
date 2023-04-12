@@ -34,7 +34,7 @@ describe("TargetFactory", () => {
         }
     }
     `;
-    const ast = new AbstractSyntaxTreeFactory().convert(code);
+    const ast = new AbstractSyntaxTreeFactory().convert("", code);
 
     const targetMapGenerator = new TargetFactory();
     const target = targetMapGenerator.extract("", ast);

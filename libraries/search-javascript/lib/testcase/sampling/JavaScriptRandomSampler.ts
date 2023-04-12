@@ -54,7 +54,7 @@ import { TargetType } from "@syntest/analysis";
 import { ObjectFunctionCall } from "../statements/action/ObjectFunctionCall";
 
 export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
-  private rootContext: RootContext;
+  private _rootContext: RootContext;
 
   constructor(
     subject: JavaScriptSubject,
@@ -66,8 +66,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     stringMaxLength: number,
     resampleGeneProbability: number,
     deltaMutationProbability: number,
-    exploreIllegalValues: boolean,
-    rootContext: RootContext
+    exploreIllegalValues: boolean
   ) {
     super(
       subject,
@@ -81,7 +80,10 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       deltaMutationProbability,
       exploreIllegalValues
     );
-    this.rootContext = rootContext;
+  }
+
+  set rootContext(rootContext: RootContext) {
+    this._rootContext = rootContext;
   }
 
   sample(): JavaScriptTestCase {
@@ -134,14 +136,14 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     );
 
     // get the relation of the function
-    const relation: Relation = this.rootContext.typeResolver.getRelation(
+    const relation: Relation = this._rootContext.typeResolver.getRelation(
       action.id
     );
     const [_function, ...parameters] = relation.involved;
 
     const arguments_: Statement[] = parameters.map((parameter) => {
-      const element = this.rootContext.typeResolver.getElement(parameter);
-      const type = this.rootContext.typeResolver.getTyping(parameter);
+      const element = this._rootContext.typeResolver.getElement(parameter);
+      const type = this._rootContext.typeResolver.getTyping(parameter);
 
       const identifierDescription: IdentifierDescription = {
         name: element.type === "identifier" ? element.name : element.value,
@@ -151,8 +153,9 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       return this.sampleArgument(depth + 1, identifierDescription);
     });
 
-    const functionElement = this.rootContext.typeResolver.getElement(_function);
-    const functionType = this.rootContext.typeResolver.getTyping(_function);
+    const functionElement =
+      this._rootContext.typeResolver.getElement(_function);
+    const functionType = this._rootContext.typeResolver.getTyping(_function);
     const functionName =
       functionElement.type === "identifier"
         ? functionElement.name
@@ -187,8 +190,8 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   }
 
   sampleSpecificClass(depth: number, id: string): ConstructorCall {
-    const classElement = this.rootContext.typeResolver.getElement(id);
-    const classType = this.rootContext.typeResolver.getTyping(id);
+    const classElement = this._rootContext.typeResolver.getElement(id);
+    const classType = this._rootContext.typeResolver.getTyping(id);
     const className =
       classElement.type === "identifier"
         ? classElement.name
@@ -254,15 +257,15 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       const action = constructor_[0];
 
       // get the relation of the constructor
-      const relation: Relation = this.rootContext.typeResolver.getRelation(
+      const relation: Relation = this._rootContext.typeResolver.getRelation(
         action.id
       );
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const [_function, ...parameters] = relation.involved;
 
       const arguments_: Statement[] = parameters.map((parameter) => {
-        const element = this.rootContext.typeResolver.getElement(parameter);
-        const type = this.rootContext.typeResolver.getTyping(parameter);
+        const element = this._rootContext.typeResolver.getElement(parameter);
+        const type = this._rootContext.typeResolver.getTyping(parameter);
 
         const identifierDescription: IdentifierDescription = {
           name: element.type === "identifier" ? element.name : element.value,
@@ -344,13 +347,13 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     );
 
     // get the relation of the method
-    const relation: Relation = this.rootContext.typeResolver.getRelation(
+    const relation: Relation = this._rootContext.typeResolver.getRelation(
       action.id
     );
     const [_function, ...parameters] = relation.involved;
 
-    const methodElement = this.rootContext.typeResolver.getElement(_function);
-    const methodType = this.rootContext.typeResolver.getTyping(_function);
+    const methodElement = this._rootContext.typeResolver.getElement(_function);
+    const methodType = this._rootContext.typeResolver.getTyping(_function);
     const methodName =
       methodElement.type === "identifier"
         ? methodElement.name
@@ -364,8 +367,8 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     switch (action.methodType) {
       case "method": {
         const arguments_: Statement[] = parameters.map((parameter) => {
-          const element = this.rootContext.typeResolver.getElement(parameter);
-          const type = this.rootContext.typeResolver.getTyping(parameter);
+          const element = this._rootContext.typeResolver.getElement(parameter);
+          const type = this._rootContext.typeResolver.getTyping(parameter);
 
           const identifierDescription: IdentifierDescription = {
             name: element.type === "identifier" ? element.name : element.value,
@@ -400,8 +403,8 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       case "set": {
         // always one argument
         const arguments_: Statement[] = parameters.map((parameter) => {
-          const element = this.rootContext.typeResolver.getElement(parameter);
-          const type = this.rootContext.typeResolver.getTyping(parameter);
+          const element = this._rootContext.typeResolver.getElement(parameter);
+          const type = this._rootContext.typeResolver.getTyping(parameter);
 
           const identifierDescription: IdentifierDescription = {
             name: element.type === "identifier" ? element.name : element.value,
@@ -438,8 +441,8 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       )
     );
 
-    const objectElement = this.rootContext.typeResolver.getElement(object_.id);
-    const objectType = this.rootContext.typeResolver.getTyping(object_.id);
+    const objectElement = this._rootContext.typeResolver.getElement(object_.id);
+    const objectType = this._rootContext.typeResolver.getTyping(object_.id);
     const objectName =
       objectElement.type === "identifier"
         ? objectElement.name
@@ -487,14 +490,14 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     const action = prng.pickOne(functions);
 
     // get the relation of the function
-    const relation: Relation = this.rootContext.typeResolver.getRelation(
+    const relation: Relation = this._rootContext.typeResolver.getRelation(
       action.id
     );
     const [_function, ...parameters] = relation.involved;
 
     const arguments_: Statement[] = parameters.map((parameter) => {
-      const element = this.rootContext.typeResolver.getElement(parameter);
-      const type = this.rootContext.typeResolver.getTyping(parameter);
+      const element = this._rootContext.typeResolver.getElement(parameter);
+      const type = this._rootContext.typeResolver.getTyping(parameter);
 
       const identifierDescription: IdentifierDescription = {
         name: element.type === "identifier" ? element.name : element.value,
@@ -504,8 +507,9 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       return this.sampleArgument(depth + 1, identifierDescription);
     });
 
-    const functionElement = this.rootContext.typeResolver.getElement(_function);
-    const functionType = this.rootContext.typeResolver.getTyping(_function);
+    const functionElement =
+      this._rootContext.typeResolver.getElement(_function);
+    const functionType = this._rootContext.typeResolver.getTyping(_function);
     const functionName =
       functionElement.type === "identifier"
         ? functionElement.name
@@ -650,7 +654,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       identifierDescription.typeProbabilityMap.getComplexType(type);
 
     const filePath = complexType.id.split("::")[0];
-    const export_ = this.rootContext
+    const export_ = this._rootContext
       .getExports(filePath)
       .find((export_) => export_.id === complexType.id);
 
@@ -750,7 +754,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
         )
       );
 
-      const propertyType = this.rootContext.typeResolver.getTyping(value);
+      const propertyType = this._rootContext.typeResolver.getTyping(value);
 
       values.push(
         this.sampleArgument(depth + 1, {
