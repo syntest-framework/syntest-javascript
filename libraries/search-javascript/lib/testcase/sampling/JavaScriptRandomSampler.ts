@@ -135,6 +135,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       )
     );
 
+    console.log(action.id);
     // get the relation of the function
     const relation: Relation = this._rootContext.typeResolver.getRelation(
       action.id

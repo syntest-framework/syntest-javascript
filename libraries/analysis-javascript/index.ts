@@ -49,6 +49,8 @@ export * from "./lib/type/resolving/TypeProbability";
 export * from "./lib/type/resolving/TypeResolver";
 export * from "./lib/type/resolving/TypeResolverUnknown";
 
+export * from "./lib/type/TypeExtractor";
+
 export * from "./lib/utils/fileSystem";
 
 export * from "./lib/RootContext";

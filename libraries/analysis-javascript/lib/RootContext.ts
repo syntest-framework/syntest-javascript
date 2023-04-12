@@ -115,10 +115,6 @@ export class RootContext extends CoreRootContext<t.Node> {
     return this._exportMap.get(absolutePath);
   }
 
-  getTypes(): TypeResolver {
-    return this._typeResolver;
-  }
-
   // getTargetMap(targetPath: string): Map<string, JavaScriptTargetMetaData> {
   //   const absoluteTargetPath = path.resolve(targetPath);
 

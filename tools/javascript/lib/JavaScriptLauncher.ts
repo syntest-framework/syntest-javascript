@@ -32,6 +32,7 @@ import {
   ControlFlowGraphFactory,
   ExportFactory,
   DependencyFactory,
+  TypeExtractor,
 } from "@syntest/analysis-javascript";
 import {
   ArgumentsObject,
@@ -104,23 +105,46 @@ export class JavaScriptLauncher extends Launcher {
     initializePseudoRandomNumberGenerator(this.arguments_.randomSeed);
     if (existsSync(".syntest")) {
       deleteDirectories([
-        this.arguments_.tempTestDirectory,
-        this.arguments_.tempLogDirectory,
-        this.arguments_.tempInstrumentedDirectory,
+        path.join(
+          this.arguments_.tempSyntestDirectory,
+          this.arguments_.tempTestDirectory
+        ),
+        path.join(
+          this.arguments_.tempSyntestDirectory,
+          this.arguments_.tempLogDirectory
+        ),
+        path.join(
+          this.arguments_.tempSyntestDirectory,
+          this.arguments_.tempInstrumentedDirectory
+        ),
         this.arguments_.tempSyntestDirectory,
       ]);
     }
 
     createDirectoryStructure([
-      this.arguments_.statisticsDirectory,
-      this.arguments_.logDirectory,
-      this.arguments_.testDirectory,
+      path.join(
+        this.arguments_.syntestDirectory,
+        this.arguments_.statisticsDirectory
+      ),
+      path.join(this.arguments_.syntestDirectory, this.arguments_.logDirectory),
+      path.join(
+        this.arguments_.syntestDirectory,
+        this.arguments_.testDirectory
+      ),
     ]);
     createDirectoryStructure([
-      this.arguments_.tempTestDirectory,
-      this.arguments_.tempLogDirectory,
-      this.arguments_.tempInstrumentedDirectory,
-      this.arguments_.tempSyntestDirectory,
+      path.join(
+        this.arguments_.tempSyntestDirectory,
+        this.arguments_.tempTestDirectory
+      ),
+      path.join(
+        this.arguments_.tempSyntestDirectory,
+        this.arguments_.tempLogDirectory
+      ),
+      path.join(
+        this.arguments_.tempSyntestDirectory,
+        this.arguments_.tempInstrumentedDirectory
+      ),
     ]);
 
     const abstractSyntaxTreeFactory = new AbstractSyntaxTreeFactory();
@@ -231,11 +255,19 @@ export class JavaScriptLauncher extends Launcher {
     //     ],
     //   ])]);
 
-    const instrumented = new Instrumenter();
-    instrumented.instrumentAll(
+    const instrumenter = new Instrumenter();
+    instrumenter.instrumentAll(
       this.rootContext,
       this.targets,
       this.arguments_.tempInstrumentedDirectory
+    );
+
+    const typeExtractor = new TypeExtractor();
+    typeExtractor.extractAll(this.rootContext);
+
+    this.rootContext.typeResolver.resolveTypes(
+      typeExtractor.totalElementsMap,
+      typeExtractor.totalRelationsMap
     );
 
     // TODO types
@@ -294,14 +326,14 @@ export class JavaScriptLauncher extends Launcher {
     let paths = suiteBuilder.createSuite(
       reducedArchive,
       "../instrumented",
-      this.arguments_.tempTestDirectory,
+      temporaryTestDirectory,
       true,
       false
     );
     await suiteBuilder.runSuite(paths);
 
     // reset states
-    suiteBuilder.clearDirectory(this.arguments_.tempTestDirectory);
+    suiteBuilder.clearDirectory(temporaryTestDirectory);
 
     // run with assertions and report results
     for (const key of reducedArchive.keys()) {
@@ -311,7 +343,7 @@ export class JavaScriptLauncher extends Launcher {
     paths = suiteBuilder.createSuite(
       reducedArchive,
       "../instrumented",
-      this.arguments_.tempTestDirectory,
+      temporaryTestDirectory,
       false,
       true
     );
@@ -527,7 +559,7 @@ export class JavaScriptLauncher extends Launcher {
       populationSize: this.arguments_.populationSize,
     });
 
-    suiteBuilder.clearDirectory(this.arguments_.tempTestDirectory);
+    suiteBuilder.clearDirectory(temporaryTestDirectory);
 
     // allocate budget manager
     const iterationBudget = new IterationBudget(this.arguments_.iterations);
@@ -571,8 +603,8 @@ export class JavaScriptLauncher extends Launcher {
       this.coveredInPath.set(target.path, archive);
     }
 
-    clearDirectory(this.arguments_.tempTestDirectory);
-    clearDirectory(this.arguments_.tempLogDirectory);
+    clearDirectory(temporaryLogDirectory);
+    clearDirectory(temporaryTestDirectory);
 
     return archive;
   }
@@ -581,9 +613,18 @@ export class JavaScriptLauncher extends Launcher {
     // TODO should be cleanup step in tool
     // Finish
     deleteDirectories([
-      this.arguments_.tempTestDirectory,
-      this.arguments_.tempLogDirectory,
-      this.arguments_.tempInstrumentedDirectory,
+      path.join(
+        this.arguments_.tempSyntestDirectory,
+        this.arguments_.tempTestDirectory
+      ),
+      path.join(
+        this.arguments_.tempSyntestDirectory,
+        this.arguments_.tempLogDirectory
+      ),
+      path.join(
+        this.arguments_.tempSyntestDirectory,
+        this.arguments_.tempInstrumentedDirectory
+      ),
       this.arguments_.tempSyntestDirectory,
     ]);
   }
