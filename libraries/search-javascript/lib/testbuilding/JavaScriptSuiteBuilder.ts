@@ -105,6 +105,7 @@ export class JavaScriptSuiteBuilder {
       }
     }
 
+    console.log(paths);
     return paths;
   }
 
@@ -113,6 +114,8 @@ export class JavaScriptSuiteBuilder {
 
     const stats = runner.stats;
 
+    console.log(paths);
+    console.log(stats);
     const instrumentationData = <InstrumentationData>(
       cloneDeep(
         (<{ __coverage__: InstrumentationData }>(<unknown>global)).__coverage__

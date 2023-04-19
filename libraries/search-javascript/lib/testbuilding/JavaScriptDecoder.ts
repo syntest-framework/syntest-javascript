@@ -22,8 +22,6 @@ import { Export } from "@syntest/analysis-javascript";
 import { Decoder } from "@syntest/core";
 
 import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
-import { ConstructorCall } from "../testcase/statements/root/ConstructorCall";
-import { FunctionCall } from "../testcase/statements/root/FunctionCall";
 import { RootStatement } from "../testcase/statements/root/RootStatement";
 import { Decoding } from "../testcase/statements/Statement";
 
@@ -205,23 +203,16 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
     const importedDependencies: Set<string> = new Set<string>();
 
     for (const gene of importableGenes) {
-      const importName =
-        gene instanceof FunctionCall
-          ? gene.functionName
-          : gene instanceof ConstructorCall
-          ? gene.constructorName
-          : gene.type;
-
       // TODO how to get the export of a variable?
       // the below does not work with duplicate exports
-      const export_: Export = this.exports.find(
-        (x) => (x.renamedTo || x.name) === importName
-      );
+      const export_: Export = this.exports.find((x) => x.id === gene.id);
 
       if (!export_) {
+        console.log(this.exports);
+        console.log(gene);
         throw new Error(
           "Cannot find an export corresponding to the importable gene: " +
-            importName
+            gene.id
         );
       }
 

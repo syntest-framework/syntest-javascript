@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-import { IdentifierDescription } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/core";
 
 import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
@@ -24,13 +23,14 @@ import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSamp
 import { Decoding, Statement } from "../Statement";
 
 import { ActionStatement } from "./ActionStatement";
+import { Getter } from "./Getter";
+import { Setter } from "./Setter";
 
 /**
  * @author Dimitri Stallenberg
  */
 export class MethodCall extends ActionStatement {
   private readonly _className: string;
-  private readonly _methodName: string;
 
   /**
    * Constructor
@@ -41,39 +41,43 @@ export class MethodCall extends ActionStatement {
    * @param args the arguments of the function
    */
   constructor(
-    identifierDescription: IdentifierDescription,
+    id: string,
+    name: string,
     type: string,
     uniqueId: string,
     className: string,
-    methodName: string,
     arguments_: Statement[]
   ) {
-    super(identifierDescription, type, uniqueId, arguments_);
+    super(id, name, type, uniqueId, arguments_);
     this._classType = "MethodCall";
     this._className = className;
-    this._methodName = methodName;
   }
 
-  mutate(sampler: JavaScriptTestCaseSampler, depth: number): MethodCall {
+  mutate(
+    sampler: JavaScriptTestCaseSampler,
+    depth: number
+  ): Getter | Setter | MethodCall {
+    if (prng.nextBoolean(sampler.resampleGeneProbability)) {
+      return sampler.sampleClassCall(depth, this._className);
+    }
+
     const arguments_ = this.args.map((a: Statement) => a.copy());
 
     if (arguments_.length > 0) {
-      const index = prng.nextInt(0, arguments_.length - 1);
-
-      arguments_[index] = prng.nextBoolean(sampler.resampleGeneProbability)
-        ? sampler.sampleArgument(
-            depth + 1,
-            arguments_[index].identifierDescription
-          )
-        : arguments_[index].mutate(sampler, depth + 1);
+      // go over each arg
+      for (let index = 0; index < arguments_.length; index++) {
+        if (prng.nextBoolean(1 / arguments_.length)) {
+          arguments_[index] = arguments_[index].mutate(sampler, depth + 1);
+        }
+      }
     }
 
     return new MethodCall(
-      this.identifierDescription,
+      this.id,
+      this.name,
       this.type,
       prng.uniqueId(),
       this.className,
-      this.methodName,
       arguments_
     );
   }
@@ -82,17 +86,13 @@ export class MethodCall extends ActionStatement {
     const deepCopyArguments = this.args.map((a: Statement) => a.copy());
 
     return new MethodCall(
-      this.identifierDescription,
-      this.type,
       this.id,
+      this.name,
+      this.type,
+      this.uniqueId,
       this.className,
-      this.methodName,
       deepCopyArguments
     );
-  }
-
-  get methodName(): string {
-    return this._methodName;
   }
 
   get className(): string {
@@ -115,7 +115,7 @@ export class MethodCall extends ActionStatement {
       a.decode(decoder, id, options)
     );
 
-    let decoded = `const ${this.varName} = await ${objectVariable}.${this.methodName}(${arguments_})`;
+    let decoded = `const ${this.varName} = await ${objectVariable}.${this.name}(${arguments_})`;
 
     if (options.addLogs) {
       const logDirectory = decoder.getLogDirectory(id, this.varName);
@@ -135,6 +135,6 @@ export class MethodCall extends ActionStatement {
   // TODO
   decodeErroring(objectVariable: string): string {
     const arguments_ = this.args.map((a) => a.varName).join(", ");
-    return `await expect(${objectVariable}.${this.methodName}(${arguments_})).to.be.rejectedWith(Error);`;
+    return `await expect(${objectVariable}.${this.name}(${arguments_})).to.be.rejectedWith(Error);`;
   }
 }

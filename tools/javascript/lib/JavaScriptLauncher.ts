@@ -22,9 +22,9 @@ import * as path from "node:path";
 import { TestCommandOptions } from "./commands/test";
 import {
   Export,
-  TypeResolver,
-  TypeResolverUnknown,
-  TypeResolverInference,
+  TypeModelFactory,
+  RandomTypeModelFactory,
+  InferenceTypeModelFactory,
   Target,
   AbstractSyntaxTreeFactory,
   TargetFactory,
@@ -59,6 +59,7 @@ import {
   JavaScriptSubject,
   JavaScriptRandomSampler,
   JavaScriptTestCaseSampler,
+  ExecutionInformationIntegrator,
 } from "@syntest/search-javascript";
 import {
   Archive,
@@ -73,9 +74,13 @@ import {
   initializePseudoRandomNumberGenerator,
 } from "@syntest/core";
 import { Instrumenter } from "@syntest/instrumentation-javascript";
+import { Logger } from "winston";
+import { getLogger } from "@syntest/logging";
 
 export type JavaScriptArguments = ArgumentsObject & TestCommandOptions;
 export class JavaScriptLauncher extends Launcher {
+  private static LOGGER: Logger;
+
   private arguments_: JavaScriptArguments;
   private moduleManager: ModuleManager;
   private userInterface: UserInterface;
@@ -96,14 +101,17 @@ export class JavaScriptLauncher extends Launcher {
     userInterface: UserInterface
   ) {
     super();
+    JavaScriptLauncher.LOGGER = getLogger("JavaScriptLauncher");
     this.arguments_ = arguments_;
     this.moduleManager = moduleManager;
     this.userInterface = userInterface;
   }
 
   async initialize(): Promise<void> {
+    JavaScriptLauncher.LOGGER.info("Initialization started");
     initializePseudoRandomNumberGenerator(this.arguments_.randomSeed);
-    if (existsSync(".syntest")) {
+    if (existsSync(this.arguments_.tempSyntestDirectory)) {
+      JavaScriptLauncher.LOGGER.info("Cleaning up old directories");
       deleteDirectories([
         path.join(
           this.arguments_.tempSyntestDirectory,
@@ -121,6 +129,7 @@ export class JavaScriptLauncher extends Launcher {
       ]);
     }
 
+    JavaScriptLauncher.LOGGER.info("Creating directories");
     createDirectoryStructure([
       path.join(
         this.arguments_.syntestDirectory,
@@ -132,6 +141,7 @@ export class JavaScriptLauncher extends Launcher {
         this.arguments_.testDirectory
       ),
     ]);
+    JavaScriptLauncher.LOGGER.info("Creating temp directories");
     createDirectoryStructure([
       path.join(
         this.arguments_.tempSyntestDirectory,
@@ -149,15 +159,15 @@ export class JavaScriptLauncher extends Launcher {
 
     const abstractSyntaxTreeFactory = new AbstractSyntaxTreeFactory();
     const targetFactory = new TargetFactory();
-
-    const typeResolver: TypeResolver =
-      this.arguments_.typeInferenceMode === "none"
-        ? new TypeResolverUnknown()
-        : new TypeResolverInference();
-
     const controlFlowGraphFactory = new ControlFlowGraphFactory();
     const dependencyFactory = new DependencyFactory();
     const exportFactory = new ExportFactory();
+    const typeExtractor = new TypeExtractor();
+    const typeResolver: TypeModelFactory =
+      this.arguments_.typeInferenceMode === "none"
+        ? new RandomTypeModelFactory()
+        : new InferenceTypeModelFactory();
+
     this.rootContext = new RootContext(
       this.arguments_.targetRootDirectory,
       abstractSyntaxTreeFactory,
@@ -165,6 +175,7 @@ export class JavaScriptLauncher extends Launcher {
       targetFactory,
       dependencyFactory,
       exportFactory,
+      typeExtractor,
       typeResolver
     );
 
@@ -180,9 +191,11 @@ export class JavaScriptLauncher extends Launcher {
     //     (<unknown>[["Target Root Directory", this.arguments_.targetRootDirectory]])
     //   ),
     // ]);
+    JavaScriptLauncher.LOGGER.info("Initialization done");
   }
 
   async preprocess(): Promise<void> {
+    JavaScriptLauncher.LOGGER.info("Preprocessing started");
     const targetSelector = new TargetSelector(this.rootContext);
     this.targets = targetSelector.loadTargets(
       this.arguments_.include,
@@ -255,31 +268,32 @@ export class JavaScriptLauncher extends Launcher {
     //     ],
     //   ])]);
 
+    JavaScriptLauncher.LOGGER.info("Instrumenting targets");
     const instrumenter = new Instrumenter();
-    instrumenter.instrumentAll(
+    await instrumenter.instrumentAll(
       this.rootContext,
       this.targets,
-      this.arguments_.tempInstrumentedDirectory
+      path.join(
+        this.arguments_.tempSyntestDirectory,
+        this.arguments_.tempInstrumentedDirectory
+      )
     );
 
-    const typeExtractor = new TypeExtractor();
-    typeExtractor.extractAll(this.rootContext);
-
-    this.rootContext.typeResolver.resolveTypes(
-      typeExtractor.totalElementsMap,
-      typeExtractor.totalRelationsMap
-    );
-
-    // TODO types
-    // await this.rootContext.scanTargetRootDirectory(this.arguments_.targetRootDirectory);
+    JavaScriptLauncher.LOGGER.info("Extracting types");
+    this.rootContext.extractTypes();
+    JavaScriptLauncher.LOGGER.info("Resolving types");
+    this.rootContext.resolveTypes();
+    JavaScriptLauncher.LOGGER.info("Preprocessing done");
   }
 
   async process(): Promise<void> {
+    JavaScriptLauncher.LOGGER.info("Processing started");
     this.archive = new Archive<JavaScriptTestCase>();
     this.exports = [];
     this.dependencyMap = new Map();
 
     for (const target of this.targets) {
+      JavaScriptLauncher.LOGGER.info(`Processing ${target.name}`);
       const archive = await this.testTarget(this.rootContext, target);
 
       const dependencies = this.rootContext.getDependencies(target.path);
@@ -288,9 +302,11 @@ export class JavaScriptLauncher extends Launcher {
       this.dependencyMap.set(target.name, dependencies);
       this.exports.push(...this.rootContext.getExports(target.path));
     }
+    JavaScriptLauncher.LOGGER.info("Processing done");
   }
 
   async postprocess(): Promise<void> {
+    JavaScriptLauncher.LOGGER.info("Postprocessing started");
     const testDirectory = path.join(
       this.arguments_.syntestDirectory,
       this.arguments_.testDirectory
@@ -304,14 +320,23 @@ export class JavaScriptLauncher extends Launcher {
       this.arguments_.tempLogDirectory
     );
 
-    clearDirectory(testDirectory);
+    // clearDirectory(testDirectory);
 
     const decoder = new JavaScriptDecoder(
       this.exports,
       this.arguments_.targetRootDirectory,
       temporaryLogDirectory
     );
-    const runner = new JavaScriptRunner(decoder, temporaryTestDirectory);
+
+    const executionInformationIntegrator = new ExecutionInformationIntegrator(
+      this.rootContext.getTypeModel()
+    );
+
+    const runner = new JavaScriptRunner(
+      decoder,
+      executionInformationIntegrator,
+      temporaryTestDirectory
+    );
 
     const suiteBuilder = new JavaScriptSuiteBuilder(
       decoder,
@@ -319,10 +344,9 @@ export class JavaScriptLauncher extends Launcher {
       temporaryLogDirectory
     );
 
-    // TODO fix hardcoded paths
-
     const reducedArchive = suiteBuilder.reduceArchive(this.archive);
 
+    // TODO fix hardcoded paths
     let paths = suiteBuilder.createSuite(
       reducedArchive,
       "../instrumented",
@@ -422,7 +446,8 @@ export class JavaScriptLauncher extends Launcher {
     table.footers.push(
       overall["statement"] * 100 + " %",
       overall["branch"] * 100 + " %",
-      overall["function"] * 100 + " %"
+      overall["function"] * 100 + " %",
+      ""
     );
 
     const originalSourceDirectory = path
@@ -438,19 +463,29 @@ export class JavaScriptLauncher extends Launcher {
     suiteBuilder.createSuite(
       reducedArchive,
       originalSourceDirectory,
-      this.arguments_.testDirectory,
+      path.join(
+        this.arguments_.syntestDirectory,
+        this.arguments_.testDirectory
+      ),
       false,
       true
     );
+    JavaScriptLauncher.LOGGER.info("Postprocessing done");
   }
 
   private async testTarget(
     rootContext: RootContext,
     target: Target
   ): Promise<Archive<JavaScriptTestCase>> {
+    JavaScriptLauncher.LOGGER.info(
+      `Testing target ${target.name} in ${target.path}`
+    );
     const currentSubject = new JavaScriptSubject(target, this.rootContext);
 
     if (currentSubject.getActionableTargets().length === 0) {
+      JavaScriptLauncher.LOGGER.info(
+        `No actionable targets found for ${target.name} in ${target.path}`
+      );
       // report skipped
       return new Archive();
     }
@@ -474,7 +509,14 @@ export class JavaScriptLauncher extends Launcher {
       this.arguments_.targetRootDirectory,
       temporaryLogDirectory
     );
-    const runner = new JavaScriptRunner(decoder, temporaryTestDirectory);
+    const executionInformationIntegrator = new ExecutionInformationIntegrator(
+      this.rootContext.getTypeModel()
+    );
+    const runner = new JavaScriptRunner(
+      decoder,
+      executionInformationIntegrator,
+      temporaryTestDirectory
+    );
 
     const suiteBuilder = new JavaScriptSuiteBuilder(
       decoder,
@@ -590,7 +632,7 @@ export class JavaScriptLauncher extends Launcher {
     }
 
     // This searches for a covering population
-    const archive = algorithm.search(
+    const archive = await algorithm.search(
       currentSubject,
       budgetManager,
       terminationManager
@@ -606,12 +648,17 @@ export class JavaScriptLauncher extends Launcher {
     clearDirectory(temporaryLogDirectory);
     clearDirectory(temporaryTestDirectory);
 
+    JavaScriptLauncher.LOGGER.info(
+      `Finished testing target ${target.name} in ${target.path}`
+    );
     return archive;
   }
 
   async exit(): Promise<void> {
+    JavaScriptLauncher.LOGGER.info("Exiting");
     // TODO should be cleanup step in tool
     // Finish
+    JavaScriptLauncher.LOGGER.info("Deleting temporary directories");
     deleteDirectories([
       path.join(
         this.arguments_.tempSyntestDirectory,

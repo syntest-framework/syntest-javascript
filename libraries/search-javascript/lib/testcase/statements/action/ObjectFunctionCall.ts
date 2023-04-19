@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-import { IdentifierDescription } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/core";
 
 import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
@@ -30,7 +29,6 @@ import { ActionStatement } from "./ActionStatement";
  */
 export class ObjectFunctionCall extends ActionStatement {
   private readonly _objectName: string;
-  private readonly _functionName: string;
 
   /**
    * Constructor
@@ -41,42 +39,40 @@ export class ObjectFunctionCall extends ActionStatement {
    * @param args the arguments of the function
    */
   constructor(
-    identifierDescription: IdentifierDescription,
+    id: string,
+    name: string,
     type: string,
     uniqueId: string,
     objectName: string,
-    functionName: string,
     arguments_: Statement[]
   ) {
-    super(identifierDescription, type, uniqueId, arguments_);
+    super(id, name, type, uniqueId, arguments_);
     this._classType = "ObjectFunctionCall";
     this._objectName = objectName;
-    this._functionName = functionName;
   }
 
   mutate(
     sampler: JavaScriptTestCaseSampler,
     depth: number
   ): ObjectFunctionCall {
+    if (prng.nextBoolean(sampler.resampleGeneProbability)) {
+      return sampler.sampleObjectFunctionCall(depth, this._objectName);
+    }
+
     const arguments_ = this.args.map((a: Statement) => a.copy());
 
     if (arguments_.length > 0) {
       const index = prng.nextInt(0, arguments_.length - 1);
 
-      arguments_[index] = prng.nextBoolean(sampler.resampleGeneProbability)
-        ? sampler.sampleArgument(
-            depth + 1,
-            arguments_[index].identifierDescription
-          )
-        : arguments_[index].mutate(sampler, depth + 1);
+      arguments_[index] = arguments_[index].mutate(sampler, depth + 1);
     }
 
     return new ObjectFunctionCall(
-      this.identifierDescription,
+      this.id,
+      this.name,
       this.type,
       prng.uniqueId(),
       this.className,
-      this.methodName,
       arguments_
     );
   }
@@ -85,17 +81,13 @@ export class ObjectFunctionCall extends ActionStatement {
     const deepCopyArguments = this.args.map((a: Statement) => a.copy());
 
     return new ObjectFunctionCall(
-      this.identifierDescription,
-      this.type,
       this.id,
+      this.name,
+      this.type,
+      this.uniqueId,
       this.className,
-      this.methodName,
       deepCopyArguments
     );
-  }
-
-  get methodName(): string {
-    return this._functionName;
   }
 
   get className(): string {
@@ -118,7 +110,7 @@ export class ObjectFunctionCall extends ActionStatement {
       a.decode(decoder, id, options)
     );
 
-    let decoded = `const ${this.varName} = await ${objectVariable}.${this.methodName}(${arguments_})`;
+    let decoded = `const ${this.varName} = await ${objectVariable}.${this.name}(${arguments_})`;
 
     if (options.addLogs) {
       const logDirectory = decoder.getLogDirectory(id, this.varName);
@@ -138,6 +130,6 @@ export class ObjectFunctionCall extends ActionStatement {
   // TODO
   decodeErroring(objectVariable: string): string {
     const arguments_ = this.args.map((a) => a.varName).join(", ");
-    return `await expect(${objectVariable}.${this.methodName}(${arguments_})).to.be.rejectedWith(Error);`;
+    return `await expect(${objectVariable}.${this.name}(${arguments_})).to.be.rejectedWith(Error);`;
   }
 }

@@ -16,34 +16,36 @@
  * limitations under the License.
  */
 
-import { IdentifierDescription } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/core";
 
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 
 import { PrimitiveStatement } from "./PrimitiveStatement";
+import { Statement } from "../Statement";
 
 /**
  * @author Dimitri Stallenberg
  */
 export class BoolStatement extends PrimitiveStatement<boolean> {
   constructor(
-    identifierDescription: IdentifierDescription,
+    id: string,
+    name: string,
     type: string,
     uniqueId: string,
     value: boolean
   ) {
-    super(identifierDescription, type, uniqueId, value);
+    super(id, name, type, uniqueId, value);
     this._classType = "BoolStatement";
   }
 
-  mutate(sampler: JavaScriptTestCaseSampler): BoolStatement {
+  mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
     if (prng.nextBoolean(sampler.resampleGeneProbability)) {
-      return sampler.sampleBool(this.identifierDescription, this.type);
+      return sampler.sampleArgument(depth + 1, this.id, this.name);
     }
 
     return new BoolStatement(
-      this.identifierDescription,
+      this.id,
+      this.name,
       this.type,
       prng.uniqueId(),
       !this.value
@@ -52,9 +54,10 @@ export class BoolStatement extends PrimitiveStatement<boolean> {
 
   copy(): BoolStatement {
     return new BoolStatement(
-      this.identifierDescription,
-      this.type,
       this.id,
+      this.name,
+      this.type,
+      this.uniqueId,
       this.value
     );
   }

@@ -233,9 +233,9 @@ export function extractExportsFromExpressionStatement(
           if (valuePath.isIdentifier()) {
             // e.g. exports = { a: b }
             // get binding of b
-            const binding = visitor._getBinding(valuePath);
+            const bindingId = visitor._getBindingId(valuePath);
             exports.push({
-              id: visitor._getNodeId(binding.path),
+              id: bindingId,
               filePath,
               name: valuePath.node.name,
               renamedTo: key,
@@ -262,10 +262,10 @@ export function extractExportsFromExpressionStatement(
         // e.g. exports = obj
         // e.g. module.exports = obj
         // get binding of obj
-        const binding = visitor._getBinding(initPath);
+        const bindingId = visitor._getBindingId(initPath);
 
         exports.push({
-          id: visitor._getNodeId(binding.path),
+          id: bindingId,
           filePath,
           name: name,
           renamedTo: name,
@@ -291,9 +291,9 @@ export function extractExportsFromExpressionStatement(
     if (init.type === "Identifier") {
       // e.g. exports.a = b
       // get binding of b
-      const binding = visitor._getBinding(initPath);
+      const bindingId = visitor._getBindingId(initPath);
       exports.push({
-        id: visitor._getNodeId(binding.path),
+        id: bindingId,
         filePath,
         name: init.name,
         renamedTo: name,

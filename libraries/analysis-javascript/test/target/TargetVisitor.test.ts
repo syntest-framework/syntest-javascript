@@ -161,10 +161,9 @@ describe("TargetVisitor test", () => {
 
     const targets = targetHelper(source);
 
-    expect(targets.length).to.equal(2);
+    expect(targets.length).to.equal(1);
 
-    checkFunction(targets[0], "name1", true, false);
-    checkFunction(targets[1], "name1", true, true);
+    checkFunction(targets[0], "name1", true, true);
   });
 
   it("FunctionDeclaration: two functions one exported", () => {

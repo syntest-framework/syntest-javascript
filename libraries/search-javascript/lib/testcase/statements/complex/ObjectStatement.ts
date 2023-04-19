@@ -16,134 +16,88 @@
  * limitations under the License.
  */
 
-import {
-  IdentifierDescription,
-  TypeProbability,
-} from "@syntest/analysis-javascript";
 import { prng } from "@syntest/core";
 
 import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
-import { StringStatement } from "../primitive/StringStatement";
 import { Decoding, Statement } from "../Statement";
 
 /**
  * @author Dimitri Stallenberg
  */
-// TODO object subtypes (get the current chosen one from the typeprobability map or something
+type ObjectType = {
+  [key: string]: Statement | undefined;
+};
 export class ObjectStatement extends Statement {
-  private _keys: StringStatement[];
-  private _values: Statement[];
+  private _object: ObjectType;
 
   constructor(
-    identifierDescription: IdentifierDescription,
+    id: string,
+    name: string,
     type: string,
     uniqueId: string,
-    keys: StringStatement[],
-    values: Statement[]
+    object: ObjectType
   ) {
-    super(identifierDescription, type, uniqueId);
-    this._keys = keys;
-    this._values = values;
+    super(id, name, type, uniqueId);
+    this._object = object;
     this._classType = "ObjectStatement";
   }
 
-  mutate(sampler: JavaScriptTestCaseSampler, depth: number): ObjectStatement {
-    const keys = this._keys.map((a: StringStatement) => a.copy());
-    const values = this._values.map((a: Statement) => a.copy());
-
-    //
-    // if (children.length !== 0) {
-    //   const index = prng.nextInt(0, children.length - 1);
-    //   if (prng.nextBoolean(Properties.resample_gene_probability)) { // TODO should be different property
-    //     children[index] = sampler.sampleArgument(depth + 1, children[index].identifierDescription)
-    //   } else {
-    //     children[index] = children[index].mutate(sampler, depth + 1);
-    //   }
-    // }
-
-    const finalKeys: StringStatement[] = [];
-    const finalValues = [];
-
-    // If we have no children, we should add one
-    if (finalKeys.length === 0) {
-      // add a child
-      const key = sampler.sampleString();
-      finalKeys.push(key);
-      finalValues.push(
-        sampler.sampleArgument(depth + 1, {
-          name: key.varName,
-          typeProbabilityMap: new TypeProbability(),
-        })
-      );
-
-      return new ObjectStatement(
-        this.identifierDescription,
-        this.type,
-        prng.uniqueId(),
-        finalKeys,
-        finalValues
-      );
+  mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
+    if (prng.nextBoolean(sampler.resampleGeneProbability)) {
+      return sampler.sampleArgument(depth, this.id, this.name);
     }
 
+    const object: ObjectType = {};
+
+    for (const key of Object.keys(this._object)) {
+      object[key] = this._object[key].copy();
+    }
+
+    const keys = Object.keys(object);
     // go over each child
-    for (let index = 0; index < finalKeys.length; index++) {
-      if (prng.nextBoolean(1 / finalKeys.length)) {
+    for (let index = 0; index < keys.length; index++) {
+      if (prng.nextBoolean(1 / keys.length)) {
+        const key = keys[index];
         // Mutate this position
         const choice = prng.nextDouble();
 
         if (choice < 0.1) {
           // 10% chance to add a call on this position
 
-          // TODO should also look if we can add back one of the deleted ones
-
-          const key = sampler.sampleString();
-          finalKeys.push(key);
-          finalValues.push(
-            sampler.sampleArgument(depth + 1, {
-              name: key.varName,
-              typeProbabilityMap: new TypeProbability(),
-            })
-          );
-          finalKeys.push(keys[index]);
-          finalValues.push(values[index]);
+          object[key] = sampler.sampleObjectArgument(depth + 1, this.id, key);
         } else if (choice < 0.2) {
           // 10% chance to delete the call
+          object[key] = undefined;
         } else {
           // 80% chance to just mutate the call
-
-          finalKeys.push(keys[index]);
-
-          if (sampler.resampleGeneProbability) {
-            finalValues.push(
-              sampler.sampleArgument(
-                depth + 1,
-                values[index].identifierDescription
-              )
-            );
-          } else {
-            finalValues.push(values[index].mutate(sampler, depth + 1));
-          }
+          object[key] = object[key].mutate(sampler, depth + 1);
         }
       }
     }
 
     return new ObjectStatement(
-      this.identifierDescription,
+      this.id,
+      this.name,
       this.type,
       prng.uniqueId(),
-      finalKeys,
-      finalValues
+      object
     );
   }
 
   copy(): ObjectStatement {
+    const object: ObjectType = {};
+
+    for (const key of Object.keys(this._object)) {
+      object[key] = this._object[key].copy();
+    }
+
     return new ObjectStatement(
-      this.identifierDescription,
-      this.type,
       this.id,
-      this._keys.map((a) => a.copy()),
-      this._values.map((a) => a.copy())
+      this.name,
+      this.type,
+      this.uniqueId,
+      this._object
     );
   }
 
@@ -152,12 +106,13 @@ export class ObjectStatement extends Statement {
     id: string,
     options: { addLogs: boolean; exception: boolean }
   ): Decoding[] {
-    const children = this._values
-      .map((a, index) => `\t"${this._keys[index].value}": ${a.varName}`)
+    const children = Object.keys(this._object)
+      .filter((key) => this._object[key] !== undefined)
+      .map((key) => `\t"${key}": ${this._object[key].varName}`)
       .join(",\n\t");
 
-    const childStatements: Decoding[] = this._values.flatMap((a) =>
-      a.decode(decoder, id, options)
+    const childStatements: Decoding[] = Object.values(this._object).flatMap(
+      (a) => a.decode(decoder, id, options)
     );
 
     let decoded = `const ${this.varName} = {\n${children}\n\t}`;
@@ -181,7 +136,9 @@ export class ObjectStatement extends Statement {
   }
 
   hasChildren(): boolean {
-    return this._keys.length > 0;
+    return Object.keys(this._object).some(
+      (key) => this._object[key] !== undefined
+    );
   }
 
   setChild(index: number, newChild: Statement) {
@@ -197,7 +154,9 @@ export class ObjectStatement extends Statement {
   }
 
   get children(): Statement[] {
-    return this._values;
+    return Object.keys(this._object)
+      .filter((key) => this._object[key] !== undefined)
+      .map((key) => this._object[key]);
   }
 
   getFlatTypes(): string[] {

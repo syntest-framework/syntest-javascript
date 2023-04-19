@@ -22,8 +22,9 @@ import {
   FunctionObjectiveFunction,
   ObjectiveFunction,
   SearchSubject,
-  BranchObjectiveFunction,
   ApproachLevel,
+  shouldNeverHappen,
+  BranchObjectiveFunction,
 } from "@syntest/core";
 
 import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
@@ -35,50 +36,59 @@ export class JavaScriptSubject extends SearchSubject<JavaScriptTestCase> {
   }
 
   protected _extractObjectives(): void {
-    const graph = this._rootContext.getControlFlowProgram(
-      this._target.path
-    ).graph;
+    // const graph = this._rootContext.getControlFlowProgram(
+    //   this._target.path
+    // ).graph;
     const functions = this._rootContext.getControlFlowProgram(
       this._target.path
     ).functions;
 
-    // Branch objectives
-    // Find all control nodes
-    // I.E. nodes that have more than one outgoing edge
-    const controlNodeIds = [...graph.nodes.keys()].filter(
-      (node) => graph.getOutgoingEdges(node).length > 1
-    );
-
-    for (const controlNodeId of controlNodeIds) {
-      const outGoingEdges = graph.getOutgoingEdges(controlNodeId);
-
-      for (const edge of outGoingEdges) {
-        // Add objective function
-        this._objectives.set(
-          new BranchObjectiveFunction(
-            new ApproachLevel(),
-            new BranchDistance(),
-            this,
-            edge.target
-          ),
-          []
-        );
-      }
-    }
-
-    for (const objective of this._objectives.keys()) {
-      const childrenObject = this.findChildren(graph, objective);
-      this._objectives.get(objective).push(...childrenObject);
-    }
-
     // FUNCTION objectives
     for (const function_ of functions) {
+      const graph = function_.graph;
+      // Branch objectives
+      // Find all control nodes
+      // I.E. nodes that have more than one outgoing edge
+      const controlNodeIds = [...graph.nodes.keys()].filter(
+        (node) => graph.getOutgoingEdges(node).length > 1
+      );
+
+      for (const controlNodeId of controlNodeIds) {
+        const outGoingEdges = graph.getOutgoingEdges(controlNodeId);
+
+        for (const edge of outGoingEdges) {
+          // Add objective function
+          this._objectives.set(
+            new BranchObjectiveFunction(
+              new ApproachLevel(),
+              new BranchDistance(),
+              this,
+              edge.target
+            ),
+            []
+          );
+        }
+      }
+
+      for (const objective of this._objectives.keys()) {
+        const childrenObject = this.findChildren(graph, objective);
+        this._objectives.get(objective).push(...childrenObject);
+      }
+
+      const entry = function_.graph.entry;
+
+      const children = function_.graph.getChildren(entry.id);
+
+      if (children.length !== 1) {
+        throw new Error(shouldNeverHappen("JavaScriptSubject")); //, "entry node has more than one child"))
+      }
+
       // Add objective
       const functionObjective = new FunctionObjectiveFunction(
         new ApproachLevel(),
         new BranchDistance(),
         this,
-        function_.id
+        children[0].id
       );
       const childrenObject = this.findChildren(
         function_.graph,
@@ -94,9 +104,8 @@ export class JavaScriptSubject extends SearchSubject<JavaScriptTestCase> {
   ): ObjectiveFunction<JavaScriptTestCase>[] {
     let childrenObject: ObjectiveFunction<JavaScriptTestCase>[] = [];
 
-    let edges2Visit = graph.edges.filter(
-      (edge) => edge.source === object.getIdentifier()
-    );
+    let edges2Visit = [...graph.getOutgoingEdges(object.getIdentifier())];
+
     const visitedEdges: Edge[] = [];
 
     while (edges2Visit.length > 0) {

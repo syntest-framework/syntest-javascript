@@ -74,6 +74,12 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
     }
   }
 
+  /**
+   * Get the target name of an expression
+   * The variable the expression is assigned to is used as the target name
+   * @param path
+   * @returns
+   */
   private _getTargetNameOfExpression(
     path: NodePath<
       t.ClassExpression | t.FunctionExpression | t.ArrowFunctionExpression
@@ -210,12 +216,23 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
           ? path.node.id.name
           : "anonymous";
       }
+      case "CallExpression": {
+        // e.g. function(class {}) // dont think this one is possible but unsure
+        // e.g. function(function () {})
+        // e.g. function(() => {})
+        return "id" in path.node && path.node.id
+          ? path.node.id.name
+          : "anonymous";
+      }
+
       default: {
         // e.g. class {}
         // e.g. function () {}
         // e.g. () => {}
         // Should not be possible
-        throw new Error("unknown class declaration");
+        throw new Error(
+          `unknown class expression ${parentNode.type} in ${this.filePath}`
+        );
       }
     }
   }
@@ -274,6 +291,25 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
       };
 
       this.subTargets.push(objectTarget, objectFunctionTarget);
+    } else if (parentNode.type === "VariableDeclarator") {
+      if (!path.parentPath.has("id")) {
+        // unsupported
+        throw new Error("Unsupported");
+      }
+
+      const export_ = this._getExport(path, targetName);
+
+      const target: FunctionTarget = {
+        id: `${this._getNodeId(path.parentPath)}`,
+        name: targetName,
+        type: TargetType.FUNCTION,
+        exported: !!export_,
+        default: export_ ? export_.default : false,
+        module: export_ ? export_.module : false,
+        isAsync: path.node.async,
+      };
+
+      this.subTargets.push(target);
     } else {
       const export_ = this._getExport(path, targetName);
 
@@ -512,51 +548,80 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
       };
 
       this.subTargets.push(objectTarget, objectFunctionTarget);
-    } else if (parentNode.type === "ClassPrivateProperty") {
-      // e.g. class A { #x = () => {} }
-      // unsupported
-      throw new Error("unknown class method parent");
-    } else if (parentNode.type === "ClassProperty") {
-      // e.g. class A { x = () => {} }
-      const parentClassName: string = this._getParentClassName(
-        <NodePath<t.ClassProperty>>path.parentPath
-      );
+    } else
+      switch (parentNode.type) {
+        case "ClassPrivateProperty": {
+          // e.g. class A { #x = () => {} }
+          // unsupported
+          throw new Error("unknown class method parent");
+        }
+        case "ClassProperty": {
+          // e.g. class A { x = () => {} }
+          const parentClassName: string = this._getParentClassName(
+            <NodePath<t.ClassProperty>>path.parentPath
+          );
 
-      const visibility = VisibilityType.PUBLIC;
-      // apparantly there is no access property on class properties
-      // if (parentNode.access === "private") {
-      //   visibility = VisibilityType.PRIVATE;
-      // } else if (parentNode.access === "protected") {
-      //   visibility = VisibilityType.PROTECTED;
-      // }
+          const visibility = VisibilityType.PUBLIC;
+          // apparantly there is no access property on class properties
+          // if (parentNode.access === "private") {
+          //   visibility = VisibilityType.PRIVATE;
+          // } else if (parentNode.access === "protected") {
+          //   visibility = VisibilityType.PROTECTED;
+          // }
 
-      const target: MethodTarget = {
-        id: `${this._getNodeId(path)}`,
-        className: parentClassName,
-        name: targetName,
-        type: TargetType.METHOD,
-        isStatic: (<t.ClassProperty>parentNode).static,
-        isAsync: path.node.async,
-        methodType: "method",
-        visibility: visibility,
-      };
+          const target: MethodTarget = {
+            id: `${this._getNodeId(path)}`,
+            className: parentClassName,
+            name: targetName,
+            type: TargetType.METHOD,
+            isStatic: (<t.ClassProperty>parentNode).static,
+            isAsync: path.node.async,
+            methodType: "method",
+            visibility: visibility,
+          };
 
-      this.subTargets.push(target);
-    } else {
-      const export_ = this._getExport(path, targetName);
+          this.subTargets.push(target);
 
-      const target: FunctionTarget = {
-        id: `${this._getNodeId(path)}`,
-        name: targetName,
-        type: TargetType.FUNCTION,
-        exported: !!export_,
-        default: export_ ? export_.default : false,
-        module: export_ ? export_.module : false,
-        isAsync: path.node.async,
-      };
+          break;
+        }
+        case "VariableDeclarator": {
+          if (!path.parentPath.has("id")) {
+            // unsupported
+            throw new Error("Unsupported");
+          }
 
-      this.subTargets.push(target);
-    }
+          const export_ = this._getExport(path, targetName);
+
+          const target: FunctionTarget = {
+            id: `${this._getNodeId(path.parentPath)}`,
+            name: targetName,
+            type: TargetType.FUNCTION,
+            exported: !!export_,
+            default: export_ ? export_.default : false,
+            module: export_ ? export_.module : false,
+            isAsync: path.node.async,
+          };
+
+          this.subTargets.push(target);
+
+          break;
+        }
+        default: {
+          const export_ = this._getExport(path, targetName);
+
+          const target: FunctionTarget = {
+            id: `${this._getNodeId(path)}`,
+            name: targetName,
+            type: TargetType.FUNCTION,
+            exported: !!export_,
+            default: export_ ? export_.default : false,
+            module: export_ ? export_.module : false,
+            isAsync: path.node.async,
+          };
+
+          this.subTargets.push(target);
+        }
+      }
   };
 
   // public VariableDeclarator: (path: NodePath<t.VariableDeclarator>) => void = (

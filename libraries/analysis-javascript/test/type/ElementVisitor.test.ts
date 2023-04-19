@@ -288,7 +288,7 @@ describe("ElementVisitor test", () => {
 
     const elements = [...elementHelper(source).values()];
 
-    expect(elements.length).to.equal(1);
+    expect(elements.length).to.equal(4);
     // we dont handle templates as elements but as relations
     expect(elements[0].type).to.equal("identifier");
   });

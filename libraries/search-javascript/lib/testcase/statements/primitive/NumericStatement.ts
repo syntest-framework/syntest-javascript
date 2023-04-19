@@ -16,12 +16,12 @@
  * limitations under the License.
  */
 
-import { IdentifierDescription } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/core";
 
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 
 import { PrimitiveStatement } from "./PrimitiveStatement";
+import { Statement } from "../Statement";
 
 /**
  * Generic number class
@@ -30,25 +30,26 @@ import { PrimitiveStatement } from "./PrimitiveStatement";
  */
 export class NumericStatement extends PrimitiveStatement<number> {
   constructor(
-    identifierDescription: IdentifierDescription,
+    id: string,
+    name: string,
     type: string,
     uniqueId: string,
     value: number
   ) {
-    super(identifierDescription, type, uniqueId, value);
+    super(id, name, type, uniqueId, value);
     this._classType = "NumericStatement";
   }
 
-  mutate(sampler: JavaScriptTestCaseSampler): NumericStatement {
+  mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
     if (prng.nextBoolean(sampler.resampleGeneProbability)) {
-      return sampler.sampleNumber(this.identifierDescription, this.type);
+      return sampler.sampleArgument(depth + 1, this.id, this.name);
     }
 
     if (prng.nextBoolean(sampler.deltaMutationProbability)) {
       return this.deltaMutation(sampler);
     }
 
-    return sampler.sampleNumber(this.identifierDescription, this.type);
+    return sampler.sampleNumber(this.id, this.name);
   }
 
   deltaMutation(sampler: JavaScriptTestCaseSampler): NumericStatement {
@@ -70,7 +71,8 @@ export class NumericStatement extends PrimitiveStatement<number> {
     }
 
     return new NumericStatement(
-      this.identifierDescription,
+      this.id,
+      this.name,
       this.type,
       prng.uniqueId(),
       newValue
@@ -79,7 +81,8 @@ export class NumericStatement extends PrimitiveStatement<number> {
 
   copy(): NumericStatement {
     return new NumericStatement(
-      this.identifierDescription,
+      this.id,
+      this.name,
       this.type,
       prng.uniqueId(),
       this.value

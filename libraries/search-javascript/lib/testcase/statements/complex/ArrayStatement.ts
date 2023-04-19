@@ -16,10 +16,6 @@
  * limitations under the License.
  */
 
-import {
-  IdentifierDescription,
-  TypeProbability,
-} from "@syntest/analysis-javascript";
 import { prng } from "@syntest/core";
 
 import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
@@ -34,17 +30,21 @@ export class ArrayStatement extends Statement {
   private _children: Statement[];
 
   constructor(
-    identifierDescription: IdentifierDescription,
+    id: string,
+    name: string,
     type: string,
     uniqueId: string,
     children: Statement[]
   ) {
-    super(identifierDescription, type, uniqueId);
+    super(id, name, type, uniqueId);
     this._children = children;
     this._classType = "ArrayStatement";
   }
 
-  mutate(sampler: JavaScriptTestCaseSampler, depth: number): ArrayStatement {
+  mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
+    if (prng.nextBoolean(sampler.resampleGeneProbability)) {
+      return sampler.sampleArgument(depth, this.id, this.type);
+    }
     const children = this._children.map((a: Statement) => a.copy());
 
     //
@@ -61,16 +61,12 @@ export class ArrayStatement extends Statement {
 
     // If there are no children, add one
     if (children.length === 0) {
-      // add a call
-      finalChildren.push(
-        sampler.sampleArgument(depth + 1, {
-          name: "arrayValue",
-          typeProbabilityMap: new TypeProbability(),
-        })
-      );
+      // add a item
+      finalChildren.push(sampler.sampleArrayArgument(depth + 1, this.id, 0));
 
       return new ArrayStatement(
-        this.identifierDescription,
+        this.id,
+        this.name,
         this.type,
         prng.uniqueId(),
         finalChildren
@@ -84,34 +80,23 @@ export class ArrayStatement extends Statement {
         const choice = prng.nextDouble();
 
         if (choice < 0.1) {
-          // 10% chance to add a call on this position
+          // 10% chance to add a argument on this position
           finalChildren.push(
-            sampler.sampleArgument(depth + 1, {
-              name: "arrayValue",
-              typeProbabilityMap: new TypeProbability(),
-            }),
+            sampler.sampleArrayArgument(depth + 1, this.id, index),
             children[index]
           );
         } else if (choice < 0.2) {
           // 10% chance to delete the child
         } else {
           // 80% chance to just mutate the child
-          if (sampler.resampleGeneProbability) {
-            finalChildren.push(
-              sampler.sampleArgument(depth + 1, {
-                name: "arrayValue",
-                typeProbabilityMap: new TypeProbability(),
-              })
-            );
-          } else {
-            finalChildren.push(children[index].mutate(sampler, depth + 1));
-          }
+          finalChildren.push(children[index].mutate(sampler, depth + 1));
         }
       }
     }
 
     return new ArrayStatement(
-      this.identifierDescription,
+      this.id,
+      this.name,
       this.type,
       prng.uniqueId(),
       finalChildren
@@ -120,9 +105,10 @@ export class ArrayStatement extends Statement {
 
   copy(): ArrayStatement {
     return new ArrayStatement(
-      this.identifierDescription,
-      this.type,
       this.id,
+      this.name,
+      this.type,
+      this.uniqueId,
       this._children.map((a) => a.copy())
     );
   }

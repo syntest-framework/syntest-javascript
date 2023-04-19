@@ -16,20 +16,27 @@
  * limitations under the License.
  */
 
-import { Binding } from "@babel/traverse";
-
 export type Element = Identifier | Literal;
 
 export interface Identifier {
   id: string;
+  filePath: string;
+  location: {
+    startIndex: number;
+    endIndex: number;
+  };
   type: ElementType.Identifier;
-  binding: Binding;
   bindingId: string;
   name: string;
 }
 
 export interface Literal {
   id: string;
+  filePath: string;
+  location: {
+    startIndex: number;
+    endIndex: number;
+  };
   type:
     | ElementType.StringLiteral
     | ElementType.NumericalLiteral

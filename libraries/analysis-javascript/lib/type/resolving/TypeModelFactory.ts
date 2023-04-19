@@ -18,15 +18,14 @@
 
 import { Element } from "../discovery/element/Element";
 import { Relation } from "../discovery/relation/Relation";
-
-import { TypeProbability } from "./TypeProbability";
+import { TypeModel } from "./TypeModel";
 
 /**
  * Abstract TypeResolver class
  *
  * @author Dimitri Stallenberg
  */
-export abstract class TypeResolver {
+export abstract class TypeModelFactory {
   /**
    * Resolves the types of all given elements and relations
    * @param elementMap the elements to resolve the types of
@@ -35,13 +34,5 @@ export abstract class TypeResolver {
   abstract resolveTypes(
     elementMap: Map<string, Element>,
     relationMap: Map<string, Relation>
-  ): void;
-
-  /**
-   * Returns the identifierDescription of the variable in the given scope
-   * @param id the id of the variable
-   */
-  abstract getTyping(id: string): TypeProbability;
-  abstract getElement(id: string): Element;
-  abstract getRelation(id: string): Relation;
+  ): TypeModel;
 }

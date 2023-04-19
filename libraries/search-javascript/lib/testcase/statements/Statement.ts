@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-import { IdentifierDescription } from "@syntest/analysis-javascript";
 import { Encoding, EncodingSampler, prng } from "@syntest/core";
 
 import { JavaScriptDecoder } from "../../testbuilding/JavaScriptDecoder";
@@ -25,29 +24,37 @@ import { JavaScriptDecoder } from "../../testbuilding/JavaScriptDecoder";
  * @author Dimitri Stallenberg
  */
 export abstract class Statement {
-  public get varName(): string {
-    return this._varName;
-  }
+  private _id: string;
+  private _name: string;
+  private _type: string;
+  private _uniqueId: string;
+  private _varName: string;
+
+  protected _classType: string;
+
   public get id(): string {
-    return this._uniqueId;
+    return this._id;
   }
-  public get identifierDescription(): IdentifierDescription {
-    return this._identifierDescription;
+
+  public get name(): string {
+    return this._name;
   }
 
   get type(): string {
     return this._type;
   }
 
+  public get uniqueId(): string {
+    return this._uniqueId;
+  }
+
+  public get varName(): string {
+    return this._varName;
+  }
+
   get classType(): string {
     return this._classType;
   }
-
-  protected _classType: string;
-  private _varName: string;
-  private _identifierDescription: IdentifierDescription;
-  private _type: string;
-  private _uniqueId: string;
 
   /**
    * Constructor
@@ -56,15 +63,16 @@ export abstract class Statement {
    * @param uniqueId
    */
   protected constructor(
-    identifierDescription: IdentifierDescription,
+    id: string,
+    name: string,
     type: string,
     uniqueId: string
   ) {
-    this._identifierDescription = identifierDescription;
+    this._id = id;
+    this._name = name;
     this._type = type;
     this._uniqueId = uniqueId;
-    this._varName =
-      identifierDescription.name + "_" + type + "_" + prng.uniqueId(4);
+    this._varName = name + "_" + type + "_" + prng.uniqueId(4);
     this._varName = "_" + this.varName;
   }
 

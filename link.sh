@@ -11,15 +11,27 @@ rm -rf node_modules/@syntest/logging
 rm -rf node_modules/@syntest/metric
 rm -rf node_modules/@syntest/module
 
-cp -r ../syntest-core/libraries/analysis node_modules/@syntest/analysis
-cp -r ../syntest-core/libraries/base-testing-tool node_modules/@syntest/base-testing-tool
-cp -r ../syntest-core/libraries/cfg-core node_modules/@syntest/cfg-core
-cp -r ../syntest-core/libraries/cli node_modules/@syntest/cli
-cp -r ../syntest-core/libraries/cli-graphics node_modules/@syntest/cli-graphics
-cp -r ../syntest-core/libraries/core node_modules/@syntest/core
-cp -r ../syntest-core/libraries/logging node_modules/@syntest/logging
-cp -r ../syntest-core/libraries/metric node_modules/@syntest/metric
-cp -r ../syntest-core/libraries/module node_modules/@syntest/module
+cd node_modules/@syntest
+
+ln -s ../../../syntest-core/libraries/analysis analysis
+ln -s ../../../syntest-core/libraries/base-testing-tool base-testing-tool
+ln -s ../../../syntest-core/libraries/cfg-core cfg-core
+ln -s ../../../syntest-core/libraries/cli cli
+ln -s ../../../syntest-core/libraries/cli-graphics cli-graphics
+ln -s ../../../syntest-core/libraries/core core
+ln -s ../../../syntest-core/libraries/logging logging
+ln -s ../../../syntest-core/libraries/metric metric
+ln -s ../../../syntest-core/libraries/module module
+
+# cp -r ../syntest-core/libraries/analysis node_modules/@syntest/analysis
+# cp -r ../syntest-core/libraries/base-testing-tool node_modules/@syntest/base-testing-tool
+# cp -r ../syntest-core/libraries/cfg-core node_modules/@syntest/cfg-core
+# cp -r ../syntest-core/libraries/cli node_modules/@syntest/cli
+# cp -r ../syntest-core/libraries/cli-graphics node_modules/@syntest/cli-graphics
+# cp -r ../syntest-core/libraries/core node_modules/@syntest/core
+# cp -r ../syntest-core/libraries/logging node_modules/@syntest/logging
+# cp -r ../syntest-core/libraries/metric node_modules/@syntest/metric
+# cp -r ../syntest-core/libraries/module node_modules/@syntest/module
 
 # npm link ../syntest-core/libraries/analysis
 # npm link ../syntest-core/libraries/base-testing-tool

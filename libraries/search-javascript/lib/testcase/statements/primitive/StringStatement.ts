@@ -16,11 +16,10 @@
  * limitations under the License.
  */
 
-import { IdentifierDescription } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/core";
 
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
-import { Decoding } from "../Statement";
+import { Decoding, Statement } from "../Statement";
 
 import { PrimitiveStatement } from "./PrimitiveStatement";
 
@@ -32,28 +31,24 @@ export class StringStatement extends PrimitiveStatement<string> {
   private readonly maxlength: number;
 
   constructor(
-    identifierDescription: IdentifierDescription,
+    id: string,
+    name: string,
     type: string,
     uniqueId: string,
     value: string,
     alphabet: string,
     maxlength: number
   ) {
-    super(identifierDescription, type, uniqueId, value);
+    super(id, name, type, uniqueId, value);
     this._classType = "StringStatement";
 
     this.alphabet = alphabet;
     this.maxlength = maxlength;
   }
 
-  mutate(sampler: JavaScriptTestCaseSampler): StringStatement {
+  mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
     if (prng.nextBoolean(sampler.resampleGeneProbability)) {
-      return sampler.sampleString(
-        this.identifierDescription,
-        this.type,
-        this.alphabet,
-        this.maxlength
-      );
+      return sampler.sampleArgument(depth + 1, this.id, this.name);
     }
 
     if (this.value.length > 0 && this.value.length < this.maxlength) {
@@ -104,7 +99,8 @@ export class StringStatement extends PrimitiveStatement<string> {
     }
 
     return new StringStatement(
-      this.identifierDescription,
+      this.id,
+      this.name,
       this.type,
       prng.uniqueId(),
       newValue,
@@ -126,7 +122,8 @@ export class StringStatement extends PrimitiveStatement<string> {
     }
 
     return new StringStatement(
-      this.identifierDescription,
+      this.id,
+      this.name,
       this.type,
       prng.uniqueId(),
       newValue,
@@ -147,7 +144,8 @@ export class StringStatement extends PrimitiveStatement<string> {
     }
 
     return new StringStatement(
-      this.identifierDescription,
+      this.id,
+      this.name,
       this.type,
       prng.uniqueId(),
       newValue,
@@ -172,7 +170,8 @@ export class StringStatement extends PrimitiveStatement<string> {
     }
 
     return new StringStatement(
-      this.identifierDescription,
+      this.id,
+      this.name,
       this.type,
       prng.uniqueId(),
       newValue,
@@ -183,9 +182,10 @@ export class StringStatement extends PrimitiveStatement<string> {
 
   copy(): StringStatement {
     return new StringStatement(
-      this.identifierDescription,
-      this.type,
       this.id,
+      this.name,
+      this.type,
+      this.uniqueId,
       this.value,
       this.alphabet,
       this.maxlength

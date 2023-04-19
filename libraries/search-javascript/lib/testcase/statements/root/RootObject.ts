@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-import { IdentifierDescription } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/core";
 import { TargetType } from "@syntest/analysis";
 
@@ -32,8 +31,6 @@ import { RootStatement } from "./RootStatement";
  * @author Dimitri Stallenberg
  */
 export class RootObject extends RootStatement {
-  private _objectName: string;
-
   /**
    * Constructor
    * @param type the return identifierDescription of the constructor
@@ -41,15 +38,14 @@ export class RootObject extends RootStatement {
    * @param calls the child calls on the object
    */
   constructor(
-    identifierDescription: IdentifierDescription,
+    id: string,
+    name: string,
     type: string,
     uniqueId: string,
-    objectName: string,
     calls: Statement[]
   ) {
-    super(identifierDescription, type, uniqueId, [], calls);
+    super(id, name, type, uniqueId, [], calls);
     this._classType = "RootObject";
-    this._objectName = objectName;
 
     for (const call of calls) {
       if (!(call instanceof MethodCall)) {
@@ -74,14 +70,12 @@ export class RootObject extends RootStatement {
     // If there are no calls, add one if there are methods available
     if (calls.length === 0 && methodsAvailable) {
       // add a call
-      finalCalls.push(
-        sampler.sampleObjectFunctionCall(depth + 1, this._objectName)
-      );
+      finalCalls.push(sampler.sampleObjectFunctionCall(depth + 1, this.name));
       return new RootObject(
-        this.identifierDescription,
+        this.id,
+        this.name,
         this.type,
         prng.uniqueId(),
-        this._objectName,
         finalCalls
       );
     }
@@ -95,7 +89,7 @@ export class RootObject extends RootStatement {
         if (choice < 0.1 && methodsAvailable) {
           // 10% chance to add a call on this position
           finalCalls.push(
-            sampler.sampleObjectFunctionCall(depth + 1, this._objectName),
+            sampler.sampleObjectFunctionCall(depth + 1, this.name),
             calls[index]
           );
         } else if (choice < 0.2) {
@@ -104,7 +98,7 @@ export class RootObject extends RootStatement {
           // 80% chance to just mutate the call
           if (prng.nextBoolean(sampler.resampleGeneProbability)) {
             finalCalls.push(
-              sampler.sampleObjectFunctionCall(depth + 1, this._objectName)
+              sampler.sampleObjectFunctionCall(depth + 1, this.name)
             );
           } else {
             finalCalls.push(calls[index].mutate(sampler, depth + 1));
@@ -114,10 +108,10 @@ export class RootObject extends RootStatement {
     }
 
     return new RootObject(
-      this.identifierDescription,
+      this.id,
+      this.name,
       this.type,
       prng.uniqueId(),
-      this._objectName,
       finalCalls
     );
   }
@@ -126,10 +120,10 @@ export class RootObject extends RootStatement {
     const deepCopyChildren = this.children.map((a: Statement) => a.copy());
 
     return new RootObject(
-      this.identifierDescription,
-      this.type,
       this.id,
-      this._objectName,
+      this.name,
+      this.type,
+      this.uniqueId,
       deepCopyChildren
     );
   }

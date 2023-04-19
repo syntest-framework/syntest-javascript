@@ -19,3 +19,4 @@ link.sh
 **/instrumentation/Instrumenter.ts
 **/instrumentation/VisitState.ts
 **/instrumentation/Visitor.ts
+**/instrumentation/source-coverage.ts

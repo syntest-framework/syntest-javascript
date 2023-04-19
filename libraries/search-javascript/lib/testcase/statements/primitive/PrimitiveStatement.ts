@@ -16,8 +16,6 @@
  * limitations under the License.
  */
 
-import { IdentifierDescription } from "@syntest/analysis-javascript";
-
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";
 
@@ -31,21 +29,22 @@ export abstract class PrimitiveStatement<T> extends Statement {
   private _value: T;
 
   constructor(
-    identifierDescription: IdentifierDescription,
+    id: string,
+    name: string,
     type: string,
     uniqueId: string,
     value: T
   ) {
-    super(identifierDescription, type, uniqueId);
+    super(id, name, type, uniqueId);
     this._value = value;
   }
 
   abstract override mutate(
     sampler: JavaScriptTestCaseSampler,
     depth: number
-  ): PrimitiveStatement<T>;
+  ): Statement;
 
-  abstract override copy(): PrimitiveStatement<T>;
+  abstract override copy(): Statement;
 
   hasChildren(): boolean {
     return false;

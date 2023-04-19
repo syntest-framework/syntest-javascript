@@ -16,22 +16,18 @@
  * limitations under the License.
  */
 
-import { TypeEnum } from "./TypeEnum";
-import { TypeProbability } from "./TypeProbability";
+export type DiscoveredType = DiscoveredObjectType;
 
-export interface Type {
-  type: TypeEnum;
+export interface DiscoveredObjectType {
+  id: string;
+  kind: DiscoveredObjectKind;
+  // name -> id
+  properties: Map<string, string>;
 }
 
-export interface FunctionType extends TypeProbability {
-  parameters: TypeProbability[];
-  returnType: TypeProbability;
-}
-
-export interface ObjectType extends TypeProbability {
-  properties: Map<string, TypeProbability>;
-}
-
-export interface ArrayType extends TypeProbability {
-  items: Map<string, TypeProbability>;
+export enum DiscoveredObjectKind {
+  CLASS,
+  OBJECT,
+  INTERFACE,
+  FUNCTION,
 }

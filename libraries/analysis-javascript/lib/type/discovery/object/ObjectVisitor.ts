@@ -18,15 +18,15 @@
 import { NodePath } from "@babel/core";
 import * as t from "@babel/types";
 import { AbstractSyntaxTreeVisitor } from "@syntest/ast-visitor-javascript";
-import { ComplexType } from "./ComplexType";
+import { DiscoveredObjectKind, DiscoveredType } from "./DiscoveredType";
 
-export class ComplexTypeVisitor extends AbstractSyntaxTreeVisitor {
-  private _complexTypeMap: Map<string, ComplexType>;
+export class ObjectVisitor extends AbstractSyntaxTreeVisitor {
+  private _complexTypeMap: Map<string, DiscoveredType>;
 
   // TODO separate stack for static and non-static properties
-  private _objectStack: ComplexType[];
+  private _objectStack: DiscoveredType[];
 
-  get complexTypeMap(): Map<string, ComplexType> {
+  get complexTypeMap(): Map<string, DiscoveredType> {
     return this._complexTypeMap;
   }
 
@@ -36,8 +36,21 @@ export class ComplexTypeVisitor extends AbstractSyntaxTreeVisitor {
     this._objectStack = [];
   }
 
-  private _getCurrentObject(): ComplexType {
+  private _getCurrentObject(): DiscoveredType {
     return this._objectStack[this._objectStack.length - 1];
+  }
+
+  private _removeFromStack(path: NodePath<t.Node>): void {
+    const currentObject = this._getCurrentObject();
+    if (currentObject.id === this._getNodeId(path)) {
+      this._objectStack.pop();
+    } else {
+      throw new Error(
+        `Unexpected object stack state: ${
+          currentObject.id
+        } !== ${this._getNodeId(path)}`
+      );
+    }
   }
 
   private _getPropertyName(node: t.ClassProperty["key"]) {
@@ -56,7 +69,7 @@ export class ComplexTypeVisitor extends AbstractSyntaxTreeVisitor {
       // e.g. const {x} = function {}
       // e.g. const {x} = () => {}
       // Should not be possible
-      throw new Error("unknown class expression");
+      throw new Error(`Unexpected property name type: ${node.type}`);
     }
   }
 
@@ -64,8 +77,9 @@ export class ComplexTypeVisitor extends AbstractSyntaxTreeVisitor {
   public ClassExpression: (path: NodePath<t.ClassExpression>) => void = (
     path: NodePath<t.ClassExpression>
   ) => {
-    const complexType: ComplexType = {
+    const complexType: DiscoveredType = {
       id: this._getNodeId(path),
+      kind: DiscoveredObjectKind.CLASS,
       properties: new Map(),
     };
     this._complexTypeMap.set(this._getNodeId(path), complexType);
@@ -73,7 +87,7 @@ export class ComplexTypeVisitor extends AbstractSyntaxTreeVisitor {
 
     path.get("body").visit();
 
-    this._objectStack.pop();
+    this._removeFromStack(path);
 
     path.skip();
   };
@@ -81,8 +95,9 @@ export class ComplexTypeVisitor extends AbstractSyntaxTreeVisitor {
   public ClassDeclaration: (path: NodePath<t.ClassDeclaration>) => void = (
     path: NodePath<t.ClassDeclaration>
   ) => {
-    const complexType: ComplexType = {
+    const complexType: DiscoveredType = {
       id: this._getNodeId(path),
+      kind: DiscoveredObjectKind.CLASS,
       properties: new Map(),
     };
     this._complexTypeMap.set(this._getNodeId(path), complexType);
@@ -90,7 +105,7 @@ export class ComplexTypeVisitor extends AbstractSyntaxTreeVisitor {
 
     path.get("body").visit();
 
-    this._objectStack.pop();
+    this._removeFromStack(path);
 
     path.skip();
   };
@@ -99,32 +114,36 @@ export class ComplexTypeVisitor extends AbstractSyntaxTreeVisitor {
     path: NodePath<t.ClassMethod>
   ) => {
     const name = this._getPropertyName(path.node.key);
+    const currentObject = this._getCurrentObject();
 
-    this._getCurrentObject().properties.set(name, this._getNodeId(path));
+    currentObject.properties.set(name, this._getNodeId(path));
   };
 
   public ClassPrivateMethod: (path: NodePath<t.ClassPrivateMethod>) => void = (
     path: NodePath<t.ClassPrivateMethod>
   ) => {
     const name = this._getPropertyName(path.node.key.id);
+    const currentObject = this._getCurrentObject();
 
-    this._getCurrentObject().properties.set(`#${name}`, this._getNodeId(path));
+    currentObject.properties.set(`#${name}`, this._getNodeId(path));
   };
 
   public ClassProperty: (path: NodePath<t.ClassProperty>) => void = (
     path: NodePath<t.ClassProperty>
   ) => {
     const name = this._getPropertyName(path.node.key);
+    const currentObject = this._getCurrentObject();
 
-    this._getCurrentObject().properties.set(name, this._getNodeId(path));
+    currentObject.properties.set(name, this._getNodeId(path));
   };
 
   public ClassPrivateProperty: (
     path: NodePath<t.ClassPrivateProperty>
   ) => void = (path: NodePath<t.ClassPrivateProperty>) => {
     const name = this._getPropertyName(path.node.key.id);
+    const currentObject = this._getCurrentObject();
 
-    this._getCurrentObject().properties.set(`#${name}`, this._getNodeId(path));
+    currentObject.properties.set(`#${name}`, this._getNodeId(path));
   };
 
   // TODO ClassAccessorProperty | TSDeclareMethod | TSIndexSignature | StaticBlock
@@ -140,8 +159,9 @@ export class ComplexTypeVisitor extends AbstractSyntaxTreeVisitor {
   public ObjectExpression: (path: NodePath<t.ObjectExpression>) => void = (
     path: NodePath<t.ObjectExpression>
   ) => {
-    const complexType: ComplexType = {
+    const complexType: DiscoveredType = {
       id: this._getNodeId(path),
+      kind: DiscoveredObjectKind.OBJECT,
       properties: new Map(),
     };
     this._complexTypeMap.set(this._getNodeId(path), complexType);
@@ -151,7 +171,7 @@ export class ComplexTypeVisitor extends AbstractSyntaxTreeVisitor {
       property.visit();
     }
 
-    this._objectStack.pop();
+    this._removeFromStack(path);
 
     path.skip();
   };
@@ -160,24 +180,24 @@ export class ComplexTypeVisitor extends AbstractSyntaxTreeVisitor {
     path: NodePath<t.ObjectMethod>
   ) => {
     const name = this._getPropertyName(path.node.key);
+    const currentObject = this._getCurrentObject();
 
-    this._getCurrentObject().properties.set(name, this._getNodeId(path));
+    currentObject.properties.set(name, this._getNodeId(path));
   };
 
   public ObjectProperty: (path: NodePath<t.ObjectProperty>) => void = (
     path: NodePath<t.ObjectProperty>
   ) => {
+    const currentObject = this._getCurrentObject();
+
     if (path.node.key.type === "PrivateName") {
       const name = this._getPropertyName(path.node.key.id);
 
-      this._getCurrentObject().properties.set(
-        `#${name}`,
-        this._getNodeId(path)
-      );
+      currentObject.properties.set(`#${name}`, this._getNodeId(path));
     } else {
       const name = this._getPropertyName(path.node.key);
 
-      this._getCurrentObject().properties.set(name, this._getNodeId(path));
+      currentObject.properties.set(name, this._getNodeId(path));
     }
   };
 
@@ -186,8 +206,9 @@ export class ComplexTypeVisitor extends AbstractSyntaxTreeVisitor {
   // Functions
   public FunctionDeclaration: (path: NodePath<t.FunctionDeclaration>) => void =
     (path: NodePath<t.FunctionDeclaration>) => {
-      const complexType: ComplexType = {
+      const complexType: DiscoveredType = {
         id: this._getNodeId(path),
+        kind: DiscoveredObjectKind.FUNCTION,
         properties: new Map(),
       };
       this._complexTypeMap.set(this._getNodeId(path), complexType);
@@ -195,7 +216,7 @@ export class ComplexTypeVisitor extends AbstractSyntaxTreeVisitor {
 
       path.get("body").visit();
 
-      this._objectStack.pop();
+      this._removeFromStack(path);
 
       path.skip();
     };
@@ -203,8 +224,9 @@ export class ComplexTypeVisitor extends AbstractSyntaxTreeVisitor {
   public FunctionExpression: (path: NodePath<t.FunctionExpression>) => void = (
     path: NodePath<t.FunctionExpression>
   ) => {
-    const complexType: ComplexType = {
+    const complexType: DiscoveredType = {
       id: this._getNodeId(path),
+      kind: DiscoveredObjectKind.FUNCTION,
       properties: new Map(),
     };
     this._complexTypeMap.set(this._getNodeId(path), complexType);
@@ -212,7 +234,7 @@ export class ComplexTypeVisitor extends AbstractSyntaxTreeVisitor {
 
     path.get("body").visit();
 
-    this._objectStack.pop();
+    this._removeFromStack(path);
 
     path.skip();
   };
@@ -220,7 +242,19 @@ export class ComplexTypeVisitor extends AbstractSyntaxTreeVisitor {
   public ArrowFunctionExpression: (
     path: NodePath<t.ArrowFunctionExpression>
   ) => void = (path: NodePath<t.ArrowFunctionExpression>) => {
-    // not thisable so we skip it
+    const complexType: DiscoveredType = {
+      id: this._getNodeId(path),
+      kind: DiscoveredObjectKind.FUNCTION,
+      properties: new Map(),
+    };
+    this._complexTypeMap.set(this._getNodeId(path), complexType);
+    this._objectStack.push(complexType);
+
+    path.get("body").visit();
+
+    this._removeFromStack(path);
+
+    path.skip();
   };
 
   public MemberExpression: (path: NodePath<t.MemberExpression>) => void = (
@@ -231,7 +265,13 @@ export class ComplexTypeVisitor extends AbstractSyntaxTreeVisitor {
     }
 
     if (path.node.object.type === "ThisExpression") {
-      const _object = this._getCurrentObject();
+      const parent = this._getThisParent(path);
+
+      const _object = this.complexTypeMap.get(this._getNodeId(parent));
+
+      if (!_object) {
+        throw new Error(`Unexpected object type: ${path.node.object.type}`);
+      }
 
       if (path.node.property.type === "PrivateName") {
         const name = this._getPropertyName(path.node.property.id);
@@ -243,12 +283,16 @@ export class ComplexTypeVisitor extends AbstractSyntaxTreeVisitor {
         _object.properties.set(name, this._getNodeId(path));
       }
     } else if (path.node.object.type === "Identifier") {
-      const binding = this._getBinding(path.get("object"));
-      const _object = this.complexTypeMap.get(this._getNodeId(binding.path));
+      const bindingId = this._getBindingId(path.get("object"));
+      let _object = this.complexTypeMap.get(bindingId);
 
       if (!_object) {
-        // TODO check for this
-        return;
+        _object = {
+          id: bindingId,
+          kind: DiscoveredObjectKind.OBJECT, // not sure actually
+          properties: new Map(),
+        };
+        this._complexTypeMap.set(bindingId, _object);
       }
 
       if (path.node.property.type === "PrivateName") {

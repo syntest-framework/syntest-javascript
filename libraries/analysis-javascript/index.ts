@@ -31,25 +31,28 @@ export * from "./lib/target/export/ExportNamedDeclaration";
 export * from "./lib/target/export/ExportVisitor";
 export * from "./lib/target/export/ExpressionStatement";
 
-export * from "./lib/target/IdentifierDescription";
 export * from "./lib/target/Target";
 export * from "./lib/target/TargetFactory";
 export * from "./lib/target/TargetVisitor";
 export * from "./lib/target/VisibilityType";
 
-export * from "./lib/type/discovery/complex-type/ComplexType";
+export * from "./lib/type/discovery/element/Element";
+export * from "./lib/type/discovery/element/ElementVisitor";
+
+export * from "./lib/type/discovery/object/DiscoveredType";
+export * from "./lib/type/discovery/object/ObjectVisitor";
 
 export * from "./lib/type/discovery/relation/Relation";
-export * from "./lib/type/discovery/VariableGenerator";
+export * from "./lib/type/discovery/relation/RelationVisitor";
 
-export * from "./lib/type/resolving/logic/TypeResolverInference";
+export * from "./lib/type/discovery/TypeExtractor";
 
+export * from "./lib/type/resolving/Type";
 export * from "./lib/type/resolving/TypeEnum";
-export * from "./lib/type/resolving/TypeProbability";
-export * from "./lib/type/resolving/TypeResolver";
-export * from "./lib/type/resolving/TypeResolverUnknown";
-
-export * from "./lib/type/TypeExtractor";
+export * from "./lib/type/resolving/TypeModel";
+export * from "./lib/type/resolving/TypeModelFactory";
+export * from "./lib/type/resolving/InferenceTypeModelFactory";
+export * from "./lib/type/resolving/RandomTypeModelFactory";
 
 export * from "./lib/utils/fileSystem";
 

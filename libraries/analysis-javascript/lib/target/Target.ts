@@ -46,6 +46,11 @@ export type Exportable = {
   default?: boolean;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isExported(target: any): target is Exportable {
+  return "exported" in target && target.exported === true;
+}
+
 export interface Callable {
   isAsync: boolean;
 }

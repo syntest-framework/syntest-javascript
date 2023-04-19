@@ -37,21 +37,34 @@ export class ElementVisitor extends AbstractSyntaxTreeVisitor {
     type: ElementType,
     value: string
   ) {
-    const element: Element =
-      type === ElementType.Identifier
-        ? {
-            id: this._getNodeId(path),
-            type: ElementType.Identifier,
-            binding: this._getBinding(path),
-            bindingId: this._getNodeId(this._getBinding(path).path),
-            name: value,
-          }
-        : {
-            id: this._getNodeId(path),
-            type: type,
-            value,
-          };
-    this._elementMap.set(element.id, element);
+    if (type === ElementType.Identifier) {
+      const bindingId = this._getBindingId(path);
+
+      const element: Element = {
+        id: this._getNodeId(path),
+        filePath: this._filePath,
+        location: {
+          startIndex: (<{ index: number }>(<unknown>path.node.loc.start)).index,
+          endIndex: (<{ index: number }>(<unknown>path.node.loc.end)).index,
+        },
+        type: ElementType.Identifier,
+        bindingId,
+        name: value,
+      };
+      this._elementMap.set(element.id, element);
+    } else {
+      const element: Element = {
+        id: this._getNodeId(path),
+        filePath: this._filePath,
+        location: {
+          startIndex: (<{ index: number }>(<unknown>path.node.loc.start)).index,
+          endIndex: (<{ index: number }>(<unknown>path.node.loc.end)).index,
+        },
+        type,
+        value,
+      };
+      this._elementMap.set(element.id, element);
+    }
   }
 
   public Identifier: (path: NodePath<t.Identifier>) => void = (
@@ -60,6 +73,16 @@ export class ElementVisitor extends AbstractSyntaxTreeVisitor {
     if (path.node.name === "undefined") {
       this._createElement(path, ElementType.Undefined, "undefined");
     } else {
+      if (
+        path.parentPath.isLabeledStatement() ||
+        path.parentPath.isContinueStatement() ||
+        path.parentPath.isBreakStatement()
+      ) {
+        // we ignore these types of identifiers
+        // these all have a label property, but we don't want to add them to the element map
+        return;
+      }
+
       this._createElement(path, ElementType.Identifier, path.node.name);
     }
   };
@@ -98,7 +121,7 @@ export class ElementVisitor extends AbstractSyntaxTreeVisitor {
       }
       case "TemplateLiteral": {
         // we handle template literals as relations
-        return;
+        break;
       }
       case "BigIntLiteral": {
         this._createElement(
@@ -116,8 +139,11 @@ export class ElementVisitor extends AbstractSyntaxTreeVisitor {
         );
         break;
       }
+      default: {
+        // should never occur
+        throw new Error(`Unknown literal type`);
+      }
     }
-    throw new Error(`Unknown literal type: ${path.node.type}`);
   };
 
   public TemplateElement: (path: NodePath<t.TemplateElement>) => void = (

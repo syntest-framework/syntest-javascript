@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-import { IdentifierDescription } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/core";
 import { TargetType } from "@syntest/analysis";
 
@@ -34,28 +33,23 @@ import { RootStatement } from "./RootStatement";
  * @author Dimitri Stallenberg
  */
 export class ConstructorCall extends RootStatement {
-  private readonly _constructorName: string;
-
   /**
    * Constructor
    * @param type the return identifierDescription of the constructor
    * @param uniqueId optional argument
    * @param args the arguments of the constructor
    * @param calls the child calls on the object
-   * @param constructorName the name of the constructor
    */
   constructor(
-    identifierDescription: IdentifierDescription,
+    id: string,
+    name: string,
     type: string,
     uniqueId: string,
     arguments_: Statement[],
-    calls: Statement[],
-    constructorName: string
+    calls: Statement[]
   ) {
-    super(identifierDescription, type, uniqueId, arguments_, calls);
+    super(id, name, type, uniqueId, arguments_, calls);
     this._classType = "ConstructorCall";
-
-    this._constructorName = constructorName;
 
     for (const argument of arguments_) {
       if (argument instanceof MethodCall) {
@@ -82,6 +76,7 @@ export class ConstructorCall extends RootStatement {
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): ConstructorCall {
     // TODO replace entire constructor?
+
     const arguments_ = this.args.map((a: Statement) => a.copy());
     const calls = this.children.map((a: Statement) => a.copy());
 
@@ -89,12 +84,7 @@ export class ConstructorCall extends RootStatement {
       // go over each arg
       for (let index = 0; index < arguments_.length; index++) {
         if (prng.nextBoolean(1 / arguments_.length)) {
-          arguments_[index] = prng.nextBoolean(sampler.resampleGeneProbability)
-            ? sampler.sampleArgument(
-                depth + 1,
-                arguments_[index].identifierDescription
-              )
-            : arguments_[index].mutate(sampler, depth + 1);
+          arguments_[index] = arguments_[index].mutate(sampler, depth + 1);
         }
       }
     }
@@ -109,16 +99,14 @@ export class ConstructorCall extends RootStatement {
     // if there are no calls, add one if there are methods available
     if (calls.length === 0 && methodsAvailable) {
       // add a call
-      finalCalls.push(
-        sampler.sampleMethodCall(depth + 1, this._constructorName)
-      );
+      finalCalls.push(sampler.sampleMethodCall(depth + 1, this.name));
       return new ConstructorCall(
-        this.identifierDescription,
+        this.id,
+        this.name,
         this.type,
         prng.uniqueId(),
         arguments_,
-        finalCalls,
-        this.constructorName
+        finalCalls
       );
     }
 
@@ -131,7 +119,7 @@ export class ConstructorCall extends RootStatement {
         if (choice < 0.1 && methodsAvailable) {
           // 10% chance to add a call on this position
           finalCalls.push(
-            sampler.sampleMethodCall(depth + 1, this._constructorName),
+            sampler.sampleMethodCall(depth + 1, this.name),
             calls[index]
           );
         } else if (choice < 0.2) {
@@ -139,9 +127,7 @@ export class ConstructorCall extends RootStatement {
         } else {
           // 80% chance to just mutate the call
           if (sampler.resampleGeneProbability) {
-            finalCalls.push(
-              sampler.sampleMethodCall(depth + 1, this._constructorName)
-            );
+            finalCalls.push(sampler.sampleMethodCall(depth + 1, this.name));
           } else {
             finalCalls.push(calls[index].mutate(sampler, depth + 1));
           }
@@ -150,12 +136,12 @@ export class ConstructorCall extends RootStatement {
     }
 
     return new ConstructorCall(
-      this.identifierDescription,
+      this.id,
+      this.name,
       this.type,
       prng.uniqueId(),
       arguments_,
-      finalCalls,
-      this.constructorName
+      finalCalls
     );
   }
 
@@ -164,17 +150,13 @@ export class ConstructorCall extends RootStatement {
     const deepCopyChildren = this.children.map((a: Statement) => a.copy());
 
     return new ConstructorCall(
-      this.identifierDescription,
-      this.type,
       this.id,
+      this.name,
+      this.type,
+      this.uniqueId,
       deepCopyArguments,
-      deepCopyChildren,
-      this.constructorName
+      deepCopyChildren
     );
-  }
-
-  get constructorName(): string {
-    return this._constructorName;
   }
 
   decode(
@@ -192,7 +174,7 @@ export class ConstructorCall extends RootStatement {
       (<MethodCall>a).decodeWithObject(decoder, id, options, this.varName)
     );
 
-    let decoded = `const ${this.varName} = new ${this.constructorName}(${arguments_})`;
+    let decoded = `const ${this.varName} = new ${this.name}(${arguments_})`;
 
     if (options.addLogs) {
       const logDirectory = decoder.getLogDirectory(id, this.varName);

@@ -27,13 +27,25 @@ import { ControlFlowGraphFactory } from "./cfg/ControlFlowGraphFactory";
 import { DependencyFactory } from "./dependency/DependencyFactory";
 import { Export } from "./target/export/Export";
 import { TargetFactory } from "./target/TargetFactory";
-import { TypeResolver } from "./type/resolving/TypeResolver";
+import { TypeModelFactory } from "./type/resolving/TypeModelFactory";
 import { readFile } from "./utils/fileSystem";
 import { ExportFactory } from "./target/export/ExportFactory";
+import { TypeExtractor } from "./type/discovery/TypeExtractor";
+import { TypeModel } from "./type/resolving/TypeModel";
+import { Element } from "./type/discovery/element/Element";
+import { DiscoveredObjectType } from "./type/discovery/object/DiscoveredType";
+import { Relation } from "./type/discovery/relation/Relation";
 
 export class RootContext extends CoreRootContext<t.Node> {
   protected _exportFactory: ExportFactory;
-  private _typeResolver: TypeResolver;
+  protected _typeExtractor: TypeExtractor;
+  protected _typeResolver: TypeModelFactory;
+
+  protected _elementMap: Map<string, Element>;
+  protected _relationMap: Map<string, Relation>;
+  protected _objectMap: Map<string, DiscoveredObjectType>;
+
+  protected _typeModel: TypeModel;
 
   // Mapping: filepath -> target name -> Exports
   protected _exportMap: Map<string, Export[]>;
@@ -45,7 +57,8 @@ export class RootContext extends CoreRootContext<t.Node> {
     targetFactory: TargetFactory,
     dependencyFactory: DependencyFactory,
     exportFactory: ExportFactory,
-    typeResolver: TypeResolver
+    typeExtractor: TypeExtractor,
+    typeResolver: TypeModelFactory
   ) {
     super(
       rootPath,
@@ -56,6 +69,7 @@ export class RootContext extends CoreRootContext<t.Node> {
       dependencyFactory
     );
     this._exportFactory = exportFactory;
+    this._typeExtractor = typeExtractor;
     this._typeResolver = typeResolver;
 
     this._exportMap = new Map();
@@ -113,6 +127,35 @@ export class RootContext extends CoreRootContext<t.Node> {
     }
 
     return this._exportMap.get(absolutePath);
+  }
+
+  extractTypes(): void {
+    if (!this._elementMap || !this._relationMap || !this._objectMap) {
+      this._typeExtractor.extractAll(this);
+      this._elementMap = this._typeExtractor.elementMap;
+      this._relationMap = this._typeExtractor.relationMap;
+      this._objectMap = this._typeExtractor.objectMap;
+    }
+  }
+
+  resolveTypes(): void {
+    if (!this._typeModel) {
+      this.extractTypes();
+      this._typeModel = this._typeResolver.resolveTypes(
+        this._elementMap,
+        this._relationMap
+      ); //, this._objectMap);
+    }
+  }
+
+  getTypeModel(): TypeModel {
+    if (!this._typeModel) {
+      this.extractTypes();
+      this.resolveTypes();
+      // or should this always be done beforehand?
+    }
+
+    return this._typeModel;
   }
 
   // getTargetMap(targetPath: string): Map<string, JavaScriptTargetMetaData> {
@@ -412,9 +455,27 @@ export class RootContext extends CoreRootContext<t.Node> {
   //     wrapperElementIsRelation,
   //     finalObjects
   //   );
+
   // }
 
-  get typeResolver(): TypeResolver {
-    return this._typeResolver;
+  getElement(id: string): Element {
+    if (!this._elementMap || !this._elementMap.has(id)) {
+      this.extractTypes();
+    }
+    return this._elementMap.get(id);
+  }
+
+  getRelation(id: string): Relation {
+    if (!this._relationMap || !this._relationMap.has(id)) {
+      this.extractTypes();
+    }
+    return this._relationMap.get(id);
+  }
+
+  getObject(id: string): DiscoveredObjectType {
+    if (!this._objectMap || !this._objectMap.has(id)) {
+      this.extractTypes();
+    }
+    return this._objectMap.get(id);
   }
 }

@@ -865,4 +865,22 @@ describe("ExportVisitor test", () => {
     expect(exports[0].module).to.equal(true);
     expect(exports[0].renamedTo).to.equal("a");
   });
+
+  it("export short arrow", () => {
+    const source = `
+    const at = (object, ...paths) => baseAt(object, baseFlatten(paths, 1))
+
+    export default at
+  `;
+
+    const exports = exportHelper(source);
+    console.log(exports);
+
+    expect(exports.length).to.equal(1);
+
+    expect(exports[0].name).to.equal("at");
+    expect(exports[0].default).to.equal(true);
+    expect(exports[0].module).to.equal(false);
+    expect(exports[0].renamedTo).to.equal("at");
+  });
 });

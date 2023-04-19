@@ -33,8 +33,7 @@ export function extractExportsFromExportDefaultDeclaration(
   switch (path.node.declaration.type) {
     case "Identifier": {
       name = path.node.declaration.name;
-      const binding = visitor._getBinding(path.get("declaration"));
-      id = visitor._getNodeId(binding.path);
+      id = visitor._getBindingId(path.get("declaration"));
       break;
     }
     case "NewExpression": {

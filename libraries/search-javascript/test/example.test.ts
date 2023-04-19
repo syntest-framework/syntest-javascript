@@ -18,10 +18,11 @@
 import { expect } from "chai";
 
 import { ExecutionInformationIntegrator } from "../lib/testcase/execution/ExecutionInformationIntegrator";
+import { TypeModel } from "@syntest/analysis-javascript";
 
 describe("Temp", () => {
   it("temp", () => {
-    new ExecutionInformationIntegrator();
+    new ExecutionInformationIntegrator(new TypeModel());
     expect(true);
   });
 });

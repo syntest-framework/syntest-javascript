@@ -16,21 +16,21 @@
  * limitations under the License.
  */
 
-import { TypeProbability } from "../type/resolving/TypeProbability";
+import { Element } from "../discovery/element/Element";
+import { Relation } from "../discovery/relation/Relation";
+import { TypeModel } from "./TypeModel";
+import { TypeModelFactory } from "./TypeModelFactory";
 
-/**
- * Interface for a IdentifierDescription Description.
- *
- * @author Dimitri Stallenberg
- */
-export interface IdentifierDescription {
-  /**
-   * Name of the parameter.
-   */
-  name: string;
+export class RandomTypeModelFactory extends TypeModelFactory {
+  getElement(): Element {
+    throw new Error("Method not implemented.");
+  }
 
-  /**
-   * Type probability map of the parameter.
-   */
-  typeProbabilityMap: TypeProbability;
+  getRelation(): Relation {
+    throw new Error("Method not implemented.");
+  }
+
+  resolveTypes() {
+    return new TypeModel();
+  }
 }

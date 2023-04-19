@@ -47,7 +47,8 @@
   },
   "dependencies": {
     "@babel/core": "7.20.12",
-    "@babel/traverse": "7.20.12"
+    "@babel/traverse": "7.20.12",
+    "globals": "^13.20.0"
   },
   "engines": {
     "node": ">=10.24.0"

@@ -18,11 +18,80 @@
 import { NodePath } from "@babel/core";
 import { Scope as BabelScope, TraverseOptions } from "@babel/traverse";
 import * as t from "@babel/types";
-import { Binding } from "@babel/traverse";
 
 import { getLogger } from "@syntest/logging";
 import { Logger } from "winston";
+import * as globals from "globals";
 
+const flatGlobals = new Set(
+  Object.values(globals).flatMap((value) => Object.keys(value))
+);
+const reservedKeywords = new Set([
+  "abstract",
+  "arguments",
+  "await*",
+  "boolean",
+  "break",
+  "byte",
+  "case",
+  "catch",
+  "char",
+  "class*",
+  "const",
+  "continue",
+  "debugger",
+  "default",
+  "delete",
+  "do",
+  "double",
+  "else",
+  "enum*",
+  "eval",
+  "export*",
+  "extends*",
+  "false",
+  "final",
+  "finally",
+  "float",
+  "for",
+  "function",
+  "goto",
+  "if",
+  "implements",
+  "import*",
+  "in",
+  "instanceof",
+  "int",
+  "interface",
+  "let*",
+  "long",
+  "native",
+  "new",
+  "null",
+  "package",
+  "private",
+  "protected",
+  "public",
+  "return",
+  "short",
+  "static",
+  "super*",
+  "switch",
+  "synchronized",
+  "this",
+  "throw",
+  "throws",
+  "transient",
+  "true",
+  "try",
+  "typeof",
+  "var",
+  "void",
+  "volatile",
+  "while",
+  "with",
+  "yield",
+]);
 export class AbstractSyntaxTreeVisitor implements TraverseOptions {
   protected static LOGGER: Logger;
 
@@ -61,24 +130,132 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
       );
     }
 
+    const startLine = (<{ line: number }>(<unknown>path.node.loc.start)).line;
+    const startColumn = (<{ column: number }>(<unknown>path.node.loc.start))
+      .column;
     const startIndex = (<{ index: number }>(<unknown>path.node.loc.start))
       .index;
+    const endLine = (<{ line: number }>(<unknown>path.node.loc.end)).line;
+    const endColumn = (<{ column: number }>(<unknown>path.node.loc.end)).column;
     const endIndex = (<{ index: number }>(<unknown>path.node.loc.end)).index;
 
-    return `${this._filePath}::${startIndex}-${endIndex}`;
+    return `${this._filePath}:${startLine}:${startColumn}:::${endLine}:${endColumn}:::${startIndex}:${endIndex}`;
   }
 
-  public _getBinding(path: NodePath<t.Node>): Binding {
-    if (path.parentPath.isMemberExpression()) {
-      // TODO
-      return this._getBinding(path.parentPath.get("object"));
+  public _getBindingId(path: NodePath<t.Node>): string {
+    if (
+      path.parentPath.isLabeledStatement() &&
+      path.parentPath.get("label") === path
+    ) {
+      /**
+       * e.g.
+       * foo:
+       * while (true) {
+       *   a = 2
+       *  continue foo
+       * }
+       */
+      // not supported
+      AbstractSyntaxTreeVisitor.LOGGER.info(`Unsupported labeled statement`);
+      throw new Error("Cannot get binding for labeled statement");
+    }
+
+    if (
+      path.parentPath.isMemberExpression() &&
+      path.parentPath.get("property") === path
+    ) {
+      // we are the property of a member expression
+      // so the binding id is equal to the member expression relation
+      // e.g. bar.foo
+      return this._getNodeId(path.parentPath);
+    }
+
+    if (
+      path.parentPath.isClassMethod() &&
+      path.parentPath.get("key") === path
+    ) {
+      // we are the key of a class method
+      // so this is the first definition of foo
+      // e.g. class Foo { foo() {} }
+      return this._getNodeId(path);
+    }
+
+    if (
+      path.parentPath.isObjectProperty() &&
+      path.parentPath.get("key") === path
+    ) {
+      // we are the key of an object property
+      // so this is the first definition of foo
+      // e.g. { foo: bar }
+      return this._getNodeId(path);
+    }
+
+    if (
+      path.parentPath.isExportSpecifier() &&
+      path.parentPath.parentPath.has("source")
+    ) {
+      // we export from source
+      // so this is the first definition of foo
+      // e.g. export { foo } from "./bar"
+      return this._getNodeId(path);
     }
 
     if (!path.isIdentifier()) {
-      throw new Error("Cannot get binding for non-identifier");
+      // non identifier so we get the relation id
+      return this._getNodeId(path);
     }
 
-    return path.scope.getBinding(path.node.name);
+    const binding = path.scope.getBinding(path.node.name);
+
+    if (
+      binding === undefined &&
+      (flatGlobals.has(path.node.name) || reservedKeywords.has(path.node.name))
+    ) {
+      return `global::${path.node.name}`;
+    } else if (binding === undefined) {
+      throw new Error(`Cannot find binding for ${path.node.name}`);
+    } else {
+      return this._getNodeId(binding.path);
+    }
+  }
+
+  public _getThisParent(
+    path: NodePath<t.Node>
+  ): NodePath<
+    t.FunctionDeclaration | t.FunctionExpression | t.ObjectMethod | t.Class
+  > {
+    let parent = path.getFunctionParent();
+
+    if (parent === undefined || parent === null) {
+      throw new Error("ThisExpression must be inside a function");
+    }
+
+    while (parent.isArrowFunctionExpression()) {
+      // arrow functions are not thisable
+      parent = parent.getFunctionParent();
+
+      if (parent === undefined || parent === null) {
+        throw new Error("ThisExpression must be inside a function");
+      }
+    }
+
+    if (parent.isClassMethod() || parent.isClassPrivateMethod()) {
+      const classParent = path.findParent((p) => p.isClass());
+      if (classParent === undefined || classParent === null) {
+        throw new Error("ThisExpression must be inside a class");
+      }
+      return <NodePath<t.Class>>classParent;
+    }
+
+    if (
+      parent.isFunctionDeclaration() ||
+      parent.isFunctionExpression() ||
+      parent.isObjectMethod()
+    ) {
+      return parent;
+    }
+
+    throw new Error("ThisExpression must be inside a function");
   }
 
   enter = (path: NodePath<t.Node>) => {
@@ -166,112 +343,4 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
 
     return "anon";
   }
-
-  // _getScope(path: NodePath<t.Node>): Scope {
-  //   switch (path.node.type) {
-  //     case "ThisExpression": {
-  //       return {
-  //         uid: `${this._getCurrentThisScopeId() - this.scopeIdOffset}`,
-  //         filePath: this.filePath,
-  //       };
-  //     }
-  //     case "MemberExpression": {
-  //       const propertyName: string = this._getNameFromNode(path.node.property);
-
-  //       const objectScope: Scope = this._getScope(<NodePath>path.get("object"));
-
-  //       objectScope.uid += "-" + propertyName;
-
-  //       return objectScope;
-  //     }
-  //     case "CallExpression": {
-  //       return this._getScope(<NodePath>path.get("callee"));
-  //     }
-
-  //     // No default
-  //   }
-
-  //   /**
-  //    * If the parent is a member expression and the current node is the property
-  //    * then we need to get use scope of the object and append the property name
-  //    */
-  //   if (
-  //     path.parent.type === "MemberExpression" &&
-  //     path.parentPath.get("property") === path
-  //   ) {
-  //     const propertyName: string = this._getNameFromNode(path.node);
-
-  //     const objectScope: Scope = this._getScope(
-  //       <NodePath>path.parentPath.get("object")
-  //     );
-
-  //     objectScope.uid += "-" + propertyName;
-
-  //     return objectScope;
-  //   }
-
-  //   if (path.node.type === "Identifier") {
-  //     if (path.scope.hasGlobal(path.node.name)) {
-  //       return {
-  //         uid: "global",
-  //         filePath: this.filePath,
-  //       };
-  //     }
-
-  //     if (
-  //       path.scope.hasBinding(path.node.name) &&
-  //       path.scope.getBinding(path.node.name)
-  //     ) {
-  //       const variableScope = path.scope.getBinding(path.node.name).scope;
-
-  //       return {
-  //         uid: `${this._getUidFromScope(variableScope) - this.scopeIdOffset}`,
-  //         filePath: this.filePath,
-  //       };
-  //     }
-
-  //     // TODO these might be wrong
-  //     if (
-  //       path.parent.type === "ClassMethod" ||
-  //       path.parent.type === "ObjectMethod" ||
-  //       path.parent.type === "AssignmentExpression" ||
-  //       path.parent.type === "FunctionExpression" ||
-  //       path.parent.type === "ObjectProperty" ||
-  //       path.parent.type === "MetaProperty"
-  //     ) {
-  //       const uid = this._getUidFromScope(path.scope.getBlockParent());
-
-  //       return {
-  //         filePath: this.filePath,
-  //         uid: `${uid - this.scopeIdOffset}`,
-  //       };
-  //     }
-
-  //     throw new Error(
-  //       `Cannot find scope of Identifier ${path.node.name}\n${
-  //         this.filePath
-  //       }\n${path.getSource()}`
-  //     );
-  //   }
-
-  //   // TODO super should be handled like this actually (kind off)
-  //   if (
-  //     path.node.type === "Super" ||
-  //     path.node.type.includes("Expression") ||
-  //     path.node.type.includes("Literal")
-  //   ) {
-  //     const uid = this._getUidFromScope(path.scope.getBlockParent());
-
-  //     return {
-  //       filePath: this.filePath,
-  //       uid: `${uid - this.scopeIdOffset}`,
-  //     };
-  //   }
-
-  //   throw new Error(
-  //     `Cannot find scope of element of type ${path.node.type}\n${
-  //       this.filePath
-  //     }\n${path.getSource()}`
-  //   );
-  // }
 }

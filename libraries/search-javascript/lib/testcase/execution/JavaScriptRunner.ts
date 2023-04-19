@@ -48,18 +48,22 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
   protected tempTestDirectory: string;
   protected executionInformationIntegrator: ExecutionInformationIntegrator;
 
-  constructor(decoder: JavaScriptDecoder, temporaryTestDirectory: string) {
+  constructor(
+    decoder: JavaScriptDecoder,
+    executionInformationIntergrator: ExecutionInformationIntegrator,
+    temporaryTestDirectory: string
+  ) {
     JavaScriptRunner.LOGGER = getLogger(JavaScriptRunner.name);
     this.decoder = decoder;
+    this.executionInformationIntegrator = executionInformationIntergrator;
     this.tempTestDirectory = temporaryTestDirectory;
-    this.executionInformationIntegrator = new ExecutionInformationIntegrator();
 
-    process.on("uncaughtException", (reason) => {
-      throw reason;
-    });
-    process.on("unhandledRejection", (reason) => {
-      throw reason;
-    });
+    // process.on("uncaughtException", (reason) => {
+    //   throw reason;
+    // });
+    // process.on("unhandledRejection", (reason) => {
+    //   throw reason;
+    // });
   }
 
   writeTestCase(
@@ -68,6 +72,7 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     targetName: string,
     addLogs = false
   ): void {
+    JavaScriptRunner.LOGGER.silly(`Writing test case to ${filePath}`);
     const decodedTestCase = this.decoder.decode(testCase, targetName, addLogs);
 
     writeFileSync(filePath, decodedTestCase);
@@ -125,6 +130,7 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     subject: JavaScriptSubject,
     testCase: JavaScriptTestCase
   ): Promise<ExecutionResult> {
+    JavaScriptRunner.LOGGER.silly("Executing test case");
     const testPath = path.resolve(
       path.join(this.tempTestDirectory, "tempTest.spec.js")
     );
@@ -155,7 +161,7 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
         const hits = instrumentationData[key].f[functionKey];
 
         traces.push({
-          id: `f-${function_.line}`,
+          id: function_.loc.id,
           type: "function",
           path: key,
           line: function_.line,
@@ -171,7 +177,7 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
         const hits = instrumentationData[key].s[statementKey];
 
         traces.push({
-          id: `s-${statement.start.line}`,
+          id: statement.id,
           type: "statement",
           path: key,
           line: statement.start.line,
@@ -187,7 +193,7 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
 
         traces.push(
           {
-            id: `b-${branch.line}`,
+            id: branch.locations[0].id,
             path: key,
             type: "branch",
             line: branch.line,
@@ -199,7 +205,7 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
             variables: meta?.variables,
           },
           {
-            id: `b-${branch.line}`,
+            id: branch.locations[1].id,
             path: key,
             type: "branch",
             line: branch.line,
@@ -260,35 +266,22 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
   }
 
   resetInstrumentationData() {
-    for (const key of Object.keys(
-      (<{ __coverage__: InstrumentationData }>(<unknown>global)).__coverage__
-    )) {
-      for (const statementKey of Object.keys(
-        (<{ __coverage__: InstrumentationData }>(<unknown>global)).__coverage__[
-          key
-        ].s
-      )) {
-        (<{ __coverage__: InstrumentationData }>(<unknown>global)).__coverage__[
-          key
-        ].s[statementKey] = 0;
+    const coverage = (<{ __coverage__: InstrumentationData }>(<unknown>global))
+      .__coverage__;
+
+    if (coverage === undefined) {
+      return;
+    }
+
+    for (const key of Object.keys(coverage)) {
+      for (const statementKey of Object.keys(coverage[key].s)) {
+        coverage[key].s[statementKey] = 0;
       }
-      for (const functionKey of Object.keys(
-        (<{ __coverage__: InstrumentationData }>(<unknown>global)).__coverage__[
-          key
-        ].f
-      )) {
-        (<{ __coverage__: InstrumentationData }>(<unknown>global)).__coverage__[
-          key
-        ].f[functionKey] = 0;
+      for (const functionKey of Object.keys(coverage[key].f)) {
+        coverage[key].f[functionKey] = 0;
       }
-      for (const branchKey of Object.keys(
-        (<{ __coverage__: InstrumentationData }>(<unknown>global)).__coverage__[
-          key
-        ].b
-      )) {
-        (<{ __coverage__: InstrumentationData }>(<unknown>global)).__coverage__[
-          key
-        ].b[branchKey] = [0, 0];
+      for (const branchKey of Object.keys(coverage[key].b)) {
+        coverage[key].b[branchKey] = [0, 0];
       }
     }
   }

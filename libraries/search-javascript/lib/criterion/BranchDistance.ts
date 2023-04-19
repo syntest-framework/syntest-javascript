@@ -18,10 +18,11 @@
 
 import { BranchDistance as CoreBranchDistance } from "@syntest/core";
 import { BranchDistanceVisitor } from "./BranchDistanceVisitor";
-import { traverse } from "@babel/core";
+import { transformSync, traverse } from "@babel/core";
+import { defaultBabelOptions } from "@syntest/analysis-javascript";
 
 export class BranchDistance extends CoreBranchDistance {
-  _calculate(
+  calculate(
     conditionAST: string,
     condition: string,
     variables: Record<string, unknown>,
@@ -34,8 +35,9 @@ export class BranchDistance extends CoreBranchDistance {
     ) {
       return 1;
     }
+    const options: unknown = JSON.parse(JSON.stringify(defaultBabelOptions));
 
-    const ast = JSON.parse(conditionAST);
+    const ast = transformSync(condition, options).ast;
     const visitor = new BranchDistanceVisitor(variables);
 
     traverse(ast, visitor);

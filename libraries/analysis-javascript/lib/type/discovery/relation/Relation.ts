@@ -36,6 +36,10 @@ export function isRelation(object: any): object is Relation {
   );
 }
 
+export function getRelationName(type: RelationType): string {
+  return Object.entries(RelationType).find(([, value]) => value === type)[0];
+}
+
 export enum RelationType {
   // special
   Return = "L->R",
@@ -44,8 +48,8 @@ export enum RelationType {
   ObjectProperty = "{L:R}",
   ObjectMethod = "{L(R)}",
 
-  ClassProperty = "L{R}",
-  StaticClassProperty = "L{static R}",
+  ClassProperty = "L{K:V}",
+  StaticClassProperty = "L{static K:V}",
   ClassMethod = "L{R()}",
   AsyncClassMethod = "L{async R()}",
   StaticClassMethod = "L{static R()}",
@@ -58,16 +62,23 @@ export enum RelationType {
   ObjectPattern = "{L}",
   RestElement = "...R",
 
+  While = "while(L)", // also do while
+  If = "if(L)",
+  For = "for(L)",
+  ForIn = "for(L in R)",
+  ForOf = "for(L of R)",
+  Switch = "switch(L) case R", // L === R bassically
+
   // Primary Expressions
   This = "this",
   // literals are processed differently
   ArrayInitializer = "[L]",
   ObjectInitializer = "{L}",
-  FunctionDefinition = "function L",
   ClassDefinition = "class L",
-  FunctionStarDefinition = "function* L",
-  AsyncFunctionDefinition = "async function L",
-  AsyncFunctionStarDefinition = "async function* L",
+  FunctionDefinition = "function L(R)",
+  FunctionStarDefinition = "function* L(R)",
+  AsyncFunctionDefinition = "async function L(R)",
+  AsyncFunctionStarDefinition = "async function* L(R)",
   // RegularExpression = "/L/", this is a literal
   TemplateLiteral = "`L`",
   Sequence = "(L,R)",
@@ -204,6 +215,9 @@ function getUnaryRelationType(operator: string, prefix: boolean) {
     case "!": {
       return RelationType.LogicalNotUnary;
     }
+    case "await": {
+      return RelationType.Await;
+    }
   }
 
   throw new Error(`Unsupported relation type operator: unary -> ${operator}`);
@@ -229,13 +243,6 @@ function getBinaryRelationType(operator: string) {
     case "**": {
       return RelationType.Exponentiation;
     }
-
-    case "in": {
-      return RelationType.In;
-    }
-    case "instanceof": {
-      return RelationType.InstanceOf;
-    }
     case "<": {
       return RelationType.Less;
     }
@@ -247,6 +254,12 @@ function getBinaryRelationType(operator: string) {
     }
     case ">=": {
       return RelationType.GreaterOrEqual;
+    }
+    case "instanceof": {
+      return RelationType.InstanceOf;
+    }
+    case "in": {
+      return RelationType.In;
     }
 
     case "==": {

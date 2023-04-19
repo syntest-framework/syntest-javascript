@@ -19,7 +19,6 @@
 import { ElementType } from "../discovery/element/Element";
 
 export enum TypeEnum {
-  ANY = "any",
   NUMERIC = "numeric",
   STRING = "string",
   BOOLEAN = "boolean",
@@ -33,7 +32,15 @@ export enum TypeEnum {
   FUNCTION = "function",
 }
 
-export function elementTypeToTypingType(elementType: ElementType): TypeEnum {
+export function elementTypeToTypingType(
+  elementType: ElementType
+):
+  | TypeEnum.STRING
+  | TypeEnum.NUMERIC
+  | TypeEnum.BOOLEAN
+  | TypeEnum.NULL
+  | TypeEnum.UNDEFINED
+  | TypeEnum.REGEX {
   switch (elementType) {
     case ElementType.StringLiteral: {
       return TypeEnum.STRING;

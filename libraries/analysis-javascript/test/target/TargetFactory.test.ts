@@ -40,6 +40,5 @@ describe("TargetFactory", () => {
     const target = targetMapGenerator.extract("", ast);
 
     expect(target.subTargets.length).to.equal(3);
-    // console.log(targets);
   });
 });

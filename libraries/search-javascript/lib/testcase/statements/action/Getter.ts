@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-import { IdentifierDescription } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/core";
 
 import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
@@ -24,13 +23,14 @@ import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSamp
 import { Decoding, Statement } from "../Statement";
 
 import { ActionStatement } from "./ActionStatement";
+import { MethodCall } from "./MethodCall";
+import { Setter } from "./Setter";
 
 /**
  * @author Dimitri Stallenberg
  */
 export class Getter extends ActionStatement {
   private readonly _className: string;
-  private readonly _property: string;
 
   /**
    * Constructor
@@ -40,53 +40,50 @@ export class Getter extends ActionStatement {
    * @param property the name of the property
    */
   constructor(
-    identifierDescription: IdentifierDescription,
+    id: string,
+    name: string,
     type: string,
     uniqueId: string,
-    className: string,
-    property: string
+    className: string
   ) {
-    super(identifierDescription, type, uniqueId, []);
+    super(id, name, type, uniqueId, []);
     this._classType = "Getter";
     this._className = className;
-    this._property = property;
   }
 
-  mutate(sampler: JavaScriptTestCaseSampler, depth: number): Getter {
+  mutate(
+    sampler: JavaScriptTestCaseSampler,
+    depth: number
+  ): Getter | Setter | MethodCall {
+    if (prng.nextBoolean(sampler.resampleGeneProbability)) {
+      return sampler.sampleClassCall(depth, this._className);
+    }
+
     const arguments_ = this.args.map((a: Statement) => a.copy());
 
     if (arguments_.length > 0) {
       const index = prng.nextInt(0, arguments_.length - 1);
 
-      arguments_[index] = prng.nextBoolean(sampler.resampleGeneProbability)
-        ? sampler.sampleArgument(
-            depth + 1,
-            arguments_[index].identifierDescription
-          )
-        : arguments_[index].mutate(sampler, depth + 1);
+      arguments_[index] = arguments_[index].mutate(sampler, depth + 1);
     }
 
     return new Getter(
-      this.identifierDescription,
+      this.id,
+      this.name,
       this.type,
       prng.uniqueId(),
-      this.className,
-      this.property
+      this.className
     );
   }
 
   copy(): Getter {
     return new Getter(
-      this.identifierDescription,
-      this.type,
       this.id,
-      this.className,
-      this.property
+      this.name,
+      this.type,
+      this.uniqueId,
+      this.className
     );
-  }
-
-  get property(): string {
-    return this._property;
   }
 
   get className(): string {
@@ -103,7 +100,7 @@ export class Getter extends ActionStatement {
     options: { addLogs: boolean; exception: boolean },
     objectVariable: string
   ): Decoding[] {
-    let decoded = `const ${this.varName} = await ${objectVariable}.${this.property}`;
+    let decoded = `const ${this.varName} = await ${objectVariable}.${this.name}`;
 
     if (options.addLogs) {
       const logDirectory = decoder.getLogDirectory(id, this.varName);
@@ -121,6 +118,6 @@ export class Getter extends ActionStatement {
 
   // TODO
   decodeErroring(objectVariable: string): string {
-    return `await expect(${objectVariable}.${this.property}).to.be.rejectedWith(Error);`;
+    return `await expect(${objectVariable}.${this.name}).to.be.rejectedWith(Error);`;
   }
 }

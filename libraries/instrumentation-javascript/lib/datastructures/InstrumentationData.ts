@@ -15,32 +15,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+export type Location = {
+  id: string;
+  start: {
+    line: number;
+    column: number;
+    index: number;
+  };
+  end: {
+    line: number;
+    column: number;
+    index: number;
+  };
+};
+
 export type InstrumentationData = {
   [path: string]: {
     hash: string;
     statementMap: {
-      [id: string]: {
-        line: number; // TODO ???
-        start: {
-          line: number;
-          column: number;
-          index: number;
-        };
-        end: {
-          line: number;
-          column: number;
-          index: number;
-        };
-      };
+      [id: string]: Location;
     };
     branchMap: {
       [id: string]: {
         line: number;
+        type: string;
+        loc: Location;
+        locations: [Location, Location];
       };
     };
     fnMap: {
       [id: string]: {
+        name: string;
         line: number;
+        decl: Location;
+        loc: Location;
       };
     };
     s: {

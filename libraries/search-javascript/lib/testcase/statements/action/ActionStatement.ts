@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-import { IdentifierDescription } from "@syntest/analysis-javascript";
 import { Encoding, EncodingSampler } from "@syntest/core";
 
 import { Statement } from "../Statement";
@@ -28,12 +27,13 @@ export abstract class ActionStatement extends Statement {
   private _args: Statement[];
 
   protected constructor(
-    identifierDescription: IdentifierDescription,
+    id: string,
+    name: string,
     type: string,
     uniqueId: string,
     arguments_: Statement[]
   ) {
-    super(identifierDescription, type, uniqueId);
+    super(id, name, type, uniqueId);
     this._args = arguments_;
   }
 

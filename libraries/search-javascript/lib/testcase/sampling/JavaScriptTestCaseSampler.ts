@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-import { IdentifierDescription } from "@syntest/analysis-javascript";
 import { EncodingSampler } from "@syntest/core";
 
 import { JavaScriptSubject } from "../../search/JavaScriptSubject";
@@ -31,6 +30,11 @@ import { ConstructorCall } from "../statements/root/ConstructorCall";
 import { Statement } from "../statements/Statement";
 import { RootObject } from "../statements/root/RootObject";
 import { ObjectFunctionCall } from "../statements/action/ObjectFunctionCall";
+import { NullStatement } from "../statements/primitive/NullStatement";
+import { UndefinedStatement } from "../statements/primitive/UndefinedStatement";
+import { ArrowFunctionStatement } from "../statements/complex/ArrowFunctionStatement";
+import { ArrayStatement } from "../statements/complex/ArrayStatement";
+import { ObjectStatement } from "../statements/complex/ObjectStatement";
 
 /**
  * JavaScriptRandomSampler class
@@ -73,41 +77,70 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
   }
 
   abstract sampleClass(depth: number): ConstructorCall;
-  abstract sampleMethodCall(
+  // TODO sampleConstructor
+  abstract sampleClassCall(
     depth: number,
     className: string
   ): MethodCall | Getter | Setter;
+  abstract sampleMethodCall(depth: number, className: string): MethodCall;
+
+  abstract sampleGetter(depth: number, className: string): Getter;
+
+  abstract sampleSetter(depth: number, className: string): Setter;
 
   abstract sampleRootObject(depth: number): RootObject;
   abstract sampleObjectFunctionCall(
     depth: number,
     objectName: string
   ): ObjectFunctionCall;
+
   // TODO
   // abstract sampleStaticMethodCall(depth: number): MethodCall;
   // abstract sampleFunctionCall(depth: number): FunctionCall;
 
-  abstract sampleArgument(
+  abstract sampleArrayArgument(
     depth: number,
-    type: IdentifierDescription
+    arrayId: string,
+    index?: number
   ): Statement;
 
+  abstract sampleObjectArgument(
+    depth: number,
+    objectId: string,
+    property?: string
+  ): Statement;
+
+  abstract sampleArgument(depth: number, id: string, name: string): Statement;
+
+  abstract sampleObject(
+    depth: number,
+    id: string,
+    name: string
+  ): ObjectStatement;
+
+  abstract sampleArray(depth: number, id: string, name: string): ArrayStatement;
+
+  abstract sampleArrowFunction(
+    depth: number,
+    id: string,
+    name: string
+  ): ArrowFunctionStatement;
+
   abstract sampleString(
-    identifierDescription?: IdentifierDescription,
-    type?: string,
+    id: string,
+    name: string,
     alphabet?: string,
     maxlength?: number
   ): StringStatement;
 
-  abstract sampleBool(
-    identifierDescription?: IdentifierDescription,
-    type?: string
-  ): BoolStatement;
+  // primitive types
+  abstract sampleBool(id: string, name: string): BoolStatement;
 
-  abstract sampleNumber(
-    identifierDescription?: IdentifierDescription,
-    type?: string
-  ): NumericStatement;
+  abstract sampleNull(id: string, name: string): NullStatement;
+
+  abstract sampleNumber(id: string, name: string): NumericStatement;
+
+  abstract sampleUndefined(id: string, name: string): UndefinedStatement;
 
   get typeInferenceMode(): string {
     return this._typeInferenceMode;

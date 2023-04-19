@@ -48,9 +48,10 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
       path.isDoWhileStatement() ||
       path.isWhileStatement()
     ) {
-      path.visit();
-
       const test = <NodePath<t.Node>>path.get("test");
+
+      test.visit();
+
       const testId = this._getNodeId(test);
 
       if (this._isDistanceMap.get(testId)) {
@@ -61,11 +62,10 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
     }
 
     if (path.isSwitchCase() || path.isForStatement()) {
-      path.visit();
-
       const test = <NodePath<t.Node>>path.get("test");
 
       if (test) {
+        test.visit();
         const testId = this._getNodeId(test);
 
         if (this._isDistanceMap.get(testId)) {
@@ -75,6 +75,19 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
         }
       } else {
         this._distance = 0;
+      }
+    }
+
+    if (path.isExpressionStatement()) {
+      path.get("expression").visit();
+
+      const expression = <NodePath<t.Node>>path.get("expression");
+      const expressionId = this._getNodeId(expression);
+
+      if (this._isDistanceMap.get(expressionId)) {
+        this._distance = <number>this._valueMap.get(this._getNodeId(path));
+      } else {
+        this._distance = this._valueMap.get(this._getNodeId(path)) ? 0 : 1;
       }
     }
 

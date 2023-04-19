@@ -26,9 +26,9 @@ export class ControlFlowGraphFactory
   implements CoreControlFlowGraphFactory<t.Node>
 {
   convert(filePath: string, AST: t.Node): ControlFlowProgram<t.Node> {
-    const visitor = new ControlFlowGraphVisitor("");
+    const visitor = new ControlFlowGraphVisitor(filePath);
     traverse(AST, visitor);
 
-    return visitor.cfg;
+    return visitor.cfg; //contractControlFlowProgram(visitor.cfg);
   }
 }

@@ -16,39 +16,36 @@
  * limitations under the License.
  */
 
-import { IdentifierDescription } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/core";
 
 import { PrimitiveStatement } from "./PrimitiveStatement";
+import { Statement } from "../Statement";
+import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 
 /**
  * @author Dimitri Stallenberg
  */
 export class UndefinedStatement extends PrimitiveStatement<boolean> {
-  constructor(
-    identifierDescription: IdentifierDescription,
-    type: string,
-    uniqueId: string
-  ) {
+  constructor(id: string, name: string, type: string, uniqueId: string) {
     // eslint-disable-next-line unicorn/no-useless-undefined
-    super(identifierDescription, type, uniqueId, undefined);
+    super(id, name, type, uniqueId, undefined);
     this._classType = "UndefinedStatement";
   }
 
-  mutate(): UndefinedStatement {
+  mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
+    if (prng.nextBoolean(sampler.resampleGeneProbability)) {
+      return sampler.sampleArgument(depth + 1, this.id, this.name);
+    }
     return new UndefinedStatement(
-      this.identifierDescription,
+      this.id,
+      this.name,
       this.type,
       prng.uniqueId()
     );
   }
 
   copy(): UndefinedStatement {
-    return new UndefinedStatement(
-      this.identifierDescription,
-      this.type,
-      this.id
-    );
+    return new UndefinedStatement(this.id, this.name, this.type, this.uniqueId);
   }
 
   getFlatTypes(): string[] {

@@ -28,10 +28,10 @@ function extractFromIdentifier(
   initPath?: NodePath<t.Node>
 ): Export {
   if (initPath && initPath.isIdentifier()) {
-    const binding = visitor._getBinding(initPath);
+    const binding = visitor._getBindingId(initPath);
 
     return {
-      id: visitor._getNodeId(binding.path),
+      id: binding,
       filePath,
       name: initPath.node.name,
       renamedTo: path.node.name,
@@ -143,10 +143,10 @@ function extractFromObjectPattern(
           // in the above example we rename b to a (as the export)
 
           // get the binding of the local variable b
-          const binding = visitor._getBinding(match.get("value"));
+          const bindingId = visitor._getBindingId(match.get("value"));
 
           exports.push({
-            id: visitor._getNodeId(binding.path),
+            id: bindingId,
             filePath,
             name: match.node.value.name,
             renamedTo: key.node.name,
@@ -206,9 +206,9 @@ function extractFromArrayPattern(
       // in the above example we rename b to a (as the export)
 
       // get the binding of the local name
-      const binding = visitor._getBinding(initElement);
+      const bindingId = visitor._getBindingId(initElement);
       exports.push({
-        id: visitor._getNodeId(binding.path),
+        id: bindingId,
         filePath,
         name: initElement.node.name,
         renamedTo: element.node.name,
@@ -282,10 +282,10 @@ export function extractExportsFromExportNamedDeclaration(
         // e.g. export {a as "b"}
         // e.g. export {a}
         // get the binding of the local name
-        const binding = visitor._getBinding(specifierPath.get("local"));
+        const bindingId = visitor._getBindingId(specifierPath.get("local"));
 
         exports.push({
-          id: visitor._getNodeId(binding.path),
+          id: bindingId,
           filePath,
           name: specifierPath.node.local.name,
           renamedTo:

@@ -20,7 +20,7 @@ import * as chai from "chai";
 
 import { AbstractSyntaxTreeFactory } from "../../lib/ast/AbstractSyntaxTreeFactory";
 import { ControlFlowGraphVisitor } from "../../lib/cfg/ControlFlowGraphVisitor";
-import { EdgeType } from "@syntest/cfg-core";
+import { EdgeType, contractControlFlowProgram } from "@syntest/cfg-core";
 
 const expect = chai.expect;
 
@@ -1052,6 +1052,42 @@ describe("ControlFlowGraphVisitor test", () => {
     const cfg = cfgHelper(source);
 
     expect(cfg);
-    // console.log(cfg.functions[0]);
+  });
+
+  it("function simple block", () => {
+    const source = `
+    function after(n, func) {
+      if (typeof func !== 'function') {
+        throw new TypeError('Expected a function')
+      }
+    
+      n = n || 0
+    
+      return function(...args) {
+        if (--n < 1) {
+          return func.apply(this, args)
+        }
+      }
+    }
+    
+    export default after
+    
+      `;
+
+    const cfg = contractControlFlowProgram(cfgHelper(source));
+
+    console.log(cfg.functions[0].graph);
+    expect(cfg.functions);
+  });
+
+  it("function short arrow", () => {
+    const source = `const at = (object, ...paths) => baseAt(object, baseFlatten(paths, 1))
+export default at
+      `;
+
+    const cfg = contractControlFlowProgram(cfgHelper(source));
+
+    console.log(cfg);
+    expect(cfg.functions);
   });
 });

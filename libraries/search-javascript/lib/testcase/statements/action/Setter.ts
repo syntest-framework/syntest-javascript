@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-import { IdentifierDescription } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/core";
 
 import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
@@ -24,13 +23,14 @@ import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSamp
 import { Decoding, Statement } from "../Statement";
 
 import { ActionStatement } from "./ActionStatement";
+import { Getter } from "./Getter";
+import { MethodCall } from "./MethodCall";
 
 /**
  * @author Dimitri Stallenberg
  */
 export class Setter extends ActionStatement {
   private readonly _className: string;
-  private readonly _property: string;
 
   /**
    * Constructor
@@ -41,32 +41,36 @@ export class Setter extends ActionStatement {
    * @param arg the argument of the setter
    */
   constructor(
-    identifierDescription: IdentifierDescription,
+    id: string,
+    name: string,
     type: string,
     uniqueId: string,
     className: string,
-    property: string,
     argument: Statement
   ) {
-    super(identifierDescription, type, uniqueId, [argument]);
+    super(id, name, type, uniqueId, [argument]);
     this._classType = "Setter";
     this._className = className;
-    this._property = property;
   }
 
-  mutate(sampler: JavaScriptTestCaseSampler, depth: number): Setter {
+  mutate(
+    sampler: JavaScriptTestCaseSampler,
+    depth: number
+  ): Getter | Setter | MethodCall {
+    if (prng.nextBoolean(sampler.resampleGeneProbability)) {
+      return sampler.sampleClassCall(depth, this._className);
+    }
+
     let argument = this.args.map((a: Statement) => a.copy())[0];
 
-    argument = prng.nextBoolean(sampler.resampleGeneProbability)
-      ? sampler.sampleArgument(depth + 1, argument.identifierDescription)
-      : argument.mutate(sampler, depth + 1);
+    argument = argument.mutate(sampler, depth + 1);
 
     return new Setter(
-      this.identifierDescription,
+      this.id,
+      this.name,
       this.type,
       prng.uniqueId(),
       this.className,
-      this.property,
       argument
     );
   }
@@ -75,17 +79,13 @@ export class Setter extends ActionStatement {
     const deepCopyArgument = this.args.map((a: Statement) => a.copy())[0];
 
     return new Setter(
-      this.identifierDescription,
-      this.type,
       this.id,
+      this.name,
+      this.type,
+      this.uniqueId,
       this.className,
-      this.property,
       deepCopyArgument
     );
-  }
-
-  get property(): string {
-    return this._property;
   }
 
   get className(): string {
@@ -108,7 +108,7 @@ export class Setter extends ActionStatement {
       a.decode(decoder, id, options)
     );
 
-    let decoded = `${objectVariable}.${this.property} = ${argument}`;
+    let decoded = `${objectVariable}.${this.name} = ${argument}`;
 
     if (options.addLogs) {
       const logDirectory = decoder.getLogDirectory(id, this.varName);
@@ -128,6 +128,6 @@ export class Setter extends ActionStatement {
   // TODO
   decodeErroring(objectVariable: string): string {
     const argument = this.args.map((a) => a.varName).join(", ");
-    return `await expect(${objectVariable}.${this.property} = ${argument}).to.be.rejectedWith(Error);`;
+    return `await expect(${objectVariable}.${this.name} = ${argument}).to.be.rejectedWith(Error);`;
   }
 }

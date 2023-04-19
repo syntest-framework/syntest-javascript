@@ -180,7 +180,7 @@ function coverStatement(path) {
 function coverAssignmentPattern(path) {
   const n = path.node;
   const b = this.cov.newBranch("default-arg", n.loc);
-  this.insertBranchCounter(path.get("right"), b);
+  this.insertBranchCounter(path, path.get("right"), b);
 }
 
 function coverFunction(path) {
@@ -254,12 +254,12 @@ function coverIfBranches(path) {
   if (ignoreIf) {
     this.setAttr(n.consequent, "skip-all", true);
   } else {
-    this.insertBranchCounter(path.get("consequent"), branch, n.loc);
+    this.insertBranchCounter(path, path.get("consequent"), branch, n.loc);
   }
   if (ignoreElse) {
     this.setAttr(n.alternate, "skip-all", true);
   } else {
-    this.insertBranchCounter(path.get("alternate"), branch);
+    this.insertBranchCounter(path, path.get("alternate"), branch);
   }
 
   const T = this.types;
@@ -303,7 +303,7 @@ function coverLoopBranch(path) {
   const n = path.node;
   const branch = this.cov.newBranch("loop", n.loc);
 
-  this.insertBranchCounter(path.get("body"), branch, n.loc);
+  this.insertBranchCounter(path, path.get("body"), branch, n.loc);
 
   const T = this.types;
 
@@ -382,10 +382,10 @@ function coverTernary(path) {
   const aHint = this.hintFor(n.alternate);
 
   if (cHint !== "next") {
-    this.insertBranchCounter(path.get("consequent"), branch);
+    this.insertBranchCounter(path, path.get("consequent"), branch);
   }
   if (aHint !== "next") {
-    this.insertBranchCounter(path.get("alternate"), branch);
+    this.insertBranchCounter(path, path.get("alternate"), branch);
   }
 
   const T = this.types;

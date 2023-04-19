@@ -17,7 +17,7 @@
  */
 
 // TODO
-import { IdentifierDescription } from "@syntest/analysis-javascript";
+
 import { prng } from "@syntest/core";
 
 import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
@@ -28,50 +28,47 @@ import { Decoding, Statement } from "../Statement";
  * @author Dimitri Stallenberg
  */
 export class ArrowFunctionStatement extends Statement {
-  private _returnValue: Statement;
+  private _parameters: string[];
+  private _returnValue: Statement | undefined;
 
   constructor(
-    identifierDescription: IdentifierDescription,
+    id: string,
+    name: string,
     type: string,
     uniqueId: string,
-    returnValue: Statement
+    parameters: string[],
+    returnValue: Statement | undefined
   ) {
-    super(identifierDescription, type, uniqueId);
+    super(id, name, type, uniqueId);
+    this._parameters = parameters;
     this._returnValue = returnValue;
     this._classType = "ArrowFunctionStatement";
   }
 
-  mutate(
-    sampler: JavaScriptTestCaseSampler,
-    depth: number
-  ): ArrowFunctionStatement {
-    // TODO mutate returnvalue identifierDescription
+  mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
     if (prng.nextBoolean(sampler.resampleGeneProbability)) {
-      // TODO should be different property
-      return new ArrowFunctionStatement(
-        this.identifierDescription,
-        this.type,
-        prng.uniqueId(),
-        sampler.sampleArgument(
-          depth + 1,
-          this._returnValue.identifierDescription
-        )
-      );
+      return sampler.sampleArgument(depth, this.id, this.name);
     }
 
     return new ArrowFunctionStatement(
-      this.identifierDescription,
+      this.id,
+      this.name,
       this.type,
       prng.uniqueId(),
-      this._returnValue.mutate(sampler, depth + 1)
+      this._parameters,
+      this.returnValue
+        ? this._returnValue.mutate(sampler, depth + 1)
+        : undefined
     );
   }
 
   copy(): ArrowFunctionStatement {
     return new ArrowFunctionStatement(
-      this.identifierDescription,
-      this.type,
       this.id,
+      this.name,
+      this.type,
+      this.uniqueId,
+      this._parameters,
       this._returnValue
     );
   }
@@ -81,6 +78,16 @@ export class ArrowFunctionStatement extends Statement {
     id: string,
     options: { addLogs: boolean; exception: boolean }
   ): Decoding[] {
+    if (this._returnValue === undefined) {
+      return [
+        {
+          decoded: `const ${this.varName} = (${this._parameters.join(
+            ", "
+          )}) => { };`,
+          reference: this,
+        },
+      ];
+    }
     const returnStatement: Decoding[] = this._returnValue.decode(
       decoder,
       id,
@@ -89,13 +96,18 @@ export class ArrowFunctionStatement extends Statement {
     return [
       ...returnStatement,
       {
-        decoded: `const ${this.varName} = () => { return ${this.returnValue.varName} };`,
+        decoded: `const ${this.varName} = (${this._parameters.join(
+          ", "
+        )}) => { return ${this.returnValue.varName} };`,
         reference: this,
       },
     ];
   }
 
   getChildren(): Statement[] {
+    if (this._returnValue === undefined) {
+      return [];
+    }
     return [this.returnValue];
   }
 
