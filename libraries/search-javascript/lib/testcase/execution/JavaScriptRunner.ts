@@ -192,20 +192,21 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
         const meta =
           metaData === undefined ? undefined : metaData[key]?.meta?.[branchKey];
 
-        traces.push(
-          {
-            id: branch.locations[0].id,
-            path: key,
-            type: "branch",
-            line: branch.line,
+        traces.push({
+          id: branch.locations[0].id,
+          path: key,
+          type: "branch",
+          line: branch.line,
 
-            hits: hits[0],
+          hits: hits[0],
 
-            condition_ast: meta?.condition_ast,
-            condition: meta?.condition,
-            variables: meta?.variables,
-          },
-          {
+          condition_ast: meta?.condition_ast,
+          condition: meta?.condition,
+          variables: meta?.variables,
+        });
+
+        if (branch.locations.length === 2) {
+          traces.push({
             id: branch.locations[1].id,
             path: key,
             type: "branch",
@@ -216,8 +217,29 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
             condition_ast: meta?.condition_ast,
             condition: meta?.condition,
             variables: meta?.variables,
-          }
-        );
+          });
+        } else if (
+          branch.locations.length === 1 &&
+          branch.type === "default-arg"
+        ) {
+          // this is the default-arg branch it only has one location
+          traces.push({
+            id: branch.locations[0].id,
+            path: key,
+            type: "branch",
+            line: branch.line,
+
+            hits: hits[0] ? 0 : 1,
+
+            condition_ast: meta?.condition_ast,
+            condition: meta?.condition,
+            variables: meta?.variables,
+          });
+        } else {
+          throw new Error(
+            `Invalid number of locations for branch type: ${branch.type}`
+          );
+        }
       }
     }
 
