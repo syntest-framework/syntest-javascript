@@ -60,7 +60,6 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
 
     this.inferRelationTypes(relationMap);
 
-    this._typeModel.createFinalTypeMaps();
     return this._typeModel;
   }
 
@@ -1037,10 +1036,16 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         const [leftId, rightId] = involved;
 
         this._typeModel.addRelationScore(leftId, rightId);
+        // TODO This is not the way to do this
+        // for now it is neccessary because variable declarations such as in lodash/at.js
+        // do not have the correct ids causing the relation to have the wrong
+        this._typeModel.addRelationScore(relationId, rightId);
+        this._typeModel.addRelationScore(leftId, relationId);
 
-        this._typeModel.addPrimitiveTypeScore(relationId, {
-          type: TypeEnum.UNDEFINED,
-        });
+        // undefined should be the actual result
+        // this._typeModel.addPrimitiveTypeScore(relationId, {
+        //   type: TypeEnum.UNDEFINED,
+        // });
 
         break;
       }

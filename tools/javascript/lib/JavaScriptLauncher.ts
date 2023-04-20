@@ -307,10 +307,10 @@ export class JavaScriptLauncher extends Launcher {
 
   async postprocess(): Promise<void> {
     JavaScriptLauncher.LOGGER.info("Postprocessing started");
-    const testDirectory = path.join(
-      this.arguments_.syntestDirectory,
-      this.arguments_.testDirectory
-    );
+    // const testDirectory = path.join(
+    //   this.arguments_.syntestDirectory,
+    //   this.arguments_.testDirectory
+    // );
     const temporaryTestDirectory = path.join(
       this.arguments_.tempSyntestDirectory,
       this.arguments_.tempTestDirectory
@@ -380,7 +380,7 @@ export class JavaScriptLauncher extends Launcher {
     this.userInterface.printHeader("SEARCH RESULTS");
 
     const table: TableObject = {
-      headers: ["Target", "Branch", "Statement", "Function", "File"],
+      headers: ["Target", "Statement", "Branch", "Function", "File"],
       rows: [],
       footers: ["Average"],
     };
@@ -440,8 +440,13 @@ export class JavaScriptLauncher extends Launcher {
     }
 
     overall["statement"] /= totalStatements;
+    if (totalStatements === 0) overall["statement"] = 1;
+
     overall["branch"] /= totalBranches;
+    if (totalBranches === 0) overall["branch"] = 1;
+
     overall["function"] /= totalFunctions;
+    if (totalFunctions === 0) overall["function"] = 1;
 
     table.footers.push(
       overall["statement"] * 100 + " %",

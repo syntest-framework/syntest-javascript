@@ -307,7 +307,10 @@ function coverLoopBranch(path) {
 
   const T = this.types;
 
-  const increment = this.getBranchIncrement(branch, path.node.loc);
+  const increment = this.getBranchIncrement(path, branch, {
+    start: path.node.loc.end,
+    end: path.node.loc.end,
+  });
   path.insertAfter(T.expressionStatement(increment));
 
   // TODO we should actually print what the just defined variable is set to

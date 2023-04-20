@@ -322,10 +322,9 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
 
     if (!subVisitor._nodes.has("ENTRY")) {
       // this function has no block
-      // e.g. () => console.log("hello world")
+      // e.g. () => log("hello world")
       // we need to create a node for it
       if (subVisitor._nodes.size > 0) {
-        console.log(subVisitor._nodes);
         throw new Error(
           `Function ${this._getNodeId(path)} has no entry node but has ${
             subVisitor._nodes.size
@@ -403,7 +402,6 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
           }
 
           if (this._isSpecial(init)) {
-            console.log("Visiting init");
             init.visit();
           }
         }

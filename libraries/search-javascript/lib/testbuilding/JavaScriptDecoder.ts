@@ -208,8 +208,6 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
       const export_: Export = this.exports.find((x) => x.id === gene.id);
 
       if (!export_) {
-        console.log(this.exports);
-        console.log(gene);
         throw new Error(
           "Cannot find an export corresponding to the importable gene: " +
             gene.id

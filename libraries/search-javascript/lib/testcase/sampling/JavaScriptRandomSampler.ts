@@ -168,13 +168,16 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     name: string
   ): FunctionCall {
     const type_ = <FunctionType>(
-      this.rootContext.getTypeModel().getType(id, TypeEnum.FUNCTION)
+      this.rootContext
+        .getTypeModel()
+        .getRandomType(
+          this.incorporateExecutionInformation,
+          id,
+          TypeEnum.FUNCTION
+        )
     );
 
     const arguments_: Statement[] = this._sampleArguments(depth, type_);
-
-    console.log(id);
-    console.log(type_);
 
     return new FunctionCall(
       id,
@@ -222,7 +225,13 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       const action = constructor_[0];
 
       const type_ = <FunctionType>(
-        this.rootContext.getTypeModel().getType(action.id, TypeEnum.FUNCTION)
+        this.rootContext
+          .getTypeModel()
+          .getRandomType(
+            this.incorporateExecutionInformation,
+            action.id,
+            TypeEnum.FUNCTION
+          )
       );
 
       arguments_ = this._sampleArguments(depth, type_);
@@ -395,7 +404,13 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     className: string
   ): MethodCall {
     const type_ = <FunctionType>(
-      this.rootContext.getTypeModel().getType(id, TypeEnum.FUNCTION)
+      this.rootContext
+        .getTypeModel()
+        .getRandomType(
+          this.incorporateExecutionInformation,
+          id,
+          TypeEnum.FUNCTION
+        )
     );
 
     const arguments_: Statement[] = this._sampleArguments(depth, type_);
@@ -454,7 +469,13 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     className: string
   ): Setter {
     const type_ = <FunctionType>(
-      this.rootContext.getTypeModel().getType(id, TypeEnum.FUNCTION)
+      this.rootContext
+        .getTypeModel()
+        .getRandomType(
+          this.incorporateExecutionInformation,
+          id,
+          TypeEnum.FUNCTION
+        )
     );
 
     const arguments_: Statement[] = this._sampleArguments(depth, type_);
@@ -542,7 +563,13 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     objectName: string
   ): ObjectFunctionCall {
     const type_ = <FunctionType>(
-      this.rootContext.getTypeModel().getType(id, TypeEnum.FUNCTION)
+      this.rootContext
+        .getTypeModel()
+        .getRandomType(
+          this.incorporateExecutionInformation,
+          id,
+          TypeEnum.FUNCTION
+        )
     );
 
     const arguments_: Statement[] = this._sampleArguments(depth, type_);
@@ -564,7 +591,13 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     index: number
   ): Statement {
     const arrayType = <ArrayType>(
-      this.rootContext.getTypeModel().getType(arrayId, TypeEnum.ARRAY)
+      this.rootContext
+        .getTypeModel()
+        .getRandomType(
+          this.incorporateExecutionInformation,
+          arrayId,
+          TypeEnum.ARRAY
+        )
     );
 
     const element = arrayType.elements.get(index);
@@ -583,7 +616,13 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     property: string
   ): Statement {
     const objectType = <ObjectType>(
-      this.rootContext.getTypeModel().getType(objectId, TypeEnum.ARRAY)
+      this.rootContext
+        .getTypeModel()
+        .getRandomType(
+          this.incorporateExecutionInformation,
+          objectId,
+          TypeEnum.OBJECT
+        )
     );
 
     const value = objectType.properties.get(property);
@@ -648,7 +687,9 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   sampleObject(depth: number, id: string, name: string) {
     const type = TypeEnum.OBJECT;
     const typeObject = <ObjectType>(
-      this.rootContext.getTypeModel().getType(id, type)
+      this.rootContext
+        .getTypeModel()
+        .getRandomType(this.incorporateExecutionInformation, id, type)
     );
 
     const object_: { [key: string]: Statement } = {};
@@ -663,7 +704,9 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   sampleArray(depth: number, id: string, name: string) {
     const type = TypeEnum.ARRAY;
     const typeObject = <ArrayType>(
-      this.rootContext.getTypeModel().getType(id, type)
+      this.rootContext
+        .getTypeModel()
+        .getRandomType(this.incorporateExecutionInformation, id, type)
     );
 
     const children: Statement[] = [];
@@ -698,7 +741,9 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   ): ArrowFunctionStatement {
     const type = TypeEnum.FUNCTION;
     const typeObject = <FunctionType>(
-      this.rootContext.getTypeModel().getType(id, type)
+      this.rootContext
+        .getTypeModel()
+        .getRandomType(this.incorporateExecutionInformation, id, type)
     );
 
     const parameters: string[] = [];

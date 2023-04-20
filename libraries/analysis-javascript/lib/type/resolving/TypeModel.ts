@@ -23,7 +23,6 @@ import {
   ObjectType,
   PrimitiveType,
   Type,
-  isPrimitiveType,
 } from "./Type";
 import { TypeEnum } from "./TypeEnum";
 
@@ -42,9 +41,6 @@ export class TypeModel {
   // element -> type enum -> type
   private _typeIdToTypeMap: Map<string, Map<string, Type>>;
 
-  // element -> type enum -> type
-  private _finalTypeIdToTypeMap: Map<string, Map<string, Type>>;
-
   // element -> scoreHasChanged
   private _scoreHasChangedMap: Map<string, boolean>;
 
@@ -58,16 +54,20 @@ export class TypeModel {
     this._elementTypeProbabilityMap = new Map();
 
     this._typeIdToTypeMap = new Map();
-    this._finalTypeIdToTypeMap = new Map();
 
     this._scoreHasChangedMap = new Map();
   }
 
-  getType(element: string, type: TypeEnum): Type {
-    if (this._finalTypeIdToTypeMap.size === 0) {
-      return this._typeIdToTypeMap.get(element).get(type);
+  getType(element: string, type: string): Type {
+    if (!this._typeIdToTypeMap.has(element)) {
+      throw new Error(`Element ${element} does not exist`);
     }
-    return this._finalTypeIdToTypeMap.get(element).get(type);
+
+    if (!this._typeIdToTypeMap.get(element).has(type)) {
+      throw new Error(`Type ${type} does not exist on element ${element}`);
+    }
+
+    return this._typeIdToTypeMap.get(element).get(type);
   }
 
   addId(id: string) {
@@ -213,25 +213,63 @@ export class TypeModel {
     this._scoreHasChangedMap.set(id, true);
   }
 
-  getRandomType(incorporateExecutionScore: boolean, element: string): Type {
-    this.calculateProbabilitiesForElement(incorporateExecutionScore, element);
+  private _sum(iterable: Iterable<number>) {
+    return [...iterable].reduce((total, currentValue) => total + currentValue);
+  }
 
-    const probabilities = this._elementTypeProbabilityMap.get(element);
+  /**
+   *
+   * @param incorporateExecutionScore wether the execution score should be weighted in
+   * @param id the id we want to get a random type for
+   * @param matchType (optional) the type enum you want to get (there can be multiple object/function/array types)
+   * @returns
+   */
+  getRandomType(
+    incorporateExecutionScore: boolean,
+    id: string,
+    matchType?: TypeEnum
+  ): Type {
+    const probabilities = this.calculateProbabilitiesForElement(
+      incorporateExecutionScore,
+      id
+    );
 
-    const choice = prng.nextDouble(0, 1);
+    // const probabilities = this._elementTypeProbabilityMap.get(element);
+    let matchingTypes = [...probabilities.entries()];
+    let totalProbability = 1;
+
+    if (matchType) {
+      matchingTypes = matchingTypes.filter(([type]) =>
+        type.endsWith(matchType)
+      );
+      totalProbability = this._sum(
+        matchingTypes.map(([, probability]) => probability)
+      );
+    }
+
+    const choice = prng.nextDouble(0, totalProbability);
     let index = 0;
 
-    let type: string;
+    let chosenType: string;
     let probability: number;
-    for ([type, probability] of probabilities.entries()) {
+    for ([chosenType, probability] of matchingTypes) {
       if (choice <= index + probability) {
-        return this._typeIdToTypeMap.get(element).get(type);
+        if (chosenType.includes("<>")) {
+          const [relationId, type] = chosenType.split("<>");
+          return this._typeIdToTypeMap.get(relationId).get(type);
+        }
+
+        return this._typeIdToTypeMap.get(id).get(chosenType);
       }
 
       index += probability;
     }
 
-    return this._typeIdToTypeMap.get(element).get(type);
+    if (chosenType.includes("<>")) {
+      const [relationId, type] = chosenType.split("<>");
+      return this._typeIdToTypeMap.get(relationId).get(type);
+    }
+    return this._typeIdToTypeMap.get(id).get(chosenType);
   }
 
   getHighestProbabilityType(
@@ -253,103 +291,35 @@ export class TypeModel {
     return this._typeIdToTypeMap.get(element).get(best);
   }
 
-  private copyType(type: Type): Type {
-    if (isPrimitiveType(type)) {
-      return {
-        type: type.type,
-      };
-    } else
-      switch (type.type) {
-        case TypeEnum.FUNCTION: {
-          return {
-            type: type.type,
-            parameters: new Map(type.parameters),
-            return: new Set(type.return),
-          };
-        }
-        case TypeEnum.ARRAY: {
-          return {
-            type: type.type,
-            elements: new Map(type.elements),
-          };
-        }
-        case TypeEnum.OBJECT: {
-          return {
-            type: type.type,
-            properties: new Map(type.properties),
-          };
-        }
-        default: {
-          throw new Error(`Unknown type ${type}`);
-        }
-      }
-  }
-
-  private mergeType(type1: Type, type2: Type): Type {
-    if (type1.type !== type2.type) {
-      throw new Error(`Cannot merge types ${type1.type} and ${type2.type}`);
-    }
-
-    if (isPrimitiveType(type1)) {
-      return {
-        type: type1.type,
-      };
-    } else if (
-      type1.type === TypeEnum.FUNCTION &&
-      type2.type === TypeEnum.FUNCTION
-    ) {
-      return {
-        type: type1.type,
-        parameters: new Map([...type1.parameters, ...type2.parameters]),
-        return: new Set([...type1.return, ...type2.return]),
-      };
-    } else if (type1.type === TypeEnum.ARRAY && type2.type === TypeEnum.ARRAY) {
-      return {
-        type: type1.type,
-        elements: new Map([...type1.elements, ...type2.elements]),
-      };
-    } else if (
-      type1.type === TypeEnum.OBJECT &&
-      type2.type === TypeEnum.OBJECT
-    ) {
-      return {
-        type: type1.type,
-        properties: new Map([...type1.properties, ...type2.properties]),
-      };
-    } else {
-      throw new Error(`Unknown type ${type1.type} ${type2.type}`);
-    }
-  }
-
   calculateProbabilitiesForElement(
     incorporateExecutionScore: boolean,
     element: string,
     relationPairsVisited?: Map<string, Set<string>>
-  ) {
+  ): Map<string, number> {
     // if (!this._scoreHasChangedMap.has(element)) {
     //     throw new Error(`Element ${element} does not exist`);
     // }
     // if (this._scoreHasChangedMap.get(element) === false) {
-    //     console.log(`Element ${element} has not changed`)
     //     // prevent recalculation of probabilities without score changes
-    //     return;
+    //     return this._elementTypeProbabilityMap.get(element);
     // }
 
     // this._scoreHasChangedMap.set(element, false);
 
-    if (!relationPairsVisited) {
-      relationPairsVisited = new Map();
-    }
+    const probabilityMap = new Map<string, number>();
 
     const typeScoreMap = this._elementTypeScoreMap.get(element);
     const relationMap = this._relationScoreMap.get(element);
 
-    const probabilityMap = new Map<string, number>();
-
-    let totalScore = 0;
-    for (const score of typeScoreMap.values()) {
-      totalScore += score;
+    if (!relationPairsVisited) {
+      relationPairsVisited = new Map();
+      // this._scoreHasChangedMap.set(element, false);
+      // this._elementTypeProbabilityMap.set(element, probabilityMap);
     }
+
+    let totalScore = this._sum(typeScoreMap.values());
+
+    const usableRelations = new Set<string>();
 
     for (const [relation, score] of relationMap.entries()) {
       if (!relationPairsVisited.has(element)) {
@@ -362,7 +332,7 @@ export class TypeModel {
         // we can safely ignore this relation
         continue;
       }
-
+      usableRelations.add(relation);
       totalScore += score;
     }
 
@@ -371,7 +341,7 @@ export class TypeModel {
     }
 
     for (const [relation, score] of relationMap.entries()) {
-      if (relationPairsVisited.get(element).has(relation)) {
+      if (!usableRelations.has(relation)) {
         // we have already visited this relation pair
         // this means that we have a cycle in the graph
         // we can safely ignore this relation
@@ -382,34 +352,43 @@ export class TypeModel {
 
       const probabilityOfRelation = score / totalScore;
 
-      this.calculateProbabilitiesForElement(
+      const probabilityMapOfRelation = this.calculateProbabilitiesForElement(
         incorporateExecutionScore,
         relation,
         relationPairsVisited
       );
-      const probabilityMapOfRelation =
-        this._elementTypeProbabilityMap.get(relation);
 
       if (probabilityMapOfRelation.size === 0) {
         throw new Error(`No probabilities for relation ${relation}`);
       }
+
       for (const [type, probability] of probabilityMapOfRelation.entries()) {
-        if (!probabilityMap.has(type)) {
-          probabilityMap.set(type, 0);
+        let finalType = type;
+
+        if (
+          type === TypeEnum.FUNCTION ||
+          type === TypeEnum.ARRAY ||
+          type === TypeEnum.OBJECT
+        ) {
+          // maybe should check for includes (or the inverse by checking for primitive types)
+          // this will only add only the final relation id
+          // the other method will add all relation id from the element to the final relation
+          finalType = `${relation}<>${type}`;
+        }
+
+        if (!probabilityMap.has(finalType)) {
+          probabilityMap.set(finalType, 0);
         }
 
         probabilityMap.set(
-          type,
-          probabilityMap.get(type) + probability * probabilityOfRelation
+          finalType,
+          probabilityMap.get(finalType) + probability * probabilityOfRelation
         );
       }
     }
 
     // sanity check
-    let totalProbability = 0;
-    for (const probability of probabilityMap.values()) {
-      totalProbability += probability;
-    }
+    const totalProbability = this._sum(probabilityMap.values());
 
     if (Math.abs(totalProbability - 1) > 0.0001) {
       throw new Error(
@@ -470,6 +449,6 @@ export class TypeModel {
       }
     }
 
-    this._elementTypeProbabilityMap.set(element, probabilityMap);
+    return probabilityMap;
   }
 }
