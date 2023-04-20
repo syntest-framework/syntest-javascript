@@ -890,7 +890,10 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
       path.get("argument").visit();
     }
 
-    this._returnNodes.add(node.id);
+    for (const nodeId of this._currentParents) {
+      this._returnNodes.add(nodeId);
+    }
+
     this._currentParents = [];
     path.skip();
   };
