@@ -380,7 +380,11 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
         break;
       }
       case "in": {
-        value = leftValue in rightValue ? 0 : 1;
+        if (rightValue === undefined || rightValue === null) {
+          value = 1;
+        } else {
+          value = leftValue in rightValue ? 0 : 1;
+        }
         break;
       }
       case "instanceof": {
