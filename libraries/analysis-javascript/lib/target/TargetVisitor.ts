@@ -48,8 +48,9 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
     targetName: string
   ): Export | undefined {
     // TODO scoping
+    // what if renamed
     return this._exports.find((x) => {
-      return x.name === targetName;
+      return x.name === targetName || x.renamedTo === targetName;
     });
   }
 
@@ -80,11 +81,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
    * @param path
    * @returns
    */
-  private _getTargetNameOfExpression(
-    path: NodePath<
-      t.ClassExpression | t.FunctionExpression | t.ArrowFunctionExpression
-    >
-  ): string {
+  private _getTargetNameOfExpression(path: NodePath<t.Node>): string {
     // e.g. const x = class A {}
     // e.g. const x = function A {}
     // e.g. const x = () => {}
@@ -212,7 +209,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
         // e.g. return class {}
         // e.g. return function () {}
         // e.g. return () => {}
-        return "id" in path.node && path.node.id
+        return "id" in path.node && path.node.id && "name" in path.node.id
           ? path.node.id.name
           : "anonymous";
       }
@@ -220,11 +217,28 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
         // e.g. function(class {}) // dont think this one is possible but unsure
         // e.g. function(function () {})
         // e.g. function(() => {})
-        return "id" in path.node && path.node.id
+        return "id" in path.node && path.node.id && "name" in path.node.id
           ? path.node.id.name
           : "anonymous";
       }
-
+      case "ConditionalExpression": {
+        // e.g. c ? class {} : b
+        // e.g. c ? function () {} : b
+        // e.g. c ? () => {} : b
+        return this._getTargetNameOfExpression(path.parentPath);
+        // return "id" in path.node && path.node.id
+        //     ? path.node.id.name
+        //     : "anonymous";
+      }
+      case "LogicalExpression": {
+        // e.g. c || class {}
+        // e.g. c || function () {}
+        // e.g. c || () => {}
+        return this._getTargetNameOfExpression(path.parentPath);
+        // return "id" in path.node && path.node.id
+        //     ? path.node.id.name
+        //     : "anonymous";
+      }
       default: {
         // e.g. class {}
         // e.g. function () {}
@@ -605,6 +619,28 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
           this.subTargets.push(target);
 
           break;
+        }
+        case "LogicalExpression":
+        case "ConditionalExpression": {
+          const export_ = this._getExport(path, targetName);
+
+          let parent = path.parentPath;
+
+          while (parent.isLogicalExpression() || parent.isConditional()) {
+            parent = parent.parentPath;
+          }
+
+          const target: FunctionTarget = {
+            id: `${this._getNodeId(parent)}`,
+            name: targetName,
+            type: TargetType.FUNCTION,
+            exported: !!export_,
+            default: export_ ? export_.default : false,
+            module: export_ ? export_.module : false,
+            isAsync: path.node.async,
+          };
+
+          this.subTargets.push(target);
         }
         default: {
           const export_ = this._getExport(path, targetName);

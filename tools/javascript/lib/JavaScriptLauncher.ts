@@ -33,6 +33,7 @@ import {
   ExportFactory,
   DependencyFactory,
   TypeExtractor,
+  isExported,
 } from "@syntest/analysis-javascript";
 import {
   ArgumentsObject,
@@ -76,6 +77,7 @@ import {
 import { Instrumenter } from "@syntest/instrumentation-javascript";
 import { Logger } from "winston";
 import { getLogger } from "@syntest/logging";
+import { TargetType } from "@syntest/analysis";
 
 export type JavaScriptArguments = ArgumentsObject & TestCommandOptions;
 export class JavaScriptLauncher extends Launcher {
@@ -487,9 +489,19 @@ export class JavaScriptLauncher extends Launcher {
     );
     const currentSubject = new JavaScriptSubject(target, this.rootContext);
 
-    if (currentSubject.getActionableTargets().length === 0) {
+    const rootTargets = currentSubject
+      .getActionableTargets()
+      .filter(
+        (target) =>
+          target.type === TargetType.FUNCTION ||
+          target.type === TargetType.CLASS ||
+          target.type === TargetType.OBJECT
+      )
+      .filter((target) => isExported(target));
+
+    if (rootTargets.length === 0) {
       JavaScriptLauncher.LOGGER.info(
-        `No actionable targets found for ${target.name} in ${target.path}`
+        `No actionable exported root targets found for ${target.name} in ${target.path}`
       );
       // report skipped
       return new Archive();
@@ -679,5 +691,8 @@ export class JavaScriptLauncher extends Launcher {
       ),
       this.arguments_.tempSyntestDirectory,
     ]);
+
+    // eslint-disable-next-line unicorn/no-process-exit
+    process.exit(0);
   }
 }

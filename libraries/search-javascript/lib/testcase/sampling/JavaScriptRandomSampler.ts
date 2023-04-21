@@ -118,7 +118,9 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       .filter((target) => isExported(target));
 
     if (rootTargets.length === 0) {
-      throw new Error("No root targets found");
+      throw new Error(
+        `No root targets found in file ${this.subject.name} ${this.subject.path}`
+      );
     }
 
     const rootTarget = prng.pickOne(rootTargets);

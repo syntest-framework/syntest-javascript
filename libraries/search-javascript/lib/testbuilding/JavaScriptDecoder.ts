@@ -205,7 +205,16 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
     for (const gene of importableGenes) {
       // TODO how to get the export of a variable?
       // the below does not work with duplicate exports
-      const export_: Export = this.exports.find((x) => x.id === gene.id);
+      let export_: Export = this.exports.find((x) => x.id === gene.id);
+
+      if (!export_) {
+        // dirty hack to fix certain exports
+        export_ = this.exports.find(
+          (x) =>
+            gene.id.split(":")[0] === x.filePath &&
+            (x.name === gene.name || x.renamedTo === gene.name)
+        );
+      }
 
       if (!export_) {
         throw new Error(

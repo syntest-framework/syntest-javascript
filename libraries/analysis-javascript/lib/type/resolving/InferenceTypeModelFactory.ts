@@ -56,7 +56,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
     this.createIdentifierTypeMaps(elementMap);
     this.createRelationTypeMaps(relationMap);
 
-    // this.create objects
+    // create objects
 
     this.inferRelationTypes(relationMap);
 
@@ -65,6 +65,22 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
 
   createNewTypeProbability(id: string, bindingId: string) {
     this._typeModel.addId(bindingId);
+
+    if (id === bindingId) {
+      // don't set if the id and binding are equal
+      return;
+    }
+
+    if (
+      this._idToBindingIdMap.has(id) &&
+      this._idToBindingIdMap.get(id) !== bindingId
+    ) {
+      throw new Error(
+        `Setting a new binding id to a previously set id is not allowed. Id: ${id}, old binding: ${this._idToBindingIdMap.get(
+          id
+        )}, new binding: ${bindingId}`
+      );
+    }
 
     this._idToBindingIdMap.set(id, bindingId);
     // always requires a mapping to itself
@@ -103,15 +119,20 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
     for (const relation of relationMap.values()) {
       this.createNewTypeProbability(relation.id, relation.id);
 
-      for (const involvedId of relation.involved) {
-        let bindingId = involvedId;
-        while (
-          this._idToBindingIdMap.has(bindingId) &&
-          bindingId !== involvedId
-        ) {
-          bindingId = this._idToBindingIdMap.get(bindingId);
+      for (let index = 0; index < relation.involved.length; index++) {
+        const involvedId = relation.involved[index];
+        if (this._elementMap.has(involvedId)) {
+          const element = this._elementMap.get(involvedId);
+
+          if (element.type === ElementType.Identifier) {
+            this.createNewTypeProbability(element.id, element.bindingId);
+          } else {
+            this.createNewTypeProbability(element.id, element.id);
+          }
+        } else {
+          // relation
+          this.createNewTypeProbability(involvedId, involvedId);
         }
-        this.createNewTypeProbability(involvedId, bindingId);
       }
     }
   }
@@ -259,7 +280,12 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
   resolveRelation(relation: Relation): void {
     const relationId = relation.id;
     const relationType: RelationType = relation.type;
-    const involved: string[] = relation.involved;
+    const involved: string[] = relation.involved.map((id) => {
+      while (this._idToBindingIdMap.has(id)) {
+        id = this._idToBindingIdMap.get(id);
+      }
+      return id;
+    });
 
     switch (relationType) {
       case RelationType.Return: {
@@ -335,6 +361,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
       case RelationType.ObjectMethod: {
         const [functionId, ...parameters] = involved;
 
+        console.log(functionId);
         // TODO what if the property is not an element
         const propertyElement = this._elementMap.get(functionId);
         const propertyName =
@@ -660,8 +687,16 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         // if (propertyId !== relationId) {
         //   throw new Error(`Property accessor relation has wrong involved elements: ${propertyId} !== ${relationId}`);
         // }
+        if (!objectId.includes("truncate")) {
+          break;
+        }
+        console.log(this._idToBindingIdMap.has(propertyId));
+        console.log(this._idToBindingIdMap.get(propertyId));
+        console.log(objectId);
+        console.log(propertyId);
 
         const propertyElement = this.getElement(propertyId);
+        console.log(propertyElement);
         if (propertyElement === undefined) {
           // TODO what if the property is not an element
         } else {

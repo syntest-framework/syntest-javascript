@@ -165,9 +165,13 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
       path.parentPath.get("property") === path
     ) {
       // we are the property of a member expression
-      // so the binding id is equal to the member expression relation
+      // so the binding id is equal to the object of the member expression relation + the id of the property
       // e.g. bar.foo
-      return this._getNodeId(path.parentPath);
+      return (
+        this._getBindingId(path.parentPath.get("object")) +
+        " " +
+        this._getNodeId(path)
+      );
     }
 
     if (
