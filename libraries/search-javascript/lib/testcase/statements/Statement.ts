@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { Encoding, EncodingSampler, prng } from "@syntest/core";
+import { Encoding, EncodingSampler, prng } from "@syntest/search";
 
 import { JavaScriptDecoder } from "../../testbuilding/JavaScriptDecoder";
 

@@ -19,7 +19,7 @@
 import * as path from "node:path";
 
 import { Export } from "@syntest/analysis-javascript";
-import { Decoder } from "@syntest/core";
+import { Decoder } from "@syntest/search";
 
 import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
 import { RootStatement } from "../testcase/statements/root/RootStatement";

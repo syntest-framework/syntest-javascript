@@ -19,7 +19,7 @@
 import { unlinkSync, writeFileSync } from "node:fs";
 import * as path from "node:path";
 
-import { Datapoint, EncodingRunner, ExecutionResult } from "@syntest/core";
+import { Datapoint, EncodingRunner, ExecutionResult } from "@syntest/search";
 import {
   InstrumentationData,
   MetaData,

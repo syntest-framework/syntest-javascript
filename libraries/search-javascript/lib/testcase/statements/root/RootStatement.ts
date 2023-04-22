@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { Encoding, EncodingSampler } from "@syntest/core";
+import { Encoding, EncodingSampler } from "@syntest/search";
 
 import { ActionStatement } from "../action/ActionStatement";
 import { Statement } from "../Statement";

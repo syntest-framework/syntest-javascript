@@ -18,7 +18,7 @@
 
 import { NodePath } from "@babel/core";
 import * as t from "@babel/types";
-import { shouldNeverHappen } from "@syntest/core";
+import { shouldNeverHappen } from "@syntest/search";
 
 import { Export } from "./Export";
 import { ExportVisitor } from "./ExportVisitor";

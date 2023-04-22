@@ -335,15 +335,19 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
       case RelationType.ObjectProperty: {
         const [propertyId, valueId] = involved;
 
-        // TODO what if the property is not an element (spread element for example)
         const propertyElement = this._elementMap.get(propertyId);
-        const propertyName =
-          "name" in propertyElement
-            ? propertyElement.name
-            : propertyElement.value;
-
         const propertyMap = new Map<string, string>();
-        propertyMap.set(propertyName, propertyId);
+
+        if (propertyElement) {
+          const propertyName =
+            "name" in propertyElement
+              ? propertyElement.name
+              : propertyElement.value;
+
+          propertyMap.set(propertyName, propertyId);
+        } else {
+          // TODO what if the property is not an element (spread element for example)
+        }
 
         // create object type
         this._typeModel.addObjectTypeScore(relationId, {

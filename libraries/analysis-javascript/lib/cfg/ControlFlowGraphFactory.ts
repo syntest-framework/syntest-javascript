@@ -18,7 +18,7 @@
 import { traverse } from "@babel/core";
 import * as t from "@babel/types";
 import { ControlFlowGraphFactory as CoreControlFlowGraphFactory } from "@syntest/analysis";
-import { ControlFlowProgram } from "@syntest/cfg-core";
+import { ControlFlowProgram } from "@syntest/cfg";
 
 import { ControlFlowGraphVisitor } from "./ControlFlowGraphVisitor";
 

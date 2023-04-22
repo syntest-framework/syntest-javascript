@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { EncodingSampler } from "@syntest/core";
+import { EncodingSampler } from "@syntest/search";
 
 import { JavaScriptSubject } from "../../search/JavaScriptSubject";
 import { JavaScriptTestCase } from "../JavaScriptTestCase";

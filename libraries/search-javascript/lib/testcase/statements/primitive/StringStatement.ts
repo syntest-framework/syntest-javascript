@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { prng } from "@syntest/core";
+import { prng } from "@syntest/search";
 
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";

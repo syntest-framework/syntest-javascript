@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { prng } from "@syntest/core";
+import { prng } from "@syntest/search";
 
 import { PrimitiveStatement } from "./PrimitiveStatement";
 import { Statement } from "../Statement";

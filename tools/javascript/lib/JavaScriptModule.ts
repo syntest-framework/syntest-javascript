@@ -20,7 +20,7 @@ import { Module, ModuleManager, Tool } from "@syntest/module";
 import yargs = require("yargs");
 
 import { getTestCommand } from "./commands/test";
-import { Configuration, TestingToolModule } from "@syntest/base-testing-tool";
+import { Configuration, TestingToolModule } from "@syntest/base-language";
 import { UserInterface } from "@syntest/cli-graphics";
 import { MetricManager } from "@syntest/metric";
 import { RandomSamplerPlugin } from "./plugins/sampler/RandomSamplerPlugin";

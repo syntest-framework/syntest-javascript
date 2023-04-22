@@ -27,7 +27,7 @@ import {
   Location,
   Node,
   NodeType,
-} from "@syntest/cfg-core";
+} from "@syntest/cfg";
 import { getLogger } from "@syntest/logging";
 
 export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {

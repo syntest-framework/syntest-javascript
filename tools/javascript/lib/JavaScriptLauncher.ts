@@ -49,7 +49,7 @@ import {
   ProcreationPlugin,
   TerminationTriggerPlugin,
   deleteDirectories,
-} from "@syntest/base-testing-tool";
+} from "@syntest/base-language";
 import { UserInterface, TableObject } from "@syntest/cli-graphics";
 import { ModuleManager } from "@syntest/module";
 import {
@@ -73,7 +73,7 @@ import {
   TerminationManager,
   TotalTimeBudget,
   initializePseudoRandomNumberGenerator,
-} from "@syntest/core";
+} from "@syntest/search";
 import { Instrumenter } from "@syntest/instrumentation-javascript";
 import { Logger } from "winston";
 import { getLogger } from "@syntest/logging";

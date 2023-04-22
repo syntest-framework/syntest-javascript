@@ -25,7 +25,7 @@ import {
 } from "node:fs";
 import * as path from "node:path";
 
-import { Archive } from "@syntest/core";
+import { Archive } from "@syntest/search";
 import { InstrumentationData } from "@syntest/instrumentation-javascript";
 import cloneDeep = require("lodash.clonedeep");
 import { Runner } from "mocha";

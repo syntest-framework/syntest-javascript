@@ -17,7 +17,7 @@
  */
 import { RootContext, SubTarget, Target } from "@syntest/analysis-javascript";
 import { TargetType } from "@syntest/analysis";
-import { ControlFlowGraph, Edge } from "@syntest/cfg-core";
+import { ControlFlowGraph, Edge } from "@syntest/cfg";
 import {
   FunctionObjectiveFunction,
   ObjectiveFunction,
@@ -25,7 +25,7 @@ import {
   ApproachLevel,
   shouldNeverHappen,
   BranchObjectiveFunction,
-} from "@syntest/core";
+} from "@syntest/search";
 
 import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
 import { BranchDistance } from "../criterion/BranchDistance";

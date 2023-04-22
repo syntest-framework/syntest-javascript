@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { Datapoint, ExecutionResult } from "@syntest/core";
+import { Datapoint, ExecutionResult } from "@syntest/search";
 
 export enum JavaScriptExecutionStatus {
   PASSED,

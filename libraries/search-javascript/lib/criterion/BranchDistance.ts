@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { BranchDistance as CoreBranchDistance } from "@syntest/core";
+import { BranchDistance as CoreBranchDistance } from "@syntest/search";
 import { BranchDistanceVisitor } from "./BranchDistanceVisitor";
 import { transformSync, traverse } from "@babel/core";
 import { defaultBabelOptions } from "@syntest/analysis-javascript";

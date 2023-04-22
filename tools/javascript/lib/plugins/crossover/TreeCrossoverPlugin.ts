@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { CrossoverOptions, CrossoverPlugin } from "@syntest/base-testing-tool";
+import { CrossoverOptions, CrossoverPlugin } from "@syntest/base-language";
 import { JavaScriptTestCase, TreeCrossover } from "@syntest/search-javascript";
 
 /**

@@ -49,8 +49,8 @@
     "@babel/core": "7.20.12",
     "@syntest/analysis": "*",
     "@syntest/ast-visitor-javascript": "*",
-    "@syntest/cfg-core": "*",
-    "@syntest/core": "*"
+    "@syntest/cfg": "*",
+    "@syntest/search": "*"
   },
   "engines": {
     "node": ">=10.24.0"
