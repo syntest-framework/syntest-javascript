@@ -874,7 +874,6 @@ describe("ExportVisitor test", () => {
   `;
 
     const exports = exportHelper(source);
-    console.log(exports);
 
     expect(exports.length).to.equal(1);
 

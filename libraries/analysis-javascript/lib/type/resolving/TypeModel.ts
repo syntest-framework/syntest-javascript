@@ -234,9 +234,6 @@ export class TypeModel {
       id
     );
 
-    // console.log(id)
-    // console.log(probabilities)
-
     // const probabilities = this._elementTypeProbabilityMap.get(element);
     let matchingTypes = [...probabilities.entries()];
     let totalProbability = 1;
@@ -294,9 +291,27 @@ export class TypeModel {
     return this._typeIdToTypeMap.get(element).get(best);
   }
 
+  calculateProbabilitiesForFile(
+    incorporateExecutionScore: boolean,
+    filepath: string
+  ): Map<string, Map<string, number>> {
+    const map = new Map();
+    for (const id of this._elements) {
+      if (!id.startsWith(filepath)) {
+        continue;
+      }
+      map.set(
+        id,
+        this.calculateProbabilitiesForElement(incorporateExecutionScore, id)
+      );
+    }
+
+    return map;
+  }
+
   calculateProbabilitiesForElement(
     incorporateExecutionScore: boolean,
-    element: string,
+    id: string,
     relationPairsVisited?: Map<string, Set<string>>
   ): Map<string, number> {
     // if (!this._scoreHasChangedMap.has(element)) {
@@ -311,8 +326,8 @@ export class TypeModel {
 
     const probabilityMap = new Map<string, number>();
 
-    const typeScoreMap = this._elementTypeScoreMap.get(element);
-    const relationMap = this._relationScoreMap.get(element);
+    const typeScoreMap = this._elementTypeScoreMap.get(id);
+    const relationMap = this._relationScoreMap.get(id);
 
     if (!relationPairsVisited) {
       relationPairsVisited = new Map();
@@ -325,11 +340,11 @@ export class TypeModel {
     const usableRelations = new Set<string>();
 
     for (const [relation, score] of relationMap.entries()) {
-      if (!relationPairsVisited.has(element)) {
-        relationPairsVisited.set(element, new Set());
+      if (!relationPairsVisited.has(id)) {
+        relationPairsVisited.set(id, new Set());
       }
 
-      if (relationPairsVisited.get(element).has(relation)) {
+      if (relationPairsVisited.get(id).has(relation)) {
         // we have already visited this relation pair
         // this means that we have a cycle in the graph
         // we can safely ignore this relation
@@ -351,7 +366,7 @@ export class TypeModel {
         continue;
       }
 
-      relationPairsVisited.get(element).add(relation);
+      relationPairsVisited.get(id).add(relation);
 
       const probabilityOfRelation = score / totalScore;
 
@@ -400,7 +415,7 @@ export class TypeModel {
     }
 
     // incorporate execution scores
-    const executionScoreMap = this._typeExecutionScoreMap.get(element);
+    const executionScoreMap = this._typeExecutionScoreMap.get(id);
 
     if (incorporateExecutionScore && executionScoreMap.size > 0) {
       let minValue = 0;

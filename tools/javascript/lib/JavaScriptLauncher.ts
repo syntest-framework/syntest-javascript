@@ -286,6 +286,15 @@ export class JavaScriptLauncher extends Launcher {
     JavaScriptLauncher.LOGGER.info("Resolving types");
     this.rootContext.resolveTypes();
     JavaScriptLauncher.LOGGER.info("Preprocessing done");
+
+    // const maps = this.rootContext.getTypeModel().calculateProbabilitiesForFile(false, '/Users/dimitrist/Documents/git/syntest/syntest-javascript-benchmark/lodash/truncate.js')
+
+    // for (const [id, map] of maps.entries()) {
+    //   console.log(id)
+    //   console.log(map)
+    // }
+    // eslint-disable-next-line unicorn/no-process-exit
+    // process.exit(0)
   }
 
   async process(): Promise<void> {

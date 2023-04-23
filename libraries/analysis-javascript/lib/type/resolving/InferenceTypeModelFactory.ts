@@ -365,7 +365,6 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
       case RelationType.ObjectMethod: {
         const [functionId, ...parameters] = involved;
 
-        console.log(functionId);
         // TODO what if the property is not an element
         const propertyElement = this._elementMap.get(functionId);
         const propertyName =
@@ -694,13 +693,9 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         if (!objectId.includes("truncate")) {
           break;
         }
-        console.log(this._idToBindingIdMap.has(propertyId));
-        console.log(this._idToBindingIdMap.get(propertyId));
-        console.log(objectId);
-        console.log(propertyId);
 
         const propertyElement = this.getElement(propertyId);
-        console.log(propertyElement);
+
         if (propertyElement === undefined) {
           // TODO what if the property is not an element
         } else {

@@ -36,12 +36,17 @@ export class ObjectVisitor extends AbstractSyntaxTreeVisitor {
     this._objectStack = [];
   }
 
-  private _getCurrentObject(): DiscoveredType {
+  private _getCurrentObject(path: NodePath<t.Node>): DiscoveredType {
+    if (this._objectStack.length === 0) {
+      throw new Error(
+        `No current object found! Location: ${this._getNodeId(path)}`
+      );
+    }
     return this._objectStack[this._objectStack.length - 1];
   }
 
   private _removeFromStack(path: NodePath<t.Node>): void {
-    const currentObject = this._getCurrentObject();
+    const currentObject = this._getCurrentObject(path);
     if (currentObject.id === this._getNodeId(path)) {
       this._objectStack.pop();
     } else {
@@ -114,7 +119,7 @@ export class ObjectVisitor extends AbstractSyntaxTreeVisitor {
     path: NodePath<t.ClassMethod>
   ) => {
     const name = this._getPropertyName(path.node.key);
-    const currentObject = this._getCurrentObject();
+    const currentObject = this._getCurrentObject(path);
 
     currentObject.properties.set(name, this._getNodeId(path));
   };
@@ -123,7 +128,7 @@ export class ObjectVisitor extends AbstractSyntaxTreeVisitor {
     path: NodePath<t.ClassPrivateMethod>
   ) => {
     const name = this._getPropertyName(path.node.key.id);
-    const currentObject = this._getCurrentObject();
+    const currentObject = this._getCurrentObject(path);
 
     currentObject.properties.set(`#${name}`, this._getNodeId(path));
   };
@@ -132,7 +137,7 @@ export class ObjectVisitor extends AbstractSyntaxTreeVisitor {
     path: NodePath<t.ClassProperty>
   ) => {
     const name = this._getPropertyName(path.node.key);
-    const currentObject = this._getCurrentObject();
+    const currentObject = this._getCurrentObject(path);
 
     currentObject.properties.set(name, this._getNodeId(path));
   };
@@ -141,7 +146,7 @@ export class ObjectVisitor extends AbstractSyntaxTreeVisitor {
     path: NodePath<t.ClassPrivateProperty>
   ) => void = (path: NodePath<t.ClassPrivateProperty>) => {
     const name = this._getPropertyName(path.node.key.id);
-    const currentObject = this._getCurrentObject();
+    const currentObject = this._getCurrentObject(path);
 
     currentObject.properties.set(`#${name}`, this._getNodeId(path));
   };
@@ -176,11 +181,31 @@ export class ObjectVisitor extends AbstractSyntaxTreeVisitor {
     path.skip();
   };
 
+  public ObjectPattern: (path: NodePath<t.ObjectPattern>) => void = (
+    path: NodePath<t.ObjectPattern>
+  ) => {
+    const complexType: DiscoveredType = {
+      id: this._getNodeId(path),
+      kind: DiscoveredObjectKind.OBJECT,
+      properties: new Map(),
+    };
+    this._complexTypeMap.set(this._getNodeId(path), complexType);
+    this._objectStack.push(complexType);
+
+    for (const property of path.get("properties")) {
+      property.visit();
+    }
+
+    this._removeFromStack(path);
+
+    path.skip();
+  };
+
   public ObjectMethod: (path: NodePath<t.ObjectMethod>) => void = (
     path: NodePath<t.ObjectMethod>
   ) => {
     const name = this._getPropertyName(path.node.key);
-    const currentObject = this._getCurrentObject();
+    const currentObject = this._getCurrentObject(path);
 
     currentObject.properties.set(name, this._getNodeId(path));
   };
@@ -188,7 +213,7 @@ export class ObjectVisitor extends AbstractSyntaxTreeVisitor {
   public ObjectProperty: (path: NodePath<t.ObjectProperty>) => void = (
     path: NodePath<t.ObjectProperty>
   ) => {
-    const currentObject = this._getCurrentObject();
+    const currentObject = this._getCurrentObject(path);
 
     if (path.node.key.type === "PrivateName") {
       const name = this._getPropertyName(path.node.key.id);

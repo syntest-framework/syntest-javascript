@@ -374,7 +374,7 @@ function coverSwitchCase(path) {
   if (b === null) {
     throw new Error("Unable to get switch branch name");
   }
-  const increment = this.getBranchIncrement(b, path.node.loc);
+  const increment = this.getBranchIncrement(path, b, path.node.loc);
   path.node.consequent.unshift(T.expressionStatement(increment));
 }
 

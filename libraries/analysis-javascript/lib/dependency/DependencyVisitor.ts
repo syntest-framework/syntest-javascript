@@ -19,12 +19,17 @@
 import { NodePath } from "@babel/core";
 import * as t from "@babel/types";
 import { AbstractSyntaxTreeVisitor } from "@syntest/ast-visitor-javascript";
+import { getLogger } from "@syntest/logging";
+import { Logger } from "winston";
 
 export class DependencyVisitor extends AbstractSyntaxTreeVisitor {
+  protected static override LOGGER: Logger;
+
   private _imports: Set<string>;
 
   constructor(filePath: string) {
     super(filePath);
+    DependencyVisitor.LOGGER = getLogger("DependencyVisitor");
     this._imports = new Set<string>();
   }
 
@@ -48,8 +53,10 @@ export class DependencyVisitor extends AbstractSyntaxTreeVisitor {
           // e.g. import(`module${1}`)
           // e.g. import(x)
           // This tool does not support computed dynamic import statements.
-          throw new Error(
-            "This tool does not support computed dynamic import statements."
+          DependencyVisitor.LOGGER.warn(
+            `This tool does not support computed dynamic import statements. Found one at ${this._getNodeId(
+              path
+            )}`
           );
         }
       } else {
@@ -74,8 +81,10 @@ export class DependencyVisitor extends AbstractSyntaxTreeVisitor {
         this._imports.add(path.node.arguments[0].value);
       } else {
         // This tool does not support computed dynamic require statements.
-        throw new Error(
-          "This tool does not support computed dynamic require statements."
+        DependencyVisitor.LOGGER.warn(
+          `This tool does not support computed dynamic require statements. Found one at ${this._getNodeId(
+            path
+          )}`
         );
       }
     }

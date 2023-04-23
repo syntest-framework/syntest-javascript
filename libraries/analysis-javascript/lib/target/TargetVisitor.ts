@@ -31,14 +31,21 @@ import {
 } from "./Target";
 import { VisibilityType } from "./VisibilityType";
 import { Export } from "./export/Export";
+import { unsupportedSyntax } from "../utils/diagnostics";
+import { Logger } from "winston";
+import { getLogger } from "@syntest/logging";
 
+const COMPUTED_FLAG = ":computed:";
 export class TargetVisitor extends AbstractSyntaxTreeVisitor {
+  protected static override LOGGER: Logger;
+
   private _exports: Export[];
 
   private _subTargets: SubTarget[];
 
   constructor(filePath: string, exports: Export[]) {
     super(filePath);
+    TargetVisitor.LOGGER = getLogger("TargetVisitor");
     this._exports = exports;
     this._subTargets = [];
   }
@@ -110,7 +117,9 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
           // e.g. const {x} = function {}
           // e.g. const {x} = () => {}
           // Should not be possible
-          throw new Error("unknown class expression");
+          throw new Error(
+            unsupportedSyntax(path.node.type, this._getNodeId(path))
+          );
         }
       }
       case "VariableDeclarator": {
@@ -127,7 +136,9 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
           // e.g. const {x} = function {}
           // e.g. const {x} = () => {}
           // Should not be possible
-          throw new Error("unknown class expression");
+          throw new Error(
+            unsupportedSyntax(path.node.type, this._getNodeId(path))
+          );
         }
       }
       case "AssignmentExpression": {
@@ -152,8 +163,13 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
             // e.g. x[y] = class {}
             // e.g. x[y] = function {}
             // e.g. x[y] = () => {}
-            // unsupported
-            throw new Error("unknown class expression");
+            // TODO unsupported cannot get the name unless executing
+            TargetVisitor.LOGGER.warn(
+              `This tool does not support computed property assignments. Found one at ${this._getNodeId(
+                path
+              )}`
+            );
+            return COMPUTED_FLAG;
           } else if (assigned.property.type === "Identifier") {
             // e.g. x.y = class {}
             // e.g. x.y = function {}
@@ -171,14 +187,18 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
             // e.g. x.? = function {}
             // e.g. x.? = () => {}
             // Should not be possible
-            throw new Error("unknown class expression");
+            throw new Error(
+              unsupportedSyntax(path.node.type, this._getNodeId(path))
+            );
           }
         } else {
           // e.g. {x} = class {}
           // e.g. {x} = function {}
           // e.g. {x} = () => {}
           // Should not be possible
-          throw new Error("unknown class expression");
+          throw new Error(
+            unsupportedSyntax(path.node.type, this._getNodeId(path))
+          );
         }
       }
       case "ObjectProperty": {
@@ -202,7 +222,9 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
           // e.g. {?: function {}}
           // e.g. {?: () => {}}
           // Should not be possible
-          throw new Error("unknown class expression");
+          throw new Error(
+            unsupportedSyntax(path.node.type, this._getNodeId(path))
+          );
         }
       }
       case "ReturnStatement": {
@@ -254,91 +276,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
   public FunctionExpression: (path: NodePath<t.FunctionExpression>) => void = (
     path
   ) => {
-    // e.g. const x = function () {}
-    // e.g. const x = function y() {}
-    const targetName = this._getTargetNameOfExpression(path);
-
-    const parentNode = path.parentPath.node;
-
-    if (
-      parentNode.type === "AssignmentExpression" &&
-      parentNode.left.type === "MemberExpression"
-    ) {
-      // e.g. a.x = function () {}
-      if (parentNode.left.object.type !== "Identifier") {
-        // e.g. a().x = function () {}
-        // unsupported
-        throw new Error("Unsupported");
-      } else if (
-        parentNode.left.property.type !== "Identifier" &&
-        !parentNode.left.property.type.includes("Literal")
-      ) {
-        // e.g. a.x() = function () {}
-        // unsupported
-        // not possible i think
-        throw new Error("Unsupported");
-      }
-
-      const functionName =
-        parentNode.left.property.type === "Identifier"
-          ? parentNode.left.property.name
-          : "value" in parentNode.left.property
-          ? parentNode.left.property.value.toString()
-          : "null";
-
-      const export_ = this._getExport(path, parentNode.left.object.name);
-
-      const objectTarget: ObjectTarget = {
-        type: TargetType.OBJECT,
-        name: parentNode.left.object.name,
-        id: `${this._getNodeId(path)}`,
-        exported: !!export_,
-        default: export_ ? export_.default : false,
-        module: export_ ? export_.module : false,
-      };
-      const objectFunctionTarget: ObjectFunctionTarget = {
-        type: TargetType.OBJECT_FUNCTION,
-        objectName: parentNode.left.object.name,
-        name: functionName,
-        id: `${this._getNodeId(path)}`,
-        isAsync: path.node.async,
-      };
-
-      this.subTargets.push(objectTarget, objectFunctionTarget);
-    } else if (parentNode.type === "VariableDeclarator") {
-      if (!path.parentPath.has("id")) {
-        // unsupported
-        throw new Error("Unsupported");
-      }
-
-      const export_ = this._getExport(path, targetName);
-
-      const target: FunctionTarget = {
-        id: `${this._getNodeId(path.parentPath)}`,
-        name: targetName,
-        type: TargetType.FUNCTION,
-        exported: !!export_,
-        default: export_ ? export_.default : false,
-        module: export_ ? export_.module : false,
-        isAsync: path.node.async,
-      };
-
-      this.subTargets.push(target);
-    } else {
-      const export_ = this._getExport(path, targetName);
-
-      const target: FunctionTarget = {
-        id: `${this._getNodeId(path)}`,
-        name: targetName,
-        type: TargetType.FUNCTION,
-        exported: !!export_,
-        default: export_ ? export_.default : false,
-        module: export_ ? export_.module : false,
-        isAsync: path.node.async,
-      };
-
-      this.subTargets.push(target);
-    }
+    this._functionExpression(path);
   };
 
   public FunctionDeclaration: (path: NodePath<t.FunctionDeclaration>) => void =
@@ -509,61 +447,94 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
     this.subTargets.push(target);
   };
 
-  public ArrowFunctionExpression: (
-    path: NodePath<t.ArrowFunctionExpression>
-  ) => void = (path) => {
+  private _functionExpression(
+    path: NodePath<t.ArrowFunctionExpression | t.FunctionExpression>
+  ) {
     // e.g. const x = () => {}
     const targetName = this._getTargetNameOfExpression(path);
 
-    const parentNode = path.parentPath.node;
-
+    const parent = path.parentPath;
+    let left;
     if (
-      parentNode.type === "AssignmentExpression" &&
-      parentNode.left.type === "MemberExpression"
+      parent.isAssignmentExpression() &&
+      ((left = parent.get("left")), left.isMemberExpression())
     ) {
-      // e.g. a.x = function () {}
-      if (parentNode.left.object.type !== "Identifier") {
-        // e.g. a().x = function () {}
-        // unsupported
-        throw new Error("Unsupported");
-      } else if (
-        parentNode.left.property.type !== "Identifier" &&
-        !parentNode.left.property.type.includes("Literal")
-      ) {
-        // e.g. a.x() = function () {}
-        // unsupported
-        // not possible i think
-        throw new Error("Unsupported");
+      let object = left.get("object");
+      const property = left.get("property");
+
+      if (object.isMemberExpression()) {
+        const subProperty = object.get("property");
+
+        if (!subProperty.isIdentifier()) {
+          // e.g. a.x().y = function () {}
+          // unsupported
+          throw new Error(
+            unsupportedSyntax(path.node.type, this._getNodeId(path))
+          );
+        }
+
+        if (subProperty.node.name === "prototype") {
+          object = object.get("object");
+        } else {
+          // e.g. a.x.y = function () {}
+          // unsupported for now should create a objecttarget as a subtarget
+          throw new Error(
+            unsupportedSyntax(path.node.type, this._getNodeId(path))
+          );
+        }
       }
 
-      const functionName =
-        parentNode.left.property.type === "Identifier"
-          ? parentNode.left.property.name
-          : "value" in parentNode.left.property
-          ? parentNode.left.property.value.toString()
+      // e.g. a.x = function () {}
+      if (object.isIdentifier()) {
+        if (
+          !property.isIdentifier() &&
+          !property.node.type.includes("Literal")
+        ) {
+          // e.g. a.x() = function () {}
+          // unsupported
+          // not possible i think
+          throw new Error(
+            unsupportedSyntax(path.node.type, this._getNodeId(path))
+          );
+        }
+
+        const functionName = property.isIdentifier()
+          ? property.node.name
+          : "value" in property.node
+          ? property.node.value.toString()
           : "null";
 
-      const export_ = this._getExport(path, parentNode.left.object.name);
+        const export_ = this._getExport(path, object.node.name);
 
-      const objectTarget: ObjectTarget = {
-        type: TargetType.OBJECT,
-        name: parentNode.left.object.name,
-        id: `${this._getNodeId(path)}`,
-        exported: !!export_,
-        default: export_ ? export_.default : false,
-        module: export_ ? export_.module : false,
-      };
-      const objectFunctionTarget: ObjectFunctionTarget = {
-        type: TargetType.OBJECT_FUNCTION,
-        objectName: parentNode.left.object.name,
-        name: functionName,
-        id: `${this._getNodeId(path)}`,
-        isAsync: path.node.async,
-      };
+        const objectTarget: ObjectTarget = {
+          type: TargetType.OBJECT,
+          name: object.node.name,
+          id: `${this._getNodeId(path)}`,
+          exported: !!export_,
+          default: export_ ? export_.default : false,
+          module: export_ ? export_.module : false,
+        };
+        const objectFunctionTarget: ObjectFunctionTarget = {
+          type: TargetType.OBJECT_FUNCTION,
+          objectName: object.node.name,
+          name: functionName,
+          id: `${this._getNodeId(path)}`,
+          isAsync: path.node.async,
+        };
 
-      this.subTargets.push(objectTarget, objectFunctionTarget);
+        this.subTargets.push(objectTarget, objectFunctionTarget);
+      } else if (object.isThisExpression()) {
+        // TODO repair this
+        return;
+      } else {
+        // e.g. a().x = function () {}
+        // unsupported
+        throw new Error(
+          unsupportedSyntax(path.node.type, this._getNodeId(path))
+        );
+      }
     } else
-      switch (parentNode.type) {
+      switch (parent.node.type) {
         case "ClassPrivateProperty": {
           // e.g. class A { #x = () => {} }
           // unsupported
@@ -588,7 +559,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
             className: parentClassName,
             name: targetName,
             type: TargetType.METHOD,
-            isStatic: (<t.ClassProperty>parentNode).static,
+            isStatic: (<t.ClassProperty>parent.node).static,
             isAsync: path.node.async,
             methodType: "method",
             visibility: visibility,
@@ -601,7 +572,9 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
         case "VariableDeclarator": {
           if (!path.parentPath.has("id")) {
             // unsupported
-            throw new Error("Unsupported");
+            throw new Error(
+              unsupportedSyntax(path.node.type, this._getNodeId(path))
+            );
           }
 
           const export_ = this._getExport(path, targetName);
@@ -658,6 +631,12 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
           this.subTargets.push(target);
         }
       }
+  }
+
+  public ArrowFunctionExpression: (
+    path: NodePath<t.ArrowFunctionExpression>
+  ) => void = (path) => {
+    this._functionExpression(path);
   };
 
   // public VariableDeclarator: (path: NodePath<t.VariableDeclarator>) => void = (

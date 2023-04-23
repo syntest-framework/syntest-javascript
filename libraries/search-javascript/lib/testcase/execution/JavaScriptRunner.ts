@@ -205,11 +205,29 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
           variables: meta?.variables,
         });
 
-        if (branch.locations.length === 2) {
+        if (branch.locations.length > 2) {
+          // switch case
+          for (const [index, location] of branch.locations.entries()) {
+            traces.push({
+              id: location.id,
+              path: key,
+              type: branch.type,
+              line: branch.line,
+
+              hits: hits[index],
+
+              condition_ast: meta?.condition_ast,
+              condition: meta?.condition,
+              variables: meta?.variables,
+            });
+          }
+        } else if (branch.locations.length === 2) {
+          // normal branch
+          // or small switch
           traces.push({
             id: branch.locations[1].id,
             path: key,
-            type: "branch",
+            type: branch.type,
             line: branch.line,
 
             hits: hits[1],

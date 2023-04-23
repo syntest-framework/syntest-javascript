@@ -22,10 +22,10 @@ import { TargetType } from "@syntest/analysis";
 import { JavaScriptSubject } from "../../../search/JavaScriptSubject";
 import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
-import { MethodCall } from "../action/MethodCall";
 import { Decoding, Statement } from "../Statement";
 
 import { RootStatement } from "./RootStatement";
+import { ObjectFunctionCall } from "../action/ObjectFunctionCall";
 
 /**
  * @author Dimitri Stallenberg
@@ -48,7 +48,7 @@ export class RootObject extends RootStatement {
     this._classType = "RootObject";
 
     for (const call of calls) {
-      if (!(call instanceof MethodCall)) {
+      if (!(call instanceof ObjectFunctionCall)) {
         throw new TypeError(
           "Constructor children must be of identifierDescription MethodCall"
         );
@@ -135,14 +135,14 @@ export class RootObject extends RootStatement {
   ): Decoding[] {
     const childStatements: Decoding[] = this.children.flatMap(
       (a: Statement) => {
-        if (a instanceof MethodCall) {
+        if (a instanceof ObjectFunctionCall) {
           return a.decodeWithObject(decoder, id, options, this.varName);
         }
         return a.decode(decoder, id, options);
       }
     );
 
-    let decoded = `const ${this.varName} = ${this.type}`;
+    let decoded = `const ${this.varName} = ${this.name}`;
 
     if (options.addLogs) {
       const logDirectory = decoder.getLogDirectory(id, this.varName);

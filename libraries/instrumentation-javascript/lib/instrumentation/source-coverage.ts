@@ -15,6 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { NodePath } from "@babel/traverse";
+import * as t from "@babel/types";
 const { classes } = require("istanbul-lib-coverage");
 
 /**
@@ -125,13 +127,18 @@ export class SourceCoverage extends classes.FileCoverage {
     this.data.bT[name] = [];
   }
 
-  addBranchPath(ifPath, name, location) {
+  addBranchPath(ifPath: NodePath<t.Node>, name, location) {
     const bMeta = this.data.branchMap[name];
     const counts = this.data.b[name];
 
     /* istanbul ignore if: paranoid check */
     if (!bMeta) {
-      throw new Error("Invalid branch " + name);
+      console.log(ifPath);
+      console.log(name);
+      console.log(location);
+      throw new Error(
+        "Invalid branch " + name + `${this._getNodeId(ifPath.node.loc)}`
+      );
     }
     if (location !== undefined) {
       bMeta.locations.push(this._cloneLocation(location));
