@@ -512,7 +512,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
 
                   methodType: "constructor",
                   isStatic: false,
-                  isAsync: false,
+                  isAsync: target.isAsync,
                 }
               );
             }
@@ -533,7 +533,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
 
               methodType: "method",
               isStatic: false,
-              isAsync: false,
+              isAsync: path.node.async,
             });
             return;
           } else {
@@ -575,27 +575,46 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
           ? property.node.value.toString()
           : "null";
 
-        const export_ = this._getExport(path, object.node.name);
+        if (object.node.name === "exports") {
+          // e.g. exports.x =  function () {}
+          // this is simply a function not an object function
+          const export_ = this._getExport(path, functionName);
 
-        const objectTarget: ObjectTarget = {
-          type: TargetType.OBJECT,
-          name: object.node.name,
-          id: `${this._getNodeId(path)}`,
-          exported: !!export_,
-          default: export_ ? export_.default : false,
-          module: export_ ? export_.module : false,
-        };
-        const objectFunctionTarget: ObjectFunctionTarget = {
-          type: TargetType.OBJECT_FUNCTION,
-          objectName: object.node.name,
-          name: functionName,
-          id: `${this._getNodeId(path)}`,
-          isAsync: path.node.async,
-        };
+          const functionTarget: FunctionTarget = {
+            id: `${this._getNodeId(path)}`,
+            type: TargetType.FUNCTION,
+            name: functionName,
+            exported: !!export_,
+            default: export_ ? export_.default : false,
+            module: export_ ? export_.module : false,
+            isAsync: path.node.async,
+          };
+          this._subTargets.push(functionTarget);
+        } else {
+          const export_ = this._getExport(path, object.node.name);
 
-        this.subTargets.push(objectTarget, objectFunctionTarget);
+          const objectTarget: ObjectTarget = {
+            type: TargetType.OBJECT,
+            name: object.node.name,
+            id: `${this._getNodeId(path)}`,
+            exported: !!export_,
+            default: export_ ? export_.default : false,
+            module: export_ ? export_.module : false,
+          };
+          const objectFunctionTarget: ObjectFunctionTarget = {
+            type: TargetType.OBJECT_FUNCTION,
+            objectName: object.node.name,
+            name: functionName,
+            id: `${this._getNodeId(path)}`,
+            isAsync: path.node.async,
+          };
+
+          this.subTargets.push(objectTarget, objectFunctionTarget);
+        }
       } else if (object.isThisExpression()) {
         // TODO repair this
+        // get the this scope object name
+        // create new object function target
         return;
       } else {
         // e.g. a().x = function () {}

@@ -334,10 +334,6 @@ export class JavaScriptLauncher extends Launcher {
 
   async postprocess(): Promise<void> {
     JavaScriptLauncher.LOGGER.info("Postprocessing started");
-    // const testDirectory = path.join(
-    //   this.arguments_.syntestDirectory,
-    //   this.arguments_.testDirectory
-    // );
     const temporaryTestDirectory = path.join(
       this.arguments_.tempSyntestDirectory,
       this.arguments_.tempTestDirectory
@@ -346,8 +342,6 @@ export class JavaScriptLauncher extends Launcher {
       this.arguments_.tempSyntestDirectory,
       this.arguments_.tempLogDirectory
     );
-
-    // clearDirectory(testDirectory);
 
     const decoder = new JavaScriptDecoder(
       this.exports,
