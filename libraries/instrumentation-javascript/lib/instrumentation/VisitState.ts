@@ -313,8 +313,8 @@ export class VisitState {
       };
     }
 
-    const name = path.node.id ? path.node.id.name : path.node.name;
-    const index = this.cov.newFunction(name, dloc, path.node.body.loc);
+    const name = n.id ? n.id.name : n.name;
+    const index = this.cov.newFunction(name, dloc, n.body.loc);
     const increment = this.increase("f", index, null);
     const body = path.get("body");
     /* istanbul ignore else: not expected */

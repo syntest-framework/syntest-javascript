@@ -133,9 +133,6 @@ export class SourceCoverage extends classes.FileCoverage {
 
     /* istanbul ignore if: paranoid check */
     if (!bMeta) {
-      console.log(ifPath);
-      console.log(name);
-      console.log(location);
       throw new Error(
         "Invalid branch " + name + `${this._getNodeId(ifPath.node.loc)}`
       );

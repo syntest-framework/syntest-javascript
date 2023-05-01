@@ -234,6 +234,9 @@ export class TypeModel {
       id
     );
 
+    // console.log(id)
+    // console.log(probabilities)
+
     // const probabilities = this._elementTypeProbabilityMap.get(element);
     let matchingTypes = [...probabilities.entries()];
     let totalProbability = 1;

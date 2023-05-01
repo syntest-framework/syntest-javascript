@@ -50,7 +50,11 @@ import {
   TerminationTriggerPlugin,
   deleteDirectories,
 } from "@syntest/base-language";
-import { UserInterface, TableObject } from "@syntest/cli-graphics";
+import {
+  UserInterface,
+  TableObject,
+  ItemizationItem,
+} from "@syntest/cli-graphics";
 import { ModuleManager } from "@syntest/module";
 import {
   JavaScriptTestCase,
@@ -75,8 +79,7 @@ import {
   initializePseudoRandomNumberGenerator,
 } from "@syntest/search";
 import { Instrumenter } from "@syntest/instrumentation-javascript";
-import { Logger } from "winston";
-import { getLogger } from "@syntest/logging";
+import { getLogger, Logger } from "@syntest/logging";
 import { TargetType } from "@syntest/analysis";
 
 export type JavaScriptArguments = ArgumentsObject & TestCommandOptions;
@@ -185,8 +188,6 @@ export class JavaScriptLauncher extends Launcher {
 
     // TODO ui info messages
 
-    this.userInterface.printHeader("TARGETS");
-
     // this.userInterface.report("property-set", [
     //   "Target Settings",
     //   <string>(
@@ -211,6 +212,21 @@ export class JavaScriptLauncher extends Launcher {
       );
       await this.exit();
     }
+
+    const itemization: ItemizationItem[] = [];
+
+    for (const target of this.targets) {
+      itemization.push({
+        text: `${target.path}: ${target.name} #${target.subTargets.length}`,
+        subItems: target.subTargets.map((subtarget) => {
+          return {
+            text: `${subtarget.type} ${subtarget.id}`,
+          };
+        }),
+      });
+    }
+
+    this.userInterface.printItemization("TARGETS", itemization);
 
     const names: string[] = [];
 

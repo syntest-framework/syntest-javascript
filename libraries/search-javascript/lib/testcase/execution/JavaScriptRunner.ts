@@ -24,7 +24,7 @@ import {
   InstrumentationData,
   MetaData,
 } from "@syntest/instrumentation-javascript";
-import { getLogger } from "@syntest/logging";
+import { getLogger, Logger } from "@syntest/logging";
 import cloneDeep = require("lodash.clonedeep");
 import { Runner } from "mocha";
 import Mocha = require("mocha");
@@ -39,7 +39,6 @@ import { JavaScriptTestCase } from "../JavaScriptTestCase";
 
 import { ExecutionInformationIntegrator } from "./ExecutionInformationIntegrator";
 import { SilentMochaReporter } from "./SilentMochaReporter";
-import { Logger } from "winston";
 
 export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
   protected static LOGGER: Logger;
@@ -155,6 +154,7 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     );
 
     const traces: Datapoint[] = [];
+
     for (const key of Object.keys(instrumentationData)) {
       for (const functionKey of Object.keys(instrumentationData[key].fnMap)) {
         const function_ = instrumentationData[key].fnMap[functionKey];

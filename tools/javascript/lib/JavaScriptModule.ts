@@ -25,7 +25,7 @@ import { UserInterface } from "@syntest/cli-graphics";
 import { MetricManager } from "@syntest/metric";
 import { RandomSamplerPlugin } from "./plugins/sampler/RandomSamplerPlugin";
 import { TreeCrossoverPlugin } from "./plugins/crossover/TreeCrossoverPlugin";
-// import { JavaScriptTreeCrossoverPlugin } from "./plugins/crossover/JavaScriptTreeCrossoverPlugin";
+import { SearchProgressBarListener } from "./plugins/listeners/SearchProgressBarListener";
 
 export default class JavaScriptModule extends TestingToolModule {
   constructor() {
@@ -62,6 +62,10 @@ export default class JavaScriptModule extends TestingToolModule {
 
     moduleManager.registerPlugin(this.name, new TreeCrossoverPlugin());
     moduleManager.registerPlugin(this.name, new RandomSamplerPlugin());
+    moduleManager.registerPlugin(
+      this.name,
+      new SearchProgressBarListener(userInterface)
+    );
 
     super.register(moduleManager, metricManager, userInterface, modules);
   }

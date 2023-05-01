@@ -36,9 +36,6 @@ export class JavaScriptSubject extends SearchSubject<JavaScriptTestCase> {
   }
 
   protected _extractObjectives(): void {
-    // const graph = this._rootContext.getControlFlowProgram(
-    //   this._target.path
-    // ).graph;
     const functions = this._rootContext.getControlFlowProgram(
       this._target.path
     ).functions;
@@ -90,11 +87,11 @@ export class JavaScriptSubject extends SearchSubject<JavaScriptTestCase> {
         this,
         children[0].id
       );
-      const childrenObject = this.findChildren(
+      const childObjectives = this.findChildren(
         function_.graph,
         functionObjective
       );
-      this._objectives.set(functionObjective, childrenObject);
+      this._objectives.set(functionObjective, childObjectives);
     }
   }
 
@@ -102,7 +99,7 @@ export class JavaScriptSubject extends SearchSubject<JavaScriptTestCase> {
     graph: ControlFlowGraph<unknown>,
     object: ObjectiveFunction<JavaScriptTestCase>
   ): ObjectiveFunction<JavaScriptTestCase>[] {
-    let childrenObject: ObjectiveFunction<JavaScriptTestCase>[] = [];
+    let childObjectives: ObjectiveFunction<JavaScriptTestCase>[] = [];
 
     let edges2Visit = [...graph.getOutgoingEdges(object.getIdentifier())];
 
@@ -126,11 +123,11 @@ export class JavaScriptSubject extends SearchSubject<JavaScriptTestCase> {
         );
         edges2Visit = [...edges2Visit, ...additionalEdges];
       } else {
-        childrenObject = [...childrenObject, ...found];
+        childObjectives = [...childObjectives, ...found];
       }
     }
 
-    return childrenObject;
+    return childObjectives;
   }
 
   getActionableTargets(): SubTarget[] {

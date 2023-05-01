@@ -276,10 +276,15 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
       path.join(sourceDirectory, path.basename(this.targetRootDirectory))
     );
 
+    // if (dependency.module) {
+    //   return dependency.default
+    //     ? `import * as ${dependency.name} from "${_path}";`
+    //     : `import {${dependency.name}} from "${_path}";`;
+    // }
     if (dependency.module) {
       return dependency.default
-        ? `import * as ${dependency.name} from "${_path}";`
-        : `import {${dependency.name}} from "${_path}";`;
+        ? `const ${dependency.name} = require("${_path}");`
+        : `const {${dependency.name}} = require("${_path}");`;
     }
     return dependency.default
       ? `import ${dependency.name} from "${_path}";`

@@ -32,8 +32,7 @@ import {
 import { VisibilityType } from "./VisibilityType";
 import { Export } from "./export/Export";
 import { unsupportedSyntax } from "../utils/diagnostics";
-import { Logger } from "winston";
-import { getLogger } from "@syntest/logging";
+import { getLogger, Logger } from "@syntest/logging";
 
 const COMPUTED_FLAG = ":computed:";
 export class TargetVisitor extends AbstractSyntaxTreeVisitor {
@@ -156,32 +155,31 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
           // e.g. x.? = class {}
           // e.g. x.? = function {}
           // e.g. x.? = () => {}
-          if (
-            assigned.property.type === "Identifier" &&
-            assigned.computed === true
-          ) {
-            // e.g. x[y] = class {}
-            // e.g. x[y] = function {}
-            // e.g. x[y] = () => {}
-            // TODO unsupported cannot get the name unless executing
-            TargetVisitor.LOGGER.warn(
-              `This tool does not support computed property assignments. Found one at ${this._getNodeId(
-                path
-              )}`
-            );
-            return COMPUTED_FLAG;
+          if (assigned.computed === true) {
+            if (assigned.property.type.includes("Literal")) {
+              // e.g. x["y"] = class {}
+              // e.g. x["y"] = function {}
+              // e.g. x["y"] = () => {}
+              return "value" in assigned.property
+                ? assigned.property.value.toString()
+                : "null";
+            } else {
+              // e.g. x[y] = class {}
+              // e.g. x[y] = function {}
+              // e.g. x[y] = () => {}
+              // TODO unsupported cannot get the name unless executing
+              TargetVisitor.LOGGER.warn(
+                `This tool does not support computed property assignments. Found one at ${this._getNodeId(
+                  path
+                )}`
+              );
+              return COMPUTED_FLAG;
+            }
           } else if (assigned.property.type === "Identifier") {
             // e.g. x.y = class {}
             // e.g. x.y = function {}
             // e.g. x.y = () => {}
             return assigned.property.name;
-          } else if (assigned.property.type.includes("Literal")) {
-            // e.g. x["y"] = class {}
-            // e.g. x["y"] = function {}
-            // e.g. x["y"] = () => {}
-            return "value" in assigned.property
-              ? assigned.property.value.toString()
-              : "null";
           } else {
             // e.g. x.? = class {}
             // e.g. x.? = function {}
@@ -463,6 +461,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
       const property = left.get("property");
 
       if (object.isMemberExpression()) {
+        const subObject = object.get("object");
         const subProperty = object.get("property");
 
         if (!subProperty.isIdentifier()) {
@@ -474,7 +473,75 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
         }
 
         if (subProperty.node.name === "prototype") {
-          object = object.get("object");
+          // e.g. a.prototype.y = function() {}
+          object = subObject;
+          if (object.isIdentifier()) {
+            const prototypeName = object.node.name;
+            // find function
+            const target = <FunctionTarget>(
+              this._subTargets.find(
+                (target) =>
+                  target.type === TargetType.FUNCTION &&
+                  (<FunctionTarget>target).name === prototypeName
+              )
+            );
+            if (target) {
+              // remove
+              this._subTargets = this._subTargets.filter(
+                (subTarget) => subTarget.id !== target.id
+              );
+              // add new
+              this._subTargets.push(
+                <ClassTarget>{
+                  id: target.id,
+                  type: TargetType.CLASS,
+                  name: target.name,
+                  exported: target.exported,
+                  renamedTo: target.renamedTo,
+                  module: target.module,
+                  default: target.default,
+                },
+                // add constructor
+                <MethodTarget>{
+                  id: target.id,
+                  type: TargetType.METHOD,
+                  name: "constructor",
+                  className: prototypeName,
+
+                  visibility: VisibilityType.PUBLIC,
+
+                  methodType: "constructor",
+                  isStatic: false,
+                  isAsync: false,
+                }
+              );
+            }
+            // add this as class method
+            if (!property.isIdentifier()) {
+              throw new Error(
+                unsupportedSyntax(path.node.type, this._getNodeId(path))
+              );
+            }
+
+            this._subTargets.push(<MethodTarget>{
+              id: `${this._getNodeId(path)}`,
+              type: TargetType.METHOD,
+              name: property.node.name,
+              className: prototypeName,
+
+              visibility: VisibilityType.PUBLIC,
+
+              methodType: "method",
+              isStatic: false,
+              isAsync: false,
+            });
+            return;
+          } else {
+            // e.g. a().prototype.y = function() {}
+            throw new Error(
+              unsupportedSyntax(path.node.type, this._getNodeId(path))
+            );
+          }
         } else {
           // e.g. a.x.y = function () {}
           // unsupported for now should create a objecttarget as a subtarget
@@ -487,15 +554,19 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
       // e.g. a.x = function () {}
       if (object.isIdentifier()) {
         if (
-          !property.isIdentifier() &&
+          left.node.computed == true &&
           !property.node.type.includes("Literal")
         ) {
-          // e.g. a.x() = function () {}
-          // unsupported
-          // not possible i think
-          throw new Error(
-            unsupportedSyntax(path.node.type, this._getNodeId(path))
+          // e.g. x[y] = class {}
+          // e.g. x[y] = function {}
+          // e.g. x[y] = () => {}
+          // TODO unsupported cannot get the name unless executing
+          TargetVisitor.LOGGER.warn(
+            `This tool does not support computed property assignments. Found one at ${this._getNodeId(
+              path
+            )}`
           );
+          return;
         }
 
         const functionName = property.isIdentifier()

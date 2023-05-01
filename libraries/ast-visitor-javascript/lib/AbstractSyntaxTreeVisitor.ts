@@ -19,8 +19,7 @@ import { NodePath } from "@babel/core";
 import { Scope as BabelScope, TraverseOptions } from "@babel/traverse";
 import * as t from "@babel/types";
 
-import { getLogger } from "@syntest/logging";
-import { Logger } from "winston";
+import { getLogger, Logger } from "@syntest/logging";
 import * as globals from "globals";
 
 const flatGlobals = new Set(
@@ -185,12 +184,26 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
     }
 
     if (
-      path.parentPath.isObjectProperty() &&
+      (path.parentPath.isObjectProperty() ||
+        path.parentPath.isObjectMethod()) &&
       path.parentPath.get("key") === path
     ) {
-      // we are the key of an object property
+      // we are the key of an object property/method
       // so this is the first definition of foo
       // e.g. { foo: bar }
+      return this._getNodeId(path);
+    }
+
+    if (
+      path.parentPath.isImportSpecifier() &&
+      path.parentPath.node.local.name !==
+        ("name" in path.parentPath.node.imported
+          ? path.parentPath.node.imported.name
+          : path.parentPath.node.imported.value)
+    ) {
+      // we import and rename
+      // so this is the first definition of foo
+      // e.g. import { foo as bar } from "./bar"
       return this._getNodeId(path);
     }
 
@@ -217,7 +230,9 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
     ) {
       return `global::${path.node.name}`;
     } else if (binding === undefined) {
-      throw new Error(`Cannot find binding for ${path.node.name}`);
+      throw new Error(
+        `Cannot find binding for ${path.node.name} at ${this._getNodeId(path)}`
+      );
     } else {
       return this._getNodeId(binding.path);
     }

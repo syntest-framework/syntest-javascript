@@ -19,8 +19,7 @@
 import { NodePath } from "@babel/core";
 import * as t from "@babel/types";
 import { AbstractSyntaxTreeVisitor } from "@syntest/ast-visitor-javascript";
-import { getLogger } from "@syntest/logging";
-import { Logger } from "winston";
+import { getLogger, Logger } from "@syntest/logging";
 
 export class DependencyVisitor extends AbstractSyntaxTreeVisitor {
   protected static override LOGGER: Logger;

@@ -17,11 +17,10 @@
  */
 
 import { Decoder, Encoding } from "@syntest/search";
-import { getLogger } from "@syntest/logging";
+import { getLogger, Logger } from "@syntest/logging";
 
 import { RootStatement } from "./statements/root/RootStatement";
 import { JavaScriptTestCaseSampler } from "./sampling/JavaScriptTestCaseSampler";
-import { Logger } from "winston";
 
 /**
  * JavaScriptTestCase class

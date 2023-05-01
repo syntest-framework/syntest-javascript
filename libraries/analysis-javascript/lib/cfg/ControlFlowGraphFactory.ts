@@ -18,7 +18,7 @@
 import { traverse } from "@babel/core";
 import * as t from "@babel/types";
 import { ControlFlowGraphFactory as CoreControlFlowGraphFactory } from "@syntest/analysis";
-import { ControlFlowProgram } from "@syntest/cfg";
+import { ControlFlowProgram, contractControlFlowProgram } from "@syntest/cfg";
 
 import { ControlFlowGraphVisitor } from "./ControlFlowGraphVisitor";
 
@@ -29,6 +29,6 @@ export class ControlFlowGraphFactory
     const visitor = new ControlFlowGraphVisitor(filePath);
     traverse(AST, visitor);
 
-    return visitor.cfg; //contractControlFlowProgram(visitor.cfg);
+    return contractControlFlowProgram(visitor.cfg);
   }
 }

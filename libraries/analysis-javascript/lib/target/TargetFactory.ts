@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import path = require("path");
+import * as path from "node:path";
 
 import { traverse } from "@babel/core";
 import * as t from "@babel/types";
