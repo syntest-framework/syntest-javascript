@@ -76,6 +76,7 @@ import {
   SearchTimeBudget,
   TerminationManager,
   TotalTimeBudget,
+  getSeed,
   initializePseudoRandomNumberGenerator,
 } from "@syntest/search";
 import { Instrumenter } from "@syntest/instrumentation-javascript";
@@ -228,63 +229,103 @@ export class JavaScriptLauncher extends Launcher {
 
     this.userInterface.printItemization("TARGETS", itemization);
 
-    const names: string[] = [];
+    const settings: TableObject = {
+      headers: ["Setting", "Value"],
+      rows: [
+        ["Preset", this.arguments_.preset],
+        ["Search Algorithm", this.arguments_.searchAlgorithm],
+        ["Population Size", `${this.arguments_.populationSize}`],
+        ["Objective Manager", `${this.arguments_.objectiveManager}`],
+        ["Secondary Objectives", `${this.arguments_.secondaryObjectives}`],
+        ["Procreation Operator", `${this.arguments_.procreation}`],
+        ["Crossover Operator", `${this.arguments_.crossover}`],
+        ["Sampling Operator", `${this.arguments_.sampler}`],
+        ["Termination Triggers", `${this.arguments_.terminationTriggers}`],
+        ["Test Minimization Enabled", `${this.arguments_.testMinimization}`],
 
-    for (const target of this.targets) {
-      names.push(`${path.basename(target.path)} -> ${target.name}`);
-    }
+        ["Seed", getSeed()],
+      ],
+      footers: ["", ""],
+    };
 
-    // this.userInterface.report("targets", names);
+    this.userInterface.printTable("SETTINGS", settings);
 
-    // this.userInterface.report("header", ["this.arguments_URATION"]);
+    const budgetSettings: TableObject = {
+      headers: ["Setting", "Value"],
+      rows: [
+        ["Iteration Budget", `${this.arguments_.iterations} iterations`],
+        ["Evaluation Budget", `${this.arguments_.evaluations} evaluations`],
+        ["Search Time Budget", `${this.arguments_.searchTime} seconds`],
+        ["Total Time Budget", `${this.arguments_.totalTime} seconds`],
+      ],
+      footers: ["", ""],
+    };
 
-    // this.userInterface.report("single-property", ["Seed", getSeed()]);
-    // this.userInterface.report("property-set", ["Budgets", <string>(<unknown>[
-    //     ["Iteration Budget", `${this.arguments_.iterationBudget} iterations`],
-    //     ["Evaluation Budget", `${this.arguments_.evaluationBudget} evaluations`],
-    //     ["Search Time Budget", `${this.arguments_.searchTimeBudget} seconds`],
-    //     ["Total Time Budget", `${this.arguments_.totalTimeBudget} seconds`],
-    //   ])]);
-    // this.userInterface.report("property-set", ["Algorithm", <string>(<unknown>[
-    //     ["Algorithm", this.arguments_.algorithm],
-    //     ["Population Size", this.arguments_.populationSize],
-    //   ])]);
-    // this.userInterface.report("property-set", [
-    //   "Variation Probabilities",
-    //   <string>(<unknown>[
-    //     ["Resampling", this.arguments_.resampleGeneProbability],
-    //     ["Delta mutation", this.arguments_.deltaMutationProbability],
-    //     ["Re-sampling from chromosome", this.arguments_.sampleExistingValueProbability],
-    //     ["Crossover", this.arguments_.crossoverProbability],
-    //   ]),
-    // ]);
+    this.userInterface.printTable("BUDGET SETTINGS", budgetSettings);
 
-    // this.userInterface.report("property-set", ["Sampling", <string>(<unknown>[
-    //     ["Max Depth", this.arguments_.maxDepth],
-    //     ["Explore Illegal Values", this.arguments_.exploreIllegalValues],
-    //     [
-    //       "Sample FUNCTION Result as Argument",
-    //       this.arguments_.sampleFunctionOutputAsArgument,
-    //     ],
-    //     ["Crossover", this.arguments_.crossoverProbability],
-    //   ])]);
+    const mutationSettings: TableObject = {
+      headers: ["Setting", "Value"],
+      rows: [
+        [
+          "Resampling Probability",
+          `${this.arguments_.resampleGeneProbability}`,
+        ],
+        [
+          "Delta Mutation Probability",
+          `${this.arguments_.deltaMutationProbability}`,
+        ],
+        [
+          "Sample Existing Value Probability",
+          `${this.arguments_.sampleExistingValueProbability}`,
+        ],
+        ["Crossover Probability", `${this.arguments_.crossoverProbability}`],
+        [
+          "Multi-point Crossover Probability",
+          `${this.arguments_.multiPointCrossoverProbability}`,
+        ],
+        // sampling
+        ["Max Depth", `${this.arguments_.maxDepth}`],
+        ["Max Action Statements", `${this.arguments_.maxActionStatements}`],
+        ["Explore Illegal Values", `${this.arguments_.exploreIllegalValues}`],
+        [
+          "Sample Output Values",
+          `${this.arguments_.sampleFunctionOutputAsArgument}`,
+        ],
+        ["Use Constant Pool Values", `${this.arguments_.constantPool}`],
+        [
+          "Use Constant Pool Probability",
+          `${this.arguments_.constantPoolProbability}`,
+        ],
+      ],
+      footers: ["", ""],
+    };
+    this.userInterface.printTable("MUTATION SETTINGS", mutationSettings);
 
-    // this.userInterface.report("property-set", ["Type Inference", <string>(<
-    //     unknown
-    //   >[
-    //     [
-    //       "Incorporate Execution Information",
-    //       this.arguments_.incorporateExecutionInformation,
-    //     ],
-    //     [
-    //       "Type Inference Mode",
-    //       this.arguments_.typeInferenceMode,
-    //     ],
-    //     [
-    //       "Random Type Probability",
-    //       this.arguments_.randomTypeProbability,
-    //     ],
-    //   ])]);
+    const typeSettings: TableObject = {
+      headers: ["Setting", "Value"],
+      rows: [
+        ["Type Inference Mode", `${this.arguments_.typeInferenceMode}`],
+        [
+          "Incorporate Execution Information",
+          `${this.arguments_.incorporateExecutionInformation}`,
+        ],
+        ["Random Type Probability", `${this.arguments_.randomTypeProbability}`],
+      ],
+      footers: ["", ""],
+    };
+    this.userInterface.printTable("Type SETTINGS", typeSettings);
+
+    const directorySettings: TableObject = {
+      headers: ["Setting", "Value"],
+      rows: [
+        ["Syntest Directory", `${this.arguments_.syntestDirectory}`],
+        ["Temporary Directory", `${this.arguments_.tempSyntestDirectory}`],
+        ["Target Root Directory", `${this.arguments_.targetRootDirectory}`],
+      ],
+      footers: ["", ""],
+    };
+
+    this.userInterface.printTable("DIRECTORY SETTINGS", directorySettings);
 
     JavaScriptLauncher.LOGGER.info("Instrumenting targets");
     const instrumenter = new Instrumenter();
