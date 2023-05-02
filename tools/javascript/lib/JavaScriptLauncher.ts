@@ -751,8 +751,5 @@ export class JavaScriptLauncher extends Launcher {
       ),
       this.arguments_.tempSyntestDirectory,
     ]);
-
-    // eslint-disable-next-line unicorn/no-process-exit
-    process.exit(0);
   }
 }
