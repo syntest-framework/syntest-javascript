@@ -25,11 +25,6 @@ export enum TypeEnum {
   NULL = "null",
   UNDEFINED = "undefined",
   REGEX = "regex",
-
-  ARRAY = "array",
-  OBJECT = "object",
-
-  FUNCTION = "function",
 }
 
 export function elementTypeToTypingType(
@@ -63,11 +58,16 @@ export function elementTypeToTypingType(
     case ElementType.BigIntLiteral: {
       return TypeEnum.NUMERIC;
     }
+    case ElementType.DecimalLiteral: {
+      return TypeEnum.NUMERIC;
+    }
 
     case ElementType.Undefined: {
       return TypeEnum.UNDEFINED;
     }
-  }
 
-  throw new Error("Unknown element type");
+    case ElementType.Identifier: {
+      throw new Error("Cannot convert ElementType Identifier to typing type");
+    }
+  }
 }

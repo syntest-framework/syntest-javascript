@@ -25,6 +25,14 @@ export interface DiscoveredObjectType {
   properties: Map<string, string>;
 }
 
+export interface FunctionType extends DiscoveredObjectType {
+  kind: DiscoveredObjectKind.FUNCTION;
+  // index -> id
+  parameters: Map<number, string>;
+  // id
+  return: Set<string>;
+}
+
 export enum DiscoveredObjectKind {
   CLASS,
   OBJECT,

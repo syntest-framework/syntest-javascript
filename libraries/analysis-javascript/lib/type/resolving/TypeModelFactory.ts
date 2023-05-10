@@ -17,6 +17,7 @@
  */
 
 import { Element } from "../discovery/element/Element";
+import { DiscoveredObjectType } from "../discovery/object/DiscoveredType";
 import { Relation } from "../discovery/relation/Relation";
 import { TypeModel } from "./TypeModel";
 
@@ -33,6 +34,7 @@ export abstract class TypeModelFactory {
    */
   abstract resolveTypes(
     elementMap: Map<string, Element>,
-    relationMap: Map<string, Relation>
+    relationMap: Map<string, Relation>,
+    objectMap: Map<string, DiscoveredObjectType>
   ): TypeModel;
 }
