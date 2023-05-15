@@ -22,7 +22,10 @@ import { TypeModelFactory } from "./TypeModelFactory";
 
 import { Element, ElementType } from "../discovery/element/Element";
 import { TypeModel } from "./TypeModel";
-import { DiscoveredObjectType } from "../discovery/object/DiscoveredType";
+import {
+  DiscoveredObjectType,
+  FunctionType,
+} from "../discovery/object/DiscoveredType";
 
 export class InferenceTypeModelFactory extends TypeModelFactory {
   private _typeModel: TypeModel;
@@ -52,7 +55,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
     relationMap: Map<string, Relation>,
     objectMap: Map<string, DiscoveredObjectType>
   ) {
-    this._typeModel = new TypeModel();
+    this._typeModel = new TypeModel(objectMap);
     this._elementMap = elementMap;
     this._relationsMap = relationMap;
 
@@ -64,6 +67,8 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
     // create objects
 
     this.inferRelationTypes(relationMap);
+
+    this.inferComplexTypes(relationMap, objectMap);
 
     return this._typeModel;
   }
@@ -156,88 +161,79 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
     }
   }
 
-  // findComplexTypes(relationMap: Map<string, Relation>) {
-  //   const complexTypes = new Map<string, ComplexType>();
+  inferComplexTypes(
+    relationMap: Map<string, Relation>,
+    objects: Map<string, DiscoveredObjectType>
+  ) {
+    // get all property accessor relations
+    const propertyAccessorRelations = [...relationMap.values()]
+      .filter((relation) =>
+        [
+          RelationType.PropertyAccessor,
+          RelationType.OptionalPropertyAccessor,
+        ].includes(relation.type)
+      )
+      // not computed only unless its a string
+      .filter((relation) => {
+        if (relation.computed) {
+          const propertyId = relation.involved[1];
+          const element = this.getElement(propertyId);
+          if (!element) {
+            // its a relation
+            return false;
+          }
+          if ("name" in element) {
+            // its an identifier
+            return false;
+          }
+        }
+        return true;
+      });
 
-  //   for (const relation of relationMap.values()) {
-  //     if (relation.type === RelationType.PropertyAccessor || relation.type === RelationType.OptionalPropertyAccessor) {
-  //       let objectId = relation.involved[0]
-  //       objectId = this._idRefersToIdMap.has(objectId) ? this._idRefersToIdMap.get(objectId) : objectId
+    // group by object id
+    // eslint-disable-next-line unicorn/no-array-reduce
+    const grouped = propertyAccessorRelations.reduce((results, relation) => {
+      let objectId = relation.involved[0];
 
-  //       const propertyId = relation.involved[1]
+      while (this._idToBindingIdMap.has(objectId)) {
+        objectId = this._idToBindingIdMap.get(objectId);
+      }
 
-  //       const object = this._totalElementsMap.has(objectId) ? this._totalElementsMap.get(objectId) : this._totalRelationsMap.get(objectId);
-  //       const property = this._totalElementsMap.has(propertyId) ? this._totalElementsMap.get(propertyId) : this._totalRelationsMap.get(propertyId);
+      if (!results.has(objectId)) {
+        results.set(objectId, []);
+      }
 
-  //       if (object === undefined || property === undefined) {
-  //         throw new Error(`Object or property not found object: ${object}, property: ${property}`);
-  //       }
+      results.get(objectId).push(relation);
+      return results;
+    }, new Map<string, Relation[]>());
 
-  //       if (!complexTypes.has(objectId)) {
-  //         complexTypes.set(objectId, {
-  //           id: objectId,
-  //           properties: new Map()
-  //         });
-  //       }
+    // per id check the best matching objects
+    for (const [id, relations] of grouped.entries()) {
+      for (const [objectId, object] of objects.entries()) {
+        let allMatched = true;
+        for (const relation of relations) {
+          const propertyId = relation.involved[1];
 
-  //       if (isRelation(property)) { // i.e. property is a function
-  //         // check wether the relation is actually a function of some sort
-  //         const functionId = property.involved[0]
-  //         const functionElement = this._totalElementsMap.get(functionId)
-  //         const propertyName = "name" in functionElement ? functionElement.name : functionElement.value
+          const element = this.getElement(propertyId);
 
-  //         // TODO or function id?
-  //         complexTypes.get(objectId).properties.set(propertyName, this.getTyping(property.id))
-  //       } else {
-  //         const propertyName = "name" in property ? property.name : property.value
-  //         complexTypes.get(objectId).properties.set(propertyName, this.getTyping(property.id))
-  //       }
-  //     } else if (relation.type === RelationType.ObjectPattern) {
-  //       const properties = new Map<string, TypeProbability>()
+          if (!element) {
+            // could be another relation?
+            continue;
+          }
 
-  //       for (const elementId of relation.involved) {
-  //         const subRelation = this._totalRelationsMap.get(elementId)
+          const propertyName = "name" in element ? element.name : element.value;
 
-  //         if (subRelation === undefined) {
-  //           throw new Error(`Subrelation not found ${elementId}`);
-  //         }
-
-  //         if (subRelation.type === RelationType.ObjectProperty) {
-  //           const propertyId = subRelation.involved[0]
-  //           const property = this._totalElementsMap.get(propertyId)
-
-  //           if (property === undefined) {
-  //             throw new Error(`Property not found ${propertyId}`);
-  //           }
-
-  //           const propertyName = "name" in property ? property.name : property.value
-
-  //           const valueId = subRelation.involved[1]
-  //           properties.set(propertyName, this.getTyping(valueId))
-  //         } else if (subRelation.type === RelationType.ObjectMethod) {
-  //           const propertyId = subRelation.involved[0]
-  //           const property = this._totalElementsMap.get(propertyId)
-
-  //           if (property === undefined) {
-  //             throw new Error(`Property not found ${propertyId}`);
-  //           }
-
-  //           const propertyName = "name" in property ? property.name : property.value
-
-  //           properties.set(propertyName, this.getTyping(propertyId))
-  //         }
-  //       }
-
-  //       complexTypes.set(relation.id, {
-  //         id: relation.id,
-  //         properties: properties
-  //       });
-  //     } else if (relation.type === RelationType.ClassDefinition) {
-
-  //     }
-
-  //   }
-  // }
+          if (!object.properties.has(propertyName)) {
+            allMatched = false;
+            break;
+          }
+        }
+        if (allMatched) {
+          this._typeModel.addTypeScore(id, objectId, relations.length);
+        }
+      }
+    }
+  }
 
   inferRelationTypes(relationMap: Map<string, Relation>) {
     const solveOrder = [
@@ -299,7 +295,8 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
   resolveRelation(relation: Relation): void {
     const relationId = relation.id;
     const relationType: RelationType = relation.type;
-    const involved: string[] = relation.involved.map((id) => {
+    const originalInvolved: string[] = relation.involved;
+    const involved: string[] = originalInvolved.map((id) => {
       while (this._idToBindingIdMap.has(id)) {
         id = this._idToBindingIdMap.get(id);
       }
@@ -314,17 +311,24 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         if (argumentId !== undefined) {
           this._typeModel.addRelationScore(relationId, argumentId);
 
+          // find the discovered type
           const type = <FunctionType>(
-            this._typeModel.getType(functionId, TypeEnum.FUNCTION)
+            this._typeModel.getDiscoveredObjectType(functionId)
           );
 
           type.return.add(argumentId);
+
+          // this can also be done in the object discovery phase...
         }
 
         break;
       }
       case RelationType.Call: {
         // TODO currently not possible because of the way the relations are created
+
+        const [functionId] = involved;
+
+        this._typeModel.addTypeScore(functionId, "DEFAULT_FUNCTION");
 
         // const [functionId, ...arguments_] = involved;
 
@@ -354,26 +358,6 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
       case RelationType.ObjectProperty: {
         const [propertyId, valueId] = involved;
 
-        const propertyElement = this._elementMap.get(propertyId);
-        const propertyMap = new Map<string, string>();
-
-        if (propertyElement) {
-          const propertyName =
-            "name" in propertyElement
-              ? propertyElement.name
-              : propertyElement.value;
-
-          propertyMap.set(propertyName, propertyId);
-        } else {
-          // TODO what if the property is not an element (spread element for example)
-        }
-
-        // create object type
-        this._typeModel.addObjectTypeScore(relationId, {
-          type: TypeEnum.OBJECT,
-          properties: propertyMap,
-        });
-
         // connect property to value
         if (valueId !== undefined) {
           this._typeModel.addRelationScore(propertyId, valueId);
@@ -382,31 +366,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         break;
       }
       case RelationType.ObjectMethod: {
-        const [functionId, ...parameters] = involved;
-
-        // TODO what if the property is not an element
-        const propertyElement = this._elementMap.get(functionId);
-        const propertyName =
-          "name" in propertyElement
-            ? propertyElement.name
-            : propertyElement.value;
-
-        const propertyMap = new Map<string, string>();
-        propertyMap.set(propertyName, functionId);
-
-        // create object type
-        this._typeModel.addObjectTypeScore(relationId, {
-          type: TypeEnum.OBJECT,
-          properties: propertyMap,
-        });
-
-        // create function type
-        this._typeModel.addFunctionTypeScore(functionId, {
-          type: TypeEnum.FUNCTION,
-          parameters: new Map(parameters.map((id, index) => [index, id])),
-          return: new Set(),
-        });
-
+        // objectvisitor takes care of this
         break;
       }
 
@@ -418,26 +378,8 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
           );
         }
 
-        const classId = involved[0];
         const propertyId = involved[1];
         const valueId = involved[2];
-
-        // TODO what if the property is not an element
-        const propertyElement = this.getElement(propertyId);
-        const propertyName =
-          "name" in propertyElement
-            ? propertyElement.name
-            : propertyElement.value;
-
-        const propertyMap = new Map<string, string>();
-        propertyMap.set(propertyName, propertyId);
-
-        // make object for the class
-        this._typeModel.addObjectTypeScore(classId, {
-          type: TypeEnum.OBJECT,
-          properties: propertyMap,
-        });
-
         // connect property to value
         if (valueId !== undefined) {
           this._typeModel.addRelationScore(propertyId, valueId);
@@ -457,62 +399,25 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
             `Class method relation should have at least 2 elements, but has ${involved.length}`
           );
         }
+        // objectvisitor takes care of this
 
-        const [classId, functionId, ...parameters] = involved;
-
-        // TODO what if the function id is not an element
-        const propertyElement = this.getElement(functionId);
-        const propertyName =
-          "name" in propertyElement
-            ? propertyElement.name
-            : propertyElement.value;
-
-        const propertyMap = new Map<string, string>();
-        propertyMap.set(propertyName, functionId);
-
-        // make object for the class
-        this._typeModel.addObjectTypeScore(classId, {
-          type: TypeEnum.OBJECT,
-          properties: propertyMap,
-        });
-
-        // TODO maybe not for setter / getter
-        // make function for the method
-        this._typeModel.addFunctionTypeScore(functionId, {
-          type: TypeEnum.FUNCTION,
-          parameters: new Map(parameters.map((id, index) => [index, id])),
-          return: new Set(),
-        });
         break;
       }
 
       case RelationType.ArrayPattern: {
-        const elements = involved;
-
-        // create array type
-        this._typeModel.addArrayTypeScore(relationId, {
-          type: TypeEnum.ARRAY,
-          elements: new Map(elements.map((id, index) => [index, id])),
-        });
-
+        // objectvisitor takes care of this
         break;
       }
       case RelationType.ObjectPattern: {
-        // create object type
-        this._typeModel.addObjectTypeScore(relationId, {
-          type: TypeEnum.OBJECT,
-          properties: new Map(), // the properties are added through the ObjectMethod/ObjectProperty relations
-        });
+        // objectvisitor takes care of this
         break;
       }
       case RelationType.RestElement: {
         const restElement = involved[0];
 
-        // create array type
-        this._typeModel.addArrayTypeScore(relationId, {
-          type: TypeEnum.ARRAY,
-          elements: new Map(),
-        });
+        // // get general array type
+        // const arrayId = // TODO
+        // this._typeModel.addTypeScore(relationId, arrayId);
 
         // connect rest element to array
         this._typeModel.addRelationScore(restElement, relationId);
@@ -541,59 +446,59 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         break;
       }
       case RelationType.ForIn: {
-        const declarator = involved[0];
-        const arrayOrObject = involved[1];
+        // const declarator = involved[0];
+        // const arrayOrObject = involved[1];
 
-        // create array type
-        this._typeModel.addArrayTypeScore(arrayOrObject, {
-          type: TypeEnum.ARRAY,
-          elements: new Map(),
-        });
+        // // create array type
 
-        // create object type
-        this._typeModel.addObjectTypeScore(arrayOrObject, {
-          type: TypeEnum.OBJECT,
-          properties: new Map(),
-        });
+        // // TODO should actually add any iterable type (but how do we check for these)
 
-        const typeOfArray = <ArrayType>(
-          this._typeModel.getType(arrayOrObject, TypeEnum.ARRAY)
-        );
+        // // // get general array type
+        // // const arrayId = // TODO
+        // // this._typeModel.addTypeScore(arrayOrObject, arrayId);
 
-        for (const id of typeOfArray.elements.values()) {
-          // connect declarator to array element
-          this._typeModel.addRelationScore(declarator, id);
-        }
+        // // // get general object type
+        // // const objectId = // TODO
+        // // this._typeModel.addTypeScore(arrayOrObject, objectId);
 
-        const typeOfObject = <ObjectType>(
-          this._typeModel.getType(arrayOrObject, TypeEnum.OBJECT)
-        );
+        // const typeOfArray = <ArrayType>(
+        //   this._typeModel.getDiscoveredObjectType(arrayOrObject)
+        // );
 
-        for (const id of typeOfObject.properties.values()) {
-          // connect declarator to object property
-          this._typeModel.addRelationScore(declarator, id);
-        }
+        // if (typeOfArray) {
+        //   if (typeOfArray.elements) {
+        //     for (const id of typeOfArray.elements.values()) {
+        //       // connect declarator to array element
+        //       this._typeModel.addRelationScore(declarator, id);
+        //     }
+        //   } else {
+        //     for (const id of typeOfArray.properties.values()) {
+        //       // connect declarator to object property
+        //       this._typeModel.addRelationScore(declarator, id);
+        //     }
+        //   }
+        // }
 
         break;
       }
       case RelationType.ForOf: {
-        const declarator = involved[0];
-        const array = involved[1];
+        // const declarator = involved[0];
+        // const array = involved[1];
 
-        // create array type
-        this._typeModel.addArrayTypeScore(array, {
-          type: TypeEnum.ARRAY,
-          elements: new Map(),
-        });
+        // // create array type
+        // // this._typeModel.addArrayTypeScore(array, {
+        // //   type: TypeEnum.ARRAY,
+        // //   elements: new Map(),
+        // // });
 
-        const typeOfArray = <ArrayType>(
-          this._typeModel.getType(array, TypeEnum.ARRAY)
-        );
+        // const typeOfArray = <ArrayType>(
+        //   this._typeModel.getDiscoveredObjectType(array)
+        // );
 
-        for (const id of typeOfArray.elements.values()) {
-          // connect declarator to array element
-          this._typeModel.addRelationScore(declarator, id);
-        }
+        // for (const id of typeOfArray.elements.values()) {
+        //   // connect declarator to array element
+        //   this._typeModel.addRelationScore(declarator, id);
+        // }
 
         break;
       }
@@ -614,32 +519,26 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         // add this type to parent
         this._typeModel.addRelationScore(thisParent, relationId);
 
-        // create object type
-        this._typeModel.addObjectTypeScore(relationId, {
-          type: TypeEnum.OBJECT,
-          properties: new Map(),
-        });
+        // // create object type
+        // this._typeModel.addObjectTypeScore(relationId, {
+        //   type: TypeEnum.OBJECT,
+        //   properties: new Map(),
+        // });
 
         break;
       }
 
       case RelationType.ArrayInitializer: {
-        const elements = involved;
-
-        // create array type
-        this._typeModel.addArrayTypeScore(relationId, {
-          type: TypeEnum.ARRAY,
-          elements: new Map(elements.map((id, index) => [index, id])),
-        });
+        // get array type
+        // const arrayId = // TODO
+        // this._typeModel.addTypeScore(relationId, arrayId)
 
         break;
       }
       case RelationType.ObjectInitializer: {
-        // create object type
-        this._typeModel.addObjectTypeScore(relationId, {
-          type: TypeEnum.OBJECT,
-          properties: new Map(), // the properties are added through the ObjectMethod/ObjectProperty relations
-        });
+        // get object type
+        // const objectId = // TODO
+        // this._typeModel.addTypeScore(relationId, objectId)
         break;
       }
 
@@ -649,11 +548,11 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         }
         const classId = involved[0];
 
-        // make object for the class
-        this._typeModel.addObjectTypeScore(classId, {
-          type: TypeEnum.OBJECT,
-          properties: new Map(), // the properties are added through the ClassMethod/ClassProperty relations
-        });
+        // // make object for the class
+        // this._typeModel.addObjectTypeScore(classId, {
+        //   type: TypeEnum.OBJECT,
+        //   properties: new Map(), // the properties are added through the ClassMethod/ClassProperty relations
+        // });
 
         // connect class to relation
         this._typeModel.addRelationScore(classId, relationId);
@@ -668,14 +567,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         if (involved.length === 0) {
           throw new Error(`Function definition has no involved elements`);
         }
-        const [functionId, ...parameters] = involved;
-
-        // make function for the function
-        this._typeModel.addFunctionTypeScore(functionId, {
-          type: TypeEnum.FUNCTION,
-          parameters: new Map(parameters.map((id, index) => [index, id])),
-          return: new Set(),
-        });
+        const [functionId] = involved;
 
         // connect function to relation
         this._typeModel.addRelationScore(functionId, relationId);
@@ -699,30 +591,20 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
       case RelationType.OptionalPropertyAccessor: {
         // TODO
         const [objectId, propertyId] = involved;
+        const [, originalProperty] = originalInvolved;
 
-        const propertyElement = this.getElement(propertyId);
+        const propertyElement = this.getElement(originalProperty);
 
         if (propertyElement === undefined) {
           // TODO what if the property is not an element
         } else {
-          const propertyName =
-            "name" in propertyElement
-              ? propertyElement.name
-              : propertyElement.value;
-
-          // add object type to object
-          this._typeModel.addObjectTypeScore(objectId, {
-            type: TypeEnum.OBJECT,
-            properties: new Map([[propertyName, propertyId]]), // can't add properties since we only know the propertyName
-          });
-
           if (propertyElement.type === ElementType.NumericalLiteral) {
             // e.g. object[0]
             // add array type to object
-            this._typeModel.addArrayTypeScore(objectId, {
-              type: TypeEnum.ARRAY,
-              elements: new Map(), // can't add elements since we only know the index, i.e. Number(propertyName)
-            });
+
+            // // find the array typeid
+            // const arrayId = // TODO
+            this._typeModel.addTypeScore(objectId, "DEFAULT_ARRAY");
           }
         }
 
@@ -791,22 +673,23 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         break;
       }
       case RelationType.Await: {
-        // often function?
-        const argumentId = involved[0];
+        // TODO
+        // // often function?
+        // const argumentId = involved[0];
 
-        this._typeModel.addFunctionTypeScore(argumentId, {
-          type: TypeEnum.FUNCTION,
-          parameters: new Map(),
-          return: new Set(),
-        });
+        // this._typeModel.addFunctionTypeScore(argumentId, {
+        //   type: TypeEnum.FUNCTION,
+        //   parameters: new Map(),
+        //   return: new Set(),
+        // });
 
-        const type_ = <FunctionType>(
-          this._typeModel.getType(argumentId, TypeEnum.FUNCTION)
-        );
+        // const type_ = <FunctionType>(
+        //   this._typeModel.getType(argumentId, TypeEnum.FUNCTION)
+        // );
 
-        for (const returnType of type_.return) {
-          this._typeModel.addRelationScore(relationId, returnType);
-        }
+        // for (const returnType of type_.return) {
+        //   this._typeModel.addRelationScore(relationId, returnType);
+        // }
 
         break;
       }
@@ -858,18 +741,18 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
       }
 
       case RelationType.In: {
-        const [, rightId] = involved;
+        // const [, rightId] = involved;
 
         // right is likely an array or object
 
-        this._typeModel.addArrayTypeScore(rightId, {
-          type: TypeEnum.ARRAY,
-          elements: new Map(),
-        });
-        this._typeModel.addObjectTypeScore(rightId, {
-          type: TypeEnum.OBJECT,
-          properties: new Map(),
-        });
+        // this._typeModel.addArrayTypeScore(rightId, {
+        //   type: TypeEnum.ARRAY,
+        //   elements: new Map(),
+        // });
+        // this._typeModel.addObjectTypeScore(rightId, {
+        //   type: TypeEnum.OBJECT,
+        //   properties: new Map(),
+        // });
 
         // TODO
         // if it is an array we know the leftId is an element of the array
@@ -880,16 +763,17 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         break;
       }
       case RelationType.InstanceOf: {
-        const [leftId, rightId] = involved;
+        // TODO
+        // const [leftId, rightId] = involved;
 
-        this._typeModel.addObjectTypeScore(leftId, {
-          type: TypeEnum.OBJECT,
-          properties: new Map(),
-        });
-        this._typeModel.addObjectTypeScore(rightId, {
-          type: TypeEnum.OBJECT,
-          properties: new Map(),
-        });
+        // this._typeModel.addObjectTypeScore(leftId, {
+        //   type: TypeEnum.OBJECT,
+        //   properties: new Map(),
+        // });
+        // this._typeModel.addObjectTypeScore(rightId, {
+        //   type: TypeEnum.OBJECT,
+        //   properties: new Map(),
+        // });
 
         this._typeModel.addTypeScore(relationId, TypeEnum.BOOLEAN);
 
@@ -1098,17 +982,18 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
       }
 
       case RelationType.Spread: {
-        const [spreadId] = involved;
+        // TODO
+        // const [spreadId] = involved;
 
-        // is array or object
-        this._typeModel.addArrayTypeScore(spreadId, {
-          type: TypeEnum.ARRAY,
-          elements: new Map(),
-        });
-        this._typeModel.addObjectTypeScore(spreadId, {
-          type: TypeEnum.OBJECT,
-          properties: new Map(),
-        });
+        // // is array or object
+        // this._typeModel.addArrayTypeScore(spreadId, {
+        //   type: TypeEnum.ARRAY,
+        //   elements: new Map(),
+        // });
+        // this._typeModel.addObjectTypeScore(spreadId, {
+        //   type: TypeEnum.OBJECT,
+        //   properties: new Map(),
+        // });
 
         // TODO results in a sequence of the type of the spread
 

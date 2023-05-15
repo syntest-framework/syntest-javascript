@@ -22,7 +22,7 @@ import { TypeModel } from "@syntest/analysis-javascript";
 
 describe("Temp", () => {
   it("temp", () => {
-    new ExecutionInformationIntegrator(new TypeModel());
+    new ExecutionInformationIntegrator(new TypeModel(new Map()));
     expect(true);
   });
 });

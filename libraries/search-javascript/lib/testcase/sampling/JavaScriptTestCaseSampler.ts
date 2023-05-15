@@ -35,6 +35,11 @@ import { UndefinedStatement } from "../statements/primitive/UndefinedStatement";
 import { ArrowFunctionStatement } from "../statements/complex/ArrowFunctionStatement";
 import { ArrayStatement } from "../statements/complex/ArrayStatement";
 import { ObjectStatement } from "../statements/complex/ObjectStatement";
+import {
+  ArrayType,
+  DiscoveredObjectType,
+  FunctionType,
+} from "@syntest/analysis-javascript";
 
 /**
  * JavaScriptRandomSampler class
@@ -115,15 +120,25 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
   abstract sampleObject(
     depth: number,
     id: string,
-    name: string
+    name: string,
+    type: string,
+    typeObject: DiscoveredObjectType
   ): ObjectStatement;
 
-  abstract sampleArray(depth: number, id: string, name: string): ArrayStatement;
+  abstract sampleArray(
+    depth: number,
+    id: string,
+    name: string,
+    type: string,
+    typeObject: ArrayType
+  ): ArrayStatement;
 
   abstract sampleArrowFunction(
     depth: number,
     id: string,
-    name: string
+    name: string,
+    type: string,
+    typeObject: FunctionType
   ): ArrowFunctionStatement;
 
   abstract sampleString(

@@ -143,8 +143,9 @@ export class RootContext extends CoreRootContext<t.Node> {
       this.extractTypes();
       this._typeModel = this._typeResolver.resolveTypes(
         this._elementMap,
-        this._relationMap
-      ); //, this._objectMap);
+        this._relationMap,
+        this._objectMap
+      );
     }
   }
 
@@ -293,113 +294,6 @@ export class RootContext extends CoreRootContext<t.Node> {
   //       )
   //     );
   //   }
-
-  //   // standard stuff
-  //   // function https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function
-  //   objects.push(
-  //     {
-  //       name: "function",
-  //       properties: new Set([
-  //         "arguments",
-  //         "caller",
-  //         "displayName",
-  //         "length",
-  //         "name",
-  //       ]),
-  //       functions: new Set(["apply", "bind", "call", "toString"]),
-  //       propertyType: new Map<string, TypeProbability>([
-  //         ["arguments", new TypeProbability([[TypeEnum.ARRAY, 1, undefined]])],
-  //         ["caller", new TypeProbability([[TypeEnum.FUNCTION, 1, undefined]])],
-  //         [
-  //           "displayName",
-  //           new TypeProbability([[TypeEnum.STRING, 1, undefined]]),
-  //         ],
-  //         ["length", new TypeProbability([[TypeEnum.NUMERIC, 1, undefined]])],
-  //         ["name", new TypeProbability([[TypeEnum.STRING, 1, undefined]])],
-  //       ]),
-  //     },
-
-  //     // array https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array
-  //     {
-  //       name: "array",
-  //       properties: new Set(["length"]),
-  //       functions: new Set([
-  //         "at",
-  //         "concat",
-  //         "copyWithin",
-  //         "entries",
-  //         "fill",
-  //         "filter",
-  //         "find",
-  //         "findIndex",
-  //         "flat",
-  //         "flatMap",
-  //         "includes",
-  //         "indexOf",
-  //         "join",
-  //         "keys",
-  //         "lastIndexOf",
-  //         "map",
-  //         "pop",
-  //         "push",
-  //         "reduce",
-  //         "reduceRight",
-  //         "reverse",
-  //         "shift",
-  //         "slice",
-  //         "toLocaleString",
-  //         "toString",
-  //         "unshift",
-  //         "values",
-  //       ]),
-  //       propertyType: new Map<string, TypeProbability>([
-  //         ["length", new TypeProbability([[TypeEnum.NUMERIC, 1, undefined]])],
-  //       ]),
-  //     },
-
-  //     // string
-  //     {
-  //       name: "string",
-  //       properties: new Set(["length"]),
-  //       functions: new Set([
-  //         "at",
-  //         "charAt",
-  //         "charCodeAt",
-  //         "codePointAt",
-  //         "concat",
-  //         "includes",
-  //         "endsWith",
-  //         "indexOf",
-  //         "lastIndexOf",
-  //         "localeCompare",
-  //         "match",
-  //         "matchAll",
-  //         "normalize",
-  //         "padEnd",
-  //         "padStart",
-  //         "repeat",
-  //         "replace",
-  //         "replaceAll",
-  //         "search",
-  //         "slice",
-  //         "split",
-  //         "startsWith",
-  //         "substring",
-  //         "toLocaleLowerCase",
-  //         "toLocaleUpperCase",
-  //         "toLowerCase",
-  //         "toString",
-  //         "toUpperCase",
-  //         "trim",
-  //         "trimStart",
-  //         "trimEnd",
-  //         "valueOf",
-  //       ]),
-  //       propertyType: new Map<string, TypeProbability>([
-  //         ["length", new TypeProbability([[TypeEnum.NUMERIC, 1, undefined]])],
-  //       ]),
-  //     }
-  //   );
 
   //   // TODO npm dependencies
   //   // TODO get rid of duplicates

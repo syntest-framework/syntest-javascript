@@ -1079,7 +1079,6 @@ describe("ControlFlowGraphVisitor test", () => {
 
     const cfg = contractControlFlowProgram(cfgHelper(source));
 
-    console.log(cfg.functions[0].graph);
     expect(cfg.functions);
   });
 
@@ -1090,7 +1089,6 @@ export default at
 
     const cfg = contractControlFlowProgram(cfgHelper(source));
 
-    console.log(cfg);
     expect(cfg.functions);
   });
 });

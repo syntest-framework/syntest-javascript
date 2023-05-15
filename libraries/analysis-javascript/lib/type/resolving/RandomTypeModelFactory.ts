@@ -17,6 +17,7 @@
  */
 
 import { Element } from "../discovery/element/Element";
+import { DiscoveredObjectType } from "../discovery/object/DiscoveredType";
 import { Relation } from "../discovery/relation/Relation";
 import { TypeModel } from "./TypeModel";
 import { TypeModelFactory } from "./TypeModelFactory";
@@ -30,7 +31,11 @@ export class RandomTypeModelFactory extends TypeModelFactory {
     throw new Error("Method not implemented.");
   }
 
-  resolveTypes() {
-    return new TypeModel();
+  resolveTypes(
+    _elementMap: Map<string, Element>,
+    _relationMap: Map<string, Relation>,
+    objectMap: Map<string, DiscoveredObjectType>
+  ) {
+    return new TypeModel(objectMap);
   }
 }

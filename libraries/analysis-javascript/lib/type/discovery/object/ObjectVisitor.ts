@@ -18,7 +18,8 @@
 import { NodePath } from "@babel/core";
 import * as t from "@babel/types";
 import { AbstractSyntaxTreeVisitor } from "@syntest/ast-visitor-javascript";
-import { DiscoveredObjectKind, DiscoveredType } from "./DiscoveredType";
+import { DiscoveredType } from "./DiscoveredType";
+import { createFunction, createObject } from "./standardObjects";
 
 export class ObjectVisitor extends AbstractSyntaxTreeVisitor {
   private _complexTypeMap: Map<string, DiscoveredType>;
@@ -33,6 +34,7 @@ export class ObjectVisitor extends AbstractSyntaxTreeVisitor {
   constructor(filePath: string) {
     super(filePath);
     this._complexTypeMap = new Map();
+
     this._objectStack = [];
   }
 
@@ -82,11 +84,7 @@ export class ObjectVisitor extends AbstractSyntaxTreeVisitor {
   public ClassExpression: (path: NodePath<t.ClassExpression>) => void = (
     path: NodePath<t.ClassExpression>
   ) => {
-    const complexType: DiscoveredType = {
-      id: this._getNodeId(path),
-      kind: DiscoveredObjectKind.CLASS,
-      properties: new Map(),
-    };
+    const complexType = createObject(this._getNodeId(path));
     this._complexTypeMap.set(this._getNodeId(path), complexType);
     this._objectStack.push(complexType);
 
@@ -100,11 +98,7 @@ export class ObjectVisitor extends AbstractSyntaxTreeVisitor {
   public ClassDeclaration: (path: NodePath<t.ClassDeclaration>) => void = (
     path: NodePath<t.ClassDeclaration>
   ) => {
-    const complexType: DiscoveredType = {
-      id: this._getNodeId(path),
-      kind: DiscoveredObjectKind.CLASS,
-      properties: new Map(),
-    };
+    const complexType = createObject(this._getNodeId(path));
     this._complexTypeMap.set(this._getNodeId(path), complexType);
     this._objectStack.push(complexType);
 
@@ -164,11 +158,8 @@ export class ObjectVisitor extends AbstractSyntaxTreeVisitor {
   public ObjectExpression: (path: NodePath<t.ObjectExpression>) => void = (
     path: NodePath<t.ObjectExpression>
   ) => {
-    const complexType: DiscoveredType = {
-      id: this._getNodeId(path),
-      kind: DiscoveredObjectKind.OBJECT,
-      properties: new Map(),
-    };
+    const complexType = createObject(this._getNodeId(path));
+
     this._complexTypeMap.set(this._getNodeId(path), complexType);
     this._objectStack.push(complexType);
 
@@ -184,19 +175,15 @@ export class ObjectVisitor extends AbstractSyntaxTreeVisitor {
   public ObjectPattern: (path: NodePath<t.ObjectPattern>) => void = (
     path: NodePath<t.ObjectPattern>
   ) => {
-    const complexType: DiscoveredType = {
-      id: this._getNodeId(path),
-      kind: DiscoveredObjectKind.OBJECT,
-      properties: new Map(),
-    };
-    this._complexTypeMap.set(this._getNodeId(path), complexType);
-    this._objectStack.push(complexType);
+    // const complexType = createObject(this._getNodeId(path))
+    // this._complexTypeMap.set(this._getNodeId(path), complexType);
+    // this._objectStack.push(complexType);
 
-    for (const property of path.get("properties")) {
-      property.visit();
-    }
+    // for (const property of path.get("properties")) {
+    //   property.visit();
+    // }
 
-    this._removeFromStack(path);
+    // this._removeFromStack(path);
 
     path.skip();
   };
@@ -229,31 +216,14 @@ export class ObjectVisitor extends AbstractSyntaxTreeVisitor {
   // TODO SpreadElement
 
   // Functions
-  public FunctionDeclaration: (path: NodePath<t.FunctionDeclaration>) => void =
-    (path: NodePath<t.FunctionDeclaration>) => {
-      const complexType: DiscoveredType = {
-        id: this._getNodeId(path),
-        kind: DiscoveredObjectKind.FUNCTION,
-        properties: new Map(),
-      };
-      this._complexTypeMap.set(this._getNodeId(path), complexType);
-      this._objectStack.push(complexType);
-
-      path.get("body").visit();
-
-      this._removeFromStack(path);
-
-      path.skip();
-    };
-
-  public FunctionExpression: (path: NodePath<t.FunctionExpression>) => void = (
-    path: NodePath<t.FunctionExpression>
+  public Function: (path: NodePath<t.Function>) => void = (
+    path: NodePath<t.Function>
   ) => {
-    const complexType: DiscoveredType = {
-      id: this._getNodeId(path),
-      kind: DiscoveredObjectKind.FUNCTION,
-      properties: new Map(),
-    };
+    const complexType = createFunction(
+      this._getNodeId(path),
+      this._extractParams(path)
+    );
+
     this._complexTypeMap.set(this._getNodeId(path), complexType);
     this._objectStack.push(complexType);
 
@@ -264,71 +234,70 @@ export class ObjectVisitor extends AbstractSyntaxTreeVisitor {
     path.skip();
   };
 
-  public ArrowFunctionExpression: (
-    path: NodePath<t.ArrowFunctionExpression>
-  ) => void = (path: NodePath<t.ArrowFunctionExpression>) => {
-    const complexType: DiscoveredType = {
-      id: this._getNodeId(path),
-      kind: DiscoveredObjectKind.FUNCTION,
-      properties: new Map(),
-    };
-    this._complexTypeMap.set(this._getNodeId(path), complexType);
-    this._objectStack.push(complexType);
+  private _extractParams(path: NodePath<t.Function>): Map<number, string> {
+    const parameters = path.get("params");
 
-    path.get("body").visit();
+    return new Map(
+      parameters.map((parameter, index) => {
+        return [index, this._getNodeId(parameter)];
+      })
+    );
+  }
 
-    this._removeFromStack(path);
+  // TODO
+  // public MemberExpression: (path: NodePath<t.MemberExpression>) => void = (
+  //   path: NodePath<t.MemberExpression>
+  // ) => {
+  //   if (path.node.computed) {
+  //     return;
+  //   }
 
-    path.skip();
-  };
+  //   if (path.node.object.type === "ThisExpression") {
+  //     const parent = this._getThisParent(path);
 
-  public MemberExpression: (path: NodePath<t.MemberExpression>) => void = (
-    path: NodePath<t.MemberExpression>
+  //     const _object = this.complexTypeMap.get(this._getNodeId(parent));
+
+  //     if (!_object) {
+  //       throw new Error(`Unexpected object type: ${path.node.object.type}`);
+  //     }
+
+  //     if (path.node.property.type === "PrivateName") {
+  //       const name = this._getPropertyName(path.node.property.id);
+
+  //       _object.properties.set(`#${name}`, this._getNodeId(path));
+  //     } else {
+  //       const name = this._getPropertyName(path.node.property);
+
+  //       _object.properties.set(name, this._getNodeId(path));
+  //     }
+  //   } else if (path.node.object.type === "Identifier") {
+  //     const bindingId = this._getBindingId(path.get("object"));
+  //     let _object = this.complexTypeMap.get(bindingId);
+
+  //     if (!_object) {
+  //       _object = {
+  //         id: bindingId,
+  //         kind: DiscoveredObjectKind.OBJECT, // not sure actually
+  //         properties: new Map(),
+  //       };
+  //       this._complexTypeMap.set(bindingId, _object);
+  //     }
+
+  //     if (path.node.property.type === "PrivateName") {
+  //       const name = this._getPropertyName(path.node.property.id);
+
+  //       _object.properties.set(`#${name}`, this._getNodeId(path));
+  //     } else {
+  //       const name = this._getPropertyName(path.node.property);
+
+  //       _object.properties.set(name, this._getNodeId(path));
+  //     }
+  //   }
+  // };
+
+  public ReturnStatement: (path: NodePath<t.ReturnStatement>) => void = (
+    path: NodePath<t.ReturnStatement>
   ) => {
-    if (path.node.computed) {
-      return;
-    }
-
-    if (path.node.object.type === "ThisExpression") {
-      const parent = this._getThisParent(path);
-
-      const _object = this.complexTypeMap.get(this._getNodeId(parent));
-
-      if (!_object) {
-        throw new Error(`Unexpected object type: ${path.node.object.type}`);
-      }
-
-      if (path.node.property.type === "PrivateName") {
-        const name = this._getPropertyName(path.node.property.id);
-
-        _object.properties.set(`#${name}`, this._getNodeId(path));
-      } else {
-        const name = this._getPropertyName(path.node.property);
-
-        _object.properties.set(name, this._getNodeId(path));
-      }
-    } else if (path.node.object.type === "Identifier") {
-      const bindingId = this._getBindingId(path.get("object"));
-      let _object = this.complexTypeMap.get(bindingId);
-
-      if (!_object) {
-        _object = {
-          id: bindingId,
-          kind: DiscoveredObjectKind.OBJECT, // not sure actually
-          properties: new Map(),
-        };
-        this._complexTypeMap.set(bindingId, _object);
-      }
-
-      if (path.node.property.type === "PrivateName") {
-        const name = this._getPropertyName(path.node.property.id);
-
-        _object.properties.set(`#${name}`, this._getNodeId(path));
-      } else {
-        const name = this._getPropertyName(path.node.property);
-
-        _object.properties.set(name, this._getNodeId(path));
-      }
-    }
+    // TODO get function parent
   };
 }

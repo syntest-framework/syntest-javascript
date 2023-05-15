@@ -33,9 +33,15 @@ export interface FunctionType extends DiscoveredObjectType {
   return: Set<string>;
 }
 
+export interface ArrayType extends DiscoveredObjectType {
+  kind: DiscoveredObjectKind.ARRAY;
+
+  // index -> id
+  elements: Map<number, string>;
+}
+
 export enum DiscoveredObjectKind {
-  CLASS,
   OBJECT,
-  INTERFACE,
   FUNCTION,
+  ARRAY,
 }

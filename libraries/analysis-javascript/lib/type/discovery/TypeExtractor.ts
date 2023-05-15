@@ -24,6 +24,12 @@ import { RootContext } from "../../RootContext";
 import { Element } from "./element/Element";
 import { Relation } from "./relation/Relation";
 import { DiscoveredObjectType } from "./object/DiscoveredType";
+import {
+  createArray,
+  createString,
+  createFunction,
+  createObject,
+} from "./object/standardObjects";
 
 export class TypeExtractor {
   private _elementMap: Map<string, Element>;
@@ -34,6 +40,16 @@ export class TypeExtractor {
     this._elementMap = new Map();
     this._relationMap = new Map();
     this._objectMap = new Map();
+
+    const defaultArray = createArray();
+    const defaultString = createString();
+    const defaultFunction = createFunction();
+    const defaultObject = createObject();
+
+    this._objectMap.set(defaultArray.id, defaultArray);
+    this._objectMap.set(defaultString.id, defaultString);
+    this._objectMap.set(defaultFunction.id, defaultFunction);
+    this._objectMap.set(defaultObject.id, defaultObject);
   }
 
   extractAll(rootContext: RootContext) {

@@ -18,6 +18,7 @@
 
 import { prng } from "@syntest/search";
 import { TypeEnum } from "./TypeEnum";
+import { DiscoveredObjectType } from "../discovery/object/DiscoveredType";
 
 export class TypeModel {
   private _elements: Set<string>;
@@ -34,7 +35,10 @@ export class TypeModel {
   // element -> scoreHasChanged
   private _scoreHasChangedMap: Map<string, boolean>;
 
-  constructor() {
+  private _discoveredTypes: Map<string, DiscoveredObjectType>;
+
+  constructor(discoveredTypes: Map<string, DiscoveredObjectType>) {
+    this._discoveredTypes = discoveredTypes;
     this._elements = new Set();
 
     this._relationScoreMap = new Map();
@@ -44,6 +48,13 @@ export class TypeModel {
     this._elementTypeProbabilityMap = new Map();
 
     this._scoreHasChangedMap = new Map();
+  }
+
+  getDiscoveredObjectType(id: string): DiscoveredObjectType {
+    if (!this._discoveredTypes.has(id)) {
+      throw new Error(`Can't find discovered type for id: ${id}`);
+    }
+    return this._discoveredTypes.get(id);
   }
 
   addId(id: string) {
@@ -290,26 +301,13 @@ export class TypeModel {
       }
 
       for (const [type, probability] of probabilityMapOfRelation.entries()) {
-        let finalType = type;
-
-        if (
-          type === TypeEnum.FUNCTION ||
-          type === TypeEnum.ARRAY ||
-          type === TypeEnum.OBJECT
-        ) {
-          // maybe should check for includes (or the inverse by checking for primitive types)
-          // this will only add only the final relation id
-          // the other method will add all relation id from the element to the final relation
-          finalType = `${relation}<>${type}`;
-        }
-
-        if (!probabilityMap.has(finalType)) {
-          probabilityMap.set(finalType, 0);
+        if (!probabilityMap.has(type)) {
+          probabilityMap.set(type, 0);
         }
 
         probabilityMap.set(
-          finalType,
-          probabilityMap.get(finalType) + probability * probabilityOfRelation
+          type,
+          probabilityMap.get(type) + probability * probabilityOfRelation
         );
       }
     }

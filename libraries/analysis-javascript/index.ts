@@ -47,7 +47,6 @@ export * from "./lib/type/discovery/relation/RelationVisitor";
 
 export * from "./lib/type/discovery/TypeExtractor";
 
-export * from "./lib/type/resolving/Type";
 export * from "./lib/type/resolving/TypeEnum";
 export * from "./lib/type/resolving/TypeModel";
 export * from "./lib/type/resolving/TypeModelFactory";
