@@ -16,47 +16,19 @@
  * limitations under the License.
  */
 
-import { TypeEnum } from "./TypeEnum";
-
-export type Type = PrimitiveType | FunctionType | ArrayType | ObjectType;
-
-export interface PrimitiveType {
-  type:
-    | TypeEnum.NUMERIC
-    | TypeEnum.STRING
-    | TypeEnum.BOOLEAN
-    | TypeEnum.NULL
-    | TypeEnum.UNDEFINED
-    | TypeEnum.REGEX;
-}
-
-export function isPrimitiveType(type: Type): type is PrimitiveType {
-  return (
-    type.type === TypeEnum.NUMERIC ||
-    type.type === TypeEnum.STRING ||
-    type.type === TypeEnum.BOOLEAN ||
-    type.type === TypeEnum.NULL ||
-    type.type === TypeEnum.UNDEFINED ||
-    type.type === TypeEnum.REGEX
-  );
-}
-
-export interface FunctionType {
-  type: TypeEnum.FUNCTION;
+export interface FunctionType extends ObjectType {
   // index -> id
   parameters: Map<number, string>;
   // id
   return: Set<string>;
 }
 
-export interface ArrayType {
-  type: TypeEnum.ARRAY;
+export interface ArrayType extends ObjectType {
   // index -> id
   elements: Map<number, string>;
 }
 
 export interface ObjectType {
-  type: TypeEnum.OBJECT;
   // name -> id
   properties: Map<string, string>;
 }

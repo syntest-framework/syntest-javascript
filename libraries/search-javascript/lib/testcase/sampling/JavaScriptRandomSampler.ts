@@ -55,7 +55,6 @@ import {
   ArrayType,
   FunctionType,
   ObjectType,
-  Type,
 } from "@syntest/analysis-javascript/lib/type/resolving/Type";
 
 export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
@@ -170,13 +169,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     name: string
   ): FunctionCall {
     const type_ = <FunctionType>(
-      this.rootContext
-        .getTypeModel()
-        .getRandomType(
-          this.incorporateExecutionInformation,
-          id,
-          TypeEnum.FUNCTION
-        )
+      this.rootContext.getTypeModel().getFunctionDescription(id)
     );
 
     const arguments_: Statement[] = this._sampleArguments(depth, type_);
@@ -227,13 +220,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       const action = constructor_[0];
 
       const type_ = <FunctionType>(
-        this.rootContext
-          .getTypeModel()
-          .getRandomType(
-            this.incorporateExecutionInformation,
-            action.id,
-            TypeEnum.FUNCTION
-          )
+        this.rootContext.getTypeModel().getFunctionDescription(action.id)
       );
 
       arguments_ = this._sampleArguments(depth, type_);
@@ -406,13 +393,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     className: string
   ): MethodCall {
     const type_ = <FunctionType>(
-      this.rootContext
-        .getTypeModel()
-        .getRandomType(
-          this.incorporateExecutionInformation,
-          id,
-          TypeEnum.FUNCTION
-        )
+      this.rootContext.getTypeModel().getFunctionDescription(id)
     );
 
     const arguments_: Statement[] = this._sampleArguments(depth, type_);
@@ -471,13 +452,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     className: string
   ): Setter {
     const type_ = <FunctionType>(
-      this.rootContext
-        .getTypeModel()
-        .getRandomType(
-          this.incorporateExecutionInformation,
-          id,
-          TypeEnum.FUNCTION
-        )
+      this.rootContext.getTypeModel().getFunctionDescription(id)
     );
 
     const arguments_: Statement[] = this._sampleArguments(depth, type_);
@@ -565,13 +540,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     objectName: string
   ): ObjectFunctionCall {
     const type_ = <FunctionType>(
-      this.rootContext
-        .getTypeModel()
-        .getRandomType(
-          this.incorporateExecutionInformation,
-          id,
-          TypeEnum.FUNCTION
-        )
+      this.rootContext.getTypeModel().getFunctionDescription(id)
     );
 
     const arguments_: Statement[] = this._sampleArguments(depth, type_);
@@ -593,13 +562,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     index: number
   ): Statement {
     const arrayType = <ArrayType>(
-      this.rootContext
-        .getTypeModel()
-        .getRandomType(
-          this.incorporateExecutionInformation,
-          arrayId,
-          TypeEnum.ARRAY
-        )
+      this.rootContext.getTypeModel().getArrayDescription(arrayId)
     );
 
     const element = arrayType.elements.get(index);
@@ -618,13 +581,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     property: string
   ): Statement {
     const objectType = <ObjectType>(
-      this.rootContext
-        .getTypeModel()
-        .getRandomType(
-          this.incorporateExecutionInformation,
-          objectId,
-          TypeEnum.OBJECT
-        )
+      this.rootContext.getTypeModel().getObjectDescription(objectId)
     );
 
     const value = objectType.properties.get(property);
@@ -636,7 +593,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   }
 
   sampleArgument(depth: number, id: string, name: string): Statement {
-    let chosenType: Type;
+    let chosenType: string;
 
     if (
       this.typeInferenceMode === "proportional" ||
@@ -653,13 +610,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       throw new Error("Invalid identifierDescription inference mode selected");
     }
 
-    switch (chosenType.type) {
-      case "function": {
-        return this.sampleArrowFunction(depth, id, name);
-      }
-      case "array": {
-        return this.sampleArray(depth, id, name);
-      }
+    switch (chosenType) {
       case "boolean": {
         return this.sampleBool(id, name);
       }
@@ -680,19 +631,26 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
         return this.sampleString(id, name);
       }
       default: {
-        // must be object
-        return this.sampleObject(depth, id, name);
+        // must be object/array/function
+        if (chosenType.endsWith("object")) {
+          return this.sampleObject(depth, id, name, chosenType);
+        } else if (chosenType.endsWith("array")) {
+          return this.sampleArray(depth, id, name, chosenType);
+        } else if (chosenType.endsWith("function")) {
+          return this.sampleArrowFunction(depth, id, name, chosenType);
+        }
       }
     }
+
+    throw new Error(`unknown type: ${chosenType}`);
   }
 
-  sampleObject(depth: number, id: string, name: string) {
-    const type = TypeEnum.OBJECT;
-    const typeObject = <ObjectType>(
-      this.rootContext
-        .getTypeModel()
-        .getRandomType(this.incorporateExecutionInformation, id, type)
-    );
+  sampleObject(depth: number, id: string, name: string, type: string) {
+    const typeObject = type.includes("<>")
+      ? this._rootContext
+          .getTypeModel()
+          .getObjectDescription(type.split("<>")[0])
+      : this._rootContext.getTypeModel().getObjectDescription(id);
 
     const object_: { [key: string]: Statement } = {};
 
@@ -703,13 +661,12 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     return new ObjectStatement(id, name, type, prng.uniqueId(), object_);
   }
 
-  sampleArray(depth: number, id: string, name: string) {
-    const type = TypeEnum.ARRAY;
-    const typeObject = <ArrayType>(
-      this.rootContext
-        .getTypeModel()
-        .getRandomType(this.incorporateExecutionInformation, id, type)
-    );
+  sampleArray(depth: number, id: string, name: string, type: string) {
+    const typeObject = type.includes("<>")
+      ? this._rootContext
+          .getTypeModel()
+          .getArrayDescription(type.split("<>")[0])
+      : this._rootContext.getTypeModel().getArrayDescription(id);
 
     const children: Statement[] = [];
 
@@ -739,14 +696,14 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   sampleArrowFunction(
     depth: number,
     id: string,
-    name: string
+    name: string,
+    type: string
   ): ArrowFunctionStatement {
-    const type = TypeEnum.FUNCTION;
-    const typeObject = <FunctionType>(
-      this.rootContext
-        .getTypeModel()
-        .getRandomType(this.incorporateExecutionInformation, id, type)
-    );
+    const typeObject = type.includes("<>")
+      ? this._rootContext
+          .getTypeModel()
+          .getFunctionDescription(type.split("<>")[0])
+      : this._rootContext.getTypeModel().getFunctionDescription(id);
 
     const parameters: string[] = [];
 
@@ -781,7 +738,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     return new ArrowFunctionStatement(
       id,
       name,
-      TypeEnum.FUNCTION,
+      type,
       prng.uniqueId(),
       parameters,
       this.sampleArgument(depth + 1, chosenReturn, "return")

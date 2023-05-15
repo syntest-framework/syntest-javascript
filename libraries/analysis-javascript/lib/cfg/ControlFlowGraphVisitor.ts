@@ -381,10 +381,16 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
       subVisitor._connectToParents(successExit);
     }
 
+    const name = path.has("id")
+      ? (<NodePath<t.Identifier>>path.get("id")).node.name
+      : path.has("key")
+      ? (<NodePath<t.Identifier>>path.get("key")).node.name
+      : "anonymous";
+
     this._functions.push(
       {
         id: this._getNodeId(path),
-        name: "id" in path.node ? path.node.id?.name : "anonymous",
+        name: name,
         graph: subVisitor.cfg.graph,
       },
       // sub functions within this function
