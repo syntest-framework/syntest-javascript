@@ -20,10 +20,7 @@ import * as chai from "chai";
 
 import { AbstractSyntaxTreeFactory } from "../../lib/ast/AbstractSyntaxTreeFactory";
 import { ControlFlowGraphVisitor } from "../../lib/cfg/ControlFlowGraphVisitor";
-import {
-  EdgeType,
-  contractControlFlowProgram,
-} from "../../../../../syntest-core/libraries/cfg";
+import { EdgeType, contractControlFlowProgram } from "@syntest/cfg";
 
 const expect = chai.expect;
 
