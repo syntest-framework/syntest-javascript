@@ -67,6 +67,7 @@
 		// 	"error",
 		// 	{ "vars": "all", "varsIgnorePattern": "^_", "args": "after-used", "argsIgnorePattern": "^_" }
 		// ],
-    "no-fallthrough": "off"
+    "no-fallthrough": "off",
+    "unicorn/expiring-todo-comments": "off"
   }
 }
