@@ -209,7 +209,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
    * @returns
    */
   private _createPlaceholderNode(path: NodePath<t.Node>): Node<t.Node> {
-    const id = `placeholder-${this._getNodeId(path)}`;
+    const id = `placeholder:::${this._getNodeId(path)}`;
     const location = this._getLocation(path);
     const node = new Node<t.Node>(
       id,
@@ -416,9 +416,9 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
       ((expression = path.get("expression")),
       expression.isAssignmentExpression())
     ) {
-      if (this._isSpecial(expression.get("right"))) {
-        expression.get("right").visit();
-      }
+      // if (this._isSpecial(expression.get("right"))) {
+      expression.get("right").visit();
+      // }
     } else if (this._isSpecial(path)) {
       path.traverse(this);
     }
@@ -451,9 +451,9 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
             throw new TypeError("Init is an array");
           }
 
-          if (this._isSpecial(init)) {
-            init.visit();
-          }
+          // if (this._isSpecial(init)) {
+          init.visit();
+          // }
         }
       }
     } else if (this._isSpecial(path)) {

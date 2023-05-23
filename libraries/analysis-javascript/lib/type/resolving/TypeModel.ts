@@ -17,7 +17,12 @@
  */
 
 import { prng } from "@syntest/search";
-import { ArrayType, FunctionType, ObjectType } from "./Type";
+import {
+  ObjectType,
+  arrayProperties,
+  functionProperties,
+  stringProperties,
+} from "./Type";
 import { TypeEnum } from "./TypeEnum";
 
 export class TypeModel {
@@ -37,8 +42,6 @@ export class TypeModel {
 
   // element -> object type
   private _objectTypeDescription: Map<string, ObjectType>;
-  private _arrayTypeDescription: Map<string, ArrayType>;
-  private _functionTypeDescription: Map<string, FunctionType>;
 
   constructor() {
     this._elements = new Set();
@@ -52,8 +55,6 @@ export class TypeModel {
     this._scoreHasChangedMap = new Map();
 
     this._objectTypeDescription = new Map();
-    this._arrayTypeDescription = new Map();
-    this._functionTypeDescription = new Map();
   }
 
   getObjectDescription(element: string): ObjectType {
@@ -62,41 +63,6 @@ export class TypeModel {
     }
 
     return this._objectTypeDescription.get(element);
-  }
-
-  getArrayDescription(element: string): ArrayType {
-    if (!this._arrayTypeDescription.has(element)) {
-      throw new Error(`Element ${element} does not have an array description`);
-    }
-
-    return this._arrayTypeDescription.get(element);
-  }
-
-  getFunctionDescription(element: string): FunctionType {
-    if (!this._functionTypeDescription.has(element)) {
-      throw new Error(
-        `Element ${element} does not have an function description`
-      );
-    }
-
-    return this._functionTypeDescription.get(element);
-  }
-
-  getComplexDescription(
-    element: string,
-    type: TypeEnum.ARRAY | TypeEnum.OBJECT | TypeEnum.FUNCTION
-  ) {
-    switch (type) {
-      case TypeEnum.ARRAY: {
-        return this.getArrayDescription(element);
-      }
-      case TypeEnum.OBJECT: {
-        return this.getObjectDescription(element);
-      }
-      case TypeEnum.FUNCTION: {
-        return this.getFunctionDescription(element);
-      }
-    }
   }
 
   addId(id: string) {
@@ -113,26 +79,20 @@ export class TypeModel {
 
     this._objectTypeDescription.set(id, {
       properties: new Map(),
-    });
-    this._arrayTypeDescription.set(id, {
-      properties: new Map(),
       elements: new Map(),
-    });
-    this._functionTypeDescription.set(id, {
-      properties: new Map(),
       parameters: new Map(),
       return: new Set(),
     });
 
-    this.addTypeScore(id, TypeEnum.NUMERIC, 0.01);
-    this.addTypeScore(id, TypeEnum.STRING, 0.01);
-    this.addTypeScore(id, TypeEnum.BOOLEAN, 0.01);
-    this.addTypeScore(id, TypeEnum.NULL, 0.01);
-    this.addTypeScore(id, TypeEnum.UNDEFINED, 0.01);
-    this.addTypeScore(id, TypeEnum.REGEX, 0.01);
-    this.addTypeScore(id, TypeEnum.OBJECT, 0.01);
-    this.addTypeScore(id, TypeEnum.ARRAY, 0.01);
-    this.addTypeScore(id, TypeEnum.FUNCTION, 0.01);
+    // this.addTypeScore(id, TypeEnum.NUMERIC, 0.01);
+    // this.addTypeScore(id, TypeEnum.STRING, 0.01);
+    // this.addTypeScore(id, TypeEnum.BOOLEAN, 0.01);
+    // this.addTypeScore(id, TypeEnum.NULL, 0.01);
+    // this.addTypeScore(id, TypeEnum.UNDEFINED, 0.01);
+    // this.addTypeScore(id, TypeEnum.REGEX, 0.01);
+    // this.addTypeScore(id, TypeEnum.OBJECT, 0.01);
+    // this.addTypeScore(id, TypeEnum.ARRAY, 0.01);
+    // this.addTypeScore(id, TypeEnum.FUNCTION, 0.01);
   }
 
   private _addRelationScore(id1: string, id2: string, score: number) {
@@ -166,38 +126,46 @@ export class TypeModel {
     const currentScore = this._elementTypeScoreMap.get(id).get(type);
 
     this._elementTypeScoreMap.get(id).set(type, currentScore + score);
-
     this._scoreHasChangedMap.set(id, true);
+
+    if (!this._typeExecutionScoreMap.get(id).has(type)) {
+      this._typeExecutionScoreMap.get(id).set(type, 0);
+    }
   }
 
-  addPropertyToFunctionType(element: string, property: string, id: string) {
-    this.addTypeScore(element, TypeEnum.FUNCTION);
-    this.getFunctionDescription(element).properties.set(property, id);
-  }
+  addProperty(element: string, property: string, id: string) {
+    // check if the property is from a string/array/function
 
-  addParameterToFunctionType(element: string, index: number, id: string) {
-    this.addTypeScore(element, TypeEnum.FUNCTION);
-    this.getFunctionDescription(element).parameters.set(index, id);
-  }
+    if (functionProperties.has(property)) {
+      this.addTypeScore(element, TypeEnum.FUNCTION);
+    }
 
-  addReturnToFunctionType(element: string, returnId: string) {
-    this.addTypeScore(element, TypeEnum.FUNCTION);
-    this.getFunctionDescription(element).return.add(returnId);
-  }
+    if (arrayProperties.has(property)) {
+      this.addTypeScore(element, TypeEnum.ARRAY);
+    }
 
-  addPropertyToArrayType(element: string, property: string, id: string) {
-    this.addTypeScore(element, TypeEnum.ARRAY);
-    this.getArrayDescription(element).properties.set(property, id);
-  }
+    if (stringProperties.has(property)) {
+      this.addTypeScore(element, TypeEnum.STRING);
+    }
 
-  addElementToArrayType(element: string, index: number, id: string) {
-    this.addTypeScore(element, TypeEnum.ARRAY);
-    this.getArrayDescription(element).elements.set(index, id);
-  }
-
-  addPropertyToObjectType(element: string, property: string, id: string) {
     this.addTypeScore(element, TypeEnum.OBJECT);
+
     this.getObjectDescription(element).properties.set(property, id);
+  }
+
+  addParameter(element: string, index: number, id: string) {
+    this.addTypeScore(element, TypeEnum.FUNCTION);
+    this.getObjectDescription(element).parameters.set(index, id);
+  }
+
+  addReturn(element: string, returnId: string) {
+    this.addTypeScore(element, TypeEnum.FUNCTION);
+    this.getObjectDescription(element).return.add(returnId);
+  }
+
+  addElement(element: string, index: number, id: string) {
+    this.addTypeScore(element, TypeEnum.ARRAY);
+    this.getObjectDescription(element).elements.set(index, id);
   }
 
   // TODO type should be TypeEnum?
@@ -215,10 +183,17 @@ export class TypeModel {
     this._typeExecutionScoreMap.get(id).set(type, currentScore + score);
 
     this._scoreHasChangedMap.set(id, true);
+
+    if (!this._elementTypeScoreMap.get(id).has(type)) {
+      this._elementTypeScoreMap.get(id).set(type, 0);
+    }
   }
 
   private _sum(iterable: Iterable<number>) {
-    return [...iterable].reduce((total, currentValue) => total + currentValue);
+    return [...iterable].reduce(
+      (total, currentValue) => total + currentValue,
+      0
+    );
   }
 
   /**
@@ -230,6 +205,7 @@ export class TypeModel {
    */
   getRandomType(
     incorporateExecutionScore: boolean,
+    randomTypeProbability: number,
     id: string,
     matchType?: TypeEnum
   ): string {
@@ -238,30 +214,20 @@ export class TypeModel {
       id
     );
 
-    // if (id.includes("/Users/dimitrist/Documents/git/syntest/syntest-javascript-benchmark/lodash/.internal/equalArrays.js:22:28")) {
-    //   const aggregatedProbabilities = new Map()
+    if (probabilities.size === 0 || prng.nextBoolean(randomTypeProbability)) {
+      return prng.pickOne([
+        TypeEnum.ARRAY,
+        TypeEnum.BOOLEAN,
+        TypeEnum.FUNCTION,
+        TypeEnum.NULL,
+        TypeEnum.NUMERIC,
+        TypeEnum.OBJECT,
+        TypeEnum.REGEX,
+        TypeEnum.STRING,
+        TypeEnum.UNDEFINED,
+      ]);
+    }
 
-    //   // eslint-disable-next-line prefer-const
-    //   for (let [key, value] of Object.entries(probabilities)) {
-    //     if (key.includes('<>')) {
-    //       key = key.split("<>")[1]
-    //     }
-
-    //     if (aggregatedProbabilities.has(key)) {
-    //       aggregatedProbabilities.set(key, 0)
-    //     }
-
-    //     aggregatedProbabilities.set(key, aggregatedProbabilities.get(key) + value)
-    //   }
-
-    //   console.log(incorporateExecutionScore)
-    //   console.log(id)
-    //   console.log(probabilities)
-    //   console.log(this._elementTypeScoreMap.get(id))
-    //   console.log(aggregatedProbabilities)
-    // }
-
-    // const probabilities = this._elementTypeProbabilityMap.get(element);
     let matchingTypes = [...probabilities.entries()];
     let totalProbability = 1;
 
@@ -292,17 +258,43 @@ export class TypeModel {
 
   getHighestProbabilityType(
     incorporateExecutionScore: boolean,
-    element: string
+    randomTypeProbability: number,
+    id: string,
+    matchType?: TypeEnum
   ): string {
-    // TODO fix the <> case
-    this.calculateProbabilitiesForElement(incorporateExecutionScore, element);
+    const probabilities = this.calculateProbabilitiesForElement(
+      incorporateExecutionScore,
+      id
+    );
 
-    const probabilities = this._elementTypeProbabilityMap.get(element);
+    if (probabilities.size === 0 || prng.nextBoolean(randomTypeProbability)) {
+      return prng.pickOne([
+        TypeEnum.ARRAY,
+        TypeEnum.BOOLEAN,
+        TypeEnum.FUNCTION,
+        TypeEnum.NULL,
+        TypeEnum.NUMERIC,
+        TypeEnum.OBJECT,
+        TypeEnum.REGEX,
+        TypeEnum.STRING,
+        TypeEnum.UNDEFINED,
+      ]);
+    }
 
-    let best: string = probabilities.keys().next().value;
+    let matchingTypes = probabilities;
 
-    for (const [type, probability] of probabilities.entries()) {
-      if (probability > probabilities.get(best)) {
+    if (matchType) {
+      matchingTypes = new Map(
+        [...matchingTypes.entries()].filter(([type]) =>
+          type.endsWith(matchType)
+        )
+      );
+    }
+
+    let best: string = matchingTypes.keys().next().value;
+
+    for (const [type, probability] of matchingTypes.entries()) {
+      if (probability > matchingTypes.get(best)) {
         best = type;
       }
     }
@@ -395,10 +387,6 @@ export class TypeModel {
         relationPairsVisited
       );
 
-      if (probabilityMapOfRelation.size === 0) {
-        throw new Error(`No probabilities for relation ${relation}`);
-      }
-
       for (const [type, probability] of probabilityMapOfRelation.entries()) {
         let finalType = type;
 
@@ -425,29 +413,31 @@ export class TypeModel {
     }
 
     // sanity check
-    const totalProbability = this._sum(probabilityMap.values());
+    // const totalProbability = this._sum(probabilityMap.values());
 
-    if (Math.abs(totalProbability - 1) > 0.0001) {
-      throw new Error(
-        `Total probability should be 1, but is ${totalProbability}`
-      );
-    }
+    // if (Math.abs(totalProbability - 1) > 0.0001) {
+    //   throw new Error(
+    //     `Total probability should be 1, but is ${totalProbability}`
+    //   );
+    // }
 
     // incorporate execution scores
     const executionScoreMap = this._typeExecutionScoreMap.get(id);
 
-    if (incorporateExecutionScore && executionScoreMap.size > 0) {
+    if (incorporateExecutionScore && executionScoreMap.size > 1) {
       let minValue = 0;
       for (const score of executionScoreMap.values()) {
         minValue = Math.min(minValue, score);
       }
 
       let totalScore = 0;
-      for (const type of typeScoreMap.keys()) {
+      for (const type of probabilityMap.keys()) {
         let score = executionScoreMap.has(type)
           ? executionScoreMap.get(type)
           : 0;
+
         score -= minValue;
+        score += 1;
         totalScore += score;
       }
 
@@ -460,11 +450,12 @@ export class TypeModel {
       }
 
       // incorporate execution score
-      for (const type of typeScoreMap.keys()) {
+      for (const type of probabilityMap.keys()) {
         let score = executionScoreMap.has(type)
           ? executionScoreMap.get(type)
           : 0;
         score -= minValue;
+        score += 1;
 
         const executionScoreDiscount = score / totalScore;
         const probability = probabilityMap.get(type);

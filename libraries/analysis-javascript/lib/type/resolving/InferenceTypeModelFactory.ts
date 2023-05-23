@@ -211,7 +211,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
 
         if (argumentId !== undefined) {
           this._typeModel.addRelationScore(relationId, argumentId);
-          this._typeModel.addReturnToFunctionType(functionId, argumentId);
+          this._typeModel.addReturn(functionId, argumentId);
         }
 
         break;
@@ -224,7 +224,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
 
         this._typeModel.addTypeScore(functionId, TypeEnum.FUNCTION);
 
-        const type = this._typeModel.getFunctionDescription(functionId);
+        const type = this._typeModel.getObjectDescription(functionId);
 
         // relation result is equal to return type of functionId
         for (const returnValueId of type.return) {
@@ -259,11 +259,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
               ? propertyElement.name
               : propertyElement.value;
 
-          this._typeModel.addPropertyToObjectType(
-            relationId,
-            propertyName,
-            propertyId
-          );
+          this._typeModel.addProperty(relationId, propertyName, propertyId);
         } else {
           // TODO what if the property is not an element (spread element for example)
         }
@@ -285,15 +281,11 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
             ? propertyElement.name
             : propertyElement.value;
 
-        this._typeModel.addPropertyToObjectType(
-          relationId,
-          propertyName,
-          functionId
-        );
+        this._typeModel.addProperty(relationId, propertyName, functionId);
 
         // create function type
         for (const [index, id] of parameters.entries()) {
-          this._typeModel.addParameterToFunctionType(functionId, index, id);
+          this._typeModel.addParameter(functionId, index, id);
         }
 
         break;
@@ -319,11 +311,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
             : propertyElement.value;
 
         // make object for the class
-        this._typeModel.addPropertyToObjectType(
-          classId,
-          propertyName,
-          propertyId
-        );
+        this._typeModel.addProperty(classId, propertyName, propertyId);
 
         // connect property to value
         if (valueId !== undefined) {
@@ -354,16 +342,12 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
             ? propertyElement.name
             : propertyElement.value;
 
-        this._typeModel.addPropertyToObjectType(
-          classId,
-          propertyName,
-          functionId
-        );
+        this._typeModel.addProperty(classId, propertyName, functionId);
 
         // TODO maybe not for setter / getter
         // make function for the method
         for (const [index, id] of parameters.entries()) {
-          this._typeModel.addParameterToFunctionType(functionId, index, id);
+          this._typeModel.addParameter(functionId, index, id);
         }
         break;
       }
@@ -374,7 +358,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         this._typeModel.addTypeScore(relationId, TypeEnum.ARRAY);
         // create array type
         for (const [index, id] of elements.entries()) {
-          this._typeModel.addElementToArrayType(relationId, index, id);
+          this._typeModel.addElement(relationId, index, id);
         }
 
         break;
@@ -423,7 +407,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         this._typeModel.addTypeScore(arrayOrObject, TypeEnum.ARRAY);
         this._typeModel.addTypeScore(arrayOrObject, TypeEnum.OBJECT);
 
-        const typeOfArray = this._typeModel.getArrayDescription(arrayOrObject);
+        const typeOfArray = this._typeModel.getObjectDescription(arrayOrObject);
 
         for (const id of typeOfArray.elements.values()) {
           // connect declarator to array element
@@ -446,7 +430,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
 
         this._typeModel.addTypeScore(array, TypeEnum.ARRAY);
 
-        const typeOfArray = this._typeModel.getArrayDescription(array);
+        const typeOfArray = this._typeModel.getObjectDescription(array);
 
         for (const id of typeOfArray.elements.values()) {
           // connect declarator to array element
@@ -483,7 +467,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
 
         // create array type
         for (const [index, id] of elements.entries()) {
-          this._typeModel.addElementToArrayType(relationId, index, id);
+          this._typeModel.addElement(relationId, index, id);
         }
 
         break;
@@ -520,7 +504,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         const [functionId, ...parameters] = involved;
 
         for (const [index, id] of parameters.entries()) {
-          this._typeModel.addParameterToFunctionType(functionId, index, id);
+          this._typeModel.addParameter(functionId, index, id);
         }
 
         // connect function to relation
@@ -563,11 +547,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
               ? propertyElement.name
               : propertyElement.value;
 
-          this._typeModel.addPropertyToObjectType(
-            objectId,
-            propertyName,
-            propertyId
-          );
+          this._typeModel.addProperty(objectId, propertyName, propertyId);
         }
 
         // we don't have to connect the relationid to the propertyId since they are equal already
@@ -634,7 +614,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
 
         this._typeModel.addTypeScore(argumentId, TypeEnum.FUNCTION);
 
-        const type_ = this._typeModel.getFunctionDescription(argumentId);
+        const type_ = this._typeModel.getObjectDescription(argumentId);
 
         for (const returnType of type_.return) {
           this._typeModel.addRelationScore(relationId, returnType);

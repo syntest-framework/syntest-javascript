@@ -1079,7 +1079,6 @@ describe("ControlFlowGraphVisitor test", () => {
 
     const cfg = contractControlFlowProgram(cfgHelper(source));
 
-    console.log(cfg.functions[0].graph);
     expect(cfg.functions);
   });
 
