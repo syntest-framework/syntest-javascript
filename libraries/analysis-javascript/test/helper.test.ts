@@ -20,5 +20,5 @@ import { setupLogger } from "@syntest/logging";
 before(() => {
   // Set up the test environment
   // ...
-  setupLogger("", [], "silly");
+  setupLogger("", [], "debug");
 });

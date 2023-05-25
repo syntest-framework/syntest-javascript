@@ -433,8 +433,7 @@ describe("TargetVisitor test", () => {
         const x = {}
         x[y] = function name1() {}
         `;
-
-    expect(() => targetHelper(source)).throw();
+    expect(targetHelper(source)).to.deep.equal([]);
   });
 
   it("FunctionExpression: assignment memberexpression", () => {
