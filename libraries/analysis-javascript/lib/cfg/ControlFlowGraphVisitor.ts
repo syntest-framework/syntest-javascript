@@ -34,6 +34,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected static override LOGGER: any;
 
+  private _nodesList: Node<t.Node>[];
   private _nodes: Map<string, Node<t.Node>>;
   private _edges: Edge[];
 
@@ -56,6 +57,10 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     }
     if (!this._nodes.has("ERROR_EXIT")) {
       throw new Error("No error exit node found");
+    }
+
+    if (this._nodesList.length !== this._nodes.size) {
+      throw new Error("Number of nodes dont match");
     }
 
     const entryNode = this._nodes.get("ENTRY");
@@ -115,6 +120,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     super(filePath);
     ControlFlowGraphVisitor.LOGGER = getLogger("ControlFlowGraphVisitor");
 
+    this._nodesList = [];
     this._nodes = new Map<string, Node<t.Node>>();
     this._edges = [];
 
@@ -148,6 +154,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     this._nodes.set(entry.id, entry);
     this._nodes.set(successExit.id, successExit);
     this._nodes.set(errorExit.id, errorExit);
+    this._nodesList.push(entry, successExit, errorExit);
 
     this._currentParents = [entry.id];
   }
@@ -199,6 +206,8 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
       path.node.type
     );
     this._nodes.set(id, node);
+    this._nodesList.push(node);
+
     return node;
   }
 
@@ -209,7 +218,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
    * @returns
    */
   private _createPlaceholderNode(path: NodePath<t.Node>): Node<t.Node> {
-    const id = `placeholder:::${this._getNodeId(path)}`;
+    const id = `placeholder-${this._getNodeId(path)}`;
     const location = this._getLocation(path);
     const node = new Node<t.Node>(
       id,
@@ -238,6 +247,8 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
       path.node.type
     );
     this._nodes.set(id, node);
+    this._nodesList.push(node);
+
     return node;
   }
 
@@ -514,31 +525,19 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     this._breakNodesStack.push(new Set());
     this._continueNodesStack.push(new Set());
 
+    const size = this._nodesList.length;
     // body
     path.get("body").visit();
 
-    // get first node of body
-    // kinda stupid way to do it but it works for now
-    const firstBodyNodeKey = [...this._nodes.keys()]
-      // cannot be entry, success exit or error exit
-      .filter(
-        (id) => id !== "ENTRY" && id !== "SUCCESS_EXIT" && id !== "ERROR_EXIT"
-      )
-      // id should be greater than the id of the loop node
-      .filter((id) => id > this._getNodeId(path))
-      // sort by id and take the first
-      .sort()[0];
-
-    let firstBodyNode;
-    if (firstBodyNodeKey === undefined) {
+    let firstBodyNode = this._nodesList[size];
+    if (firstBodyNode === undefined) {
+      // should never happen since we always add the block node
       // empty body
       // create placeholder node
       const placeholderNode = this._createPlaceholderNode(path);
       this._connectToParents(placeholderNode);
       this._currentParents = [placeholderNode.id];
       firstBodyNode = placeholderNode;
-    } else {
-      firstBodyNode = this._nodes.get(firstBodyNodeKey);
     }
 
     // loop

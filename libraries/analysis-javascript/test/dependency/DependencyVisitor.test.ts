@@ -97,7 +97,7 @@ describe("TargetVisitor test", () => {
         const name1 = require(x);
       `;
 
-    expect(() => dependencyHelper(source)).throw();
+    expect(dependencyHelper(source)).to.deep.equal(new Set());
   });
 
   it("basic dynamic import default computed", () => {
@@ -105,7 +105,7 @@ describe("TargetVisitor test", () => {
         const name1 = import(x);
       `;
 
-    expect(() => dependencyHelper(source)).throw();
+    expect(dependencyHelper(source)).to.deep.equal(new Set());
   });
 
   it("basic dynamic import default computed", () => {
