@@ -216,6 +216,10 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
       {},
       path.node.type
     );
+
+    if (this._nodes.has(id)) {
+      throw new Error(`Node already registered ${id}`);
+    }
     this._nodes.set(id, node);
     this._nodesList.push(node);
 
@@ -257,6 +261,10 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
       {},
       path.node.type
     );
+
+    if (this._nodes.has(id)) {
+      throw new Error(`Node already registered ${id}`);
+    }
     this._nodes.set(id, node);
     this._nodesList.push(node);
 
@@ -605,7 +613,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     if (beforeSize === this._nodes.size) {
       // empty body
       // create placeholder node
-      const placeholderNode = this._createPlaceholderNode(path);
+      const placeholderNode = this._createPlaceholderNode(path.get("body"));
       this._connectToParents(placeholderNode);
       this._currentParents = [placeholderNode.id];
     }
@@ -697,7 +705,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     if (beforeSize === this._nodes.size) {
       // empty body
       // create placeholder node
-      const placeholderNode = this._createPlaceholderNode(path);
+      const placeholderNode = this._createPlaceholderNode(path.get("body"));
       this._connectToParents(placeholderNode);
       this._currentParents = [placeholderNode.id];
     }
@@ -774,7 +782,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     if (beforeSize === this._nodes.size) {
       // empty body
       // create placeholder node
-      const placeholderNode = this._createPlaceholderNode(path);
+      const placeholderNode = this._createPlaceholderNode(path.get("body"));
       this._connectToParents(placeholderNode);
       this._currentParents = [placeholderNode.id];
     }
