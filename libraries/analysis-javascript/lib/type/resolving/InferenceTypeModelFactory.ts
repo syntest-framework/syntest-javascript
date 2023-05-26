@@ -333,22 +333,26 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
           );
         }
 
-        const [classId, functionId, ...parameters] = involved;
+        const [, functionId, ...parameters] = involved;
+        // const [classId, functionId, ...parameters] = involved;
 
-        // TODO what if the function id is not an element
-        const propertyElement = this.getElement(functionId);
-        const propertyName =
-          "name" in propertyElement
-            ? propertyElement.name
-            : propertyElement.value;
+        // TODO the following does not work because the element refers to the identifier of the method
+        // BUT we do not record the ids as such we actually record the id of the entire function
+        // // TODO what if the function id is not an element
+        // const propertyElement = this.getElement(functionId);
+        // const propertyName =
+        //   "name" in propertyElement
+        //     ? propertyElement.name
+        //     : propertyElement.value;
 
-        this._typeModel.addProperty(classId, propertyName, functionId);
+        // this._typeModel.addProperty(classId, propertyName, functionId);
 
         // TODO maybe not for setter / getter
         // make function for the method
         for (const [index, id] of parameters.entries()) {
           this._typeModel.addParameter(functionId, index, id);
         }
+
         break;
       }
 

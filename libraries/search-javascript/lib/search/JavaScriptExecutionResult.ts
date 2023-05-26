@@ -81,6 +81,12 @@ export class JavaScriptExecutionResult implements ExecutionResult {
     const trace = this._traces.find((trace) => trace.id === id);
 
     if (!trace) {
+      if (id.startsWith("placeholder")) {
+        // TODO stupit hack because the placeholder nodes we add in the cfg are not being registred by the instrumentation
+        // should fix
+        return false;
+      }
+
       throw new Error(
         `Could not find a matching trace for the given id: ${id}`
       );
