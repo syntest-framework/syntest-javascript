@@ -44,6 +44,7 @@ describe("ControlFlowGraphVisitor test", () => {
 
     const cfg = cfgHelper(source);
 
+    console.log(cfg.graph);
     expect(cfg.graph.nodes).to.have.lengthOf(7);
     expect(cfg.graph.edges).to.have.lengthOf(5);
 

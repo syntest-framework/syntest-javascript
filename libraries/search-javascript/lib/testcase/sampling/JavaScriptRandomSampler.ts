@@ -560,6 +560,18 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
     const childIds = [...arrayType.elements.values()];
 
+    if (childIds.length === 0) {
+      // TODO should be done in the typemodel somehow
+      // maybe create types for the subproperties by doing /main/array/id::1::1[element-index]
+      // maybe create types for the subproperties by doing /main/array/id::1::1.property
+      return this.sampleString(
+        "anon",
+        "anon",
+        this.stringAlphabet,
+        this.stringMaxLength
+      );
+    }
+
     return this.sampleArgument(depth, prng.pickOne(childIds), String(index));
   }
 

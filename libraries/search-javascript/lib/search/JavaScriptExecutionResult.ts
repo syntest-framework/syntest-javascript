@@ -78,7 +78,15 @@ export class JavaScriptExecutionResult implements ExecutionResult {
    * @inheritDoc
    */
   public coversId(id: string): boolean {
-    return !!this._traces.some((trace) => trace.id === id && trace.hits > 0);
+    const trace = this._traces.find((trace) => trace.id === id);
+
+    if (!trace) {
+      throw new Error(
+        `Could not find a matching trace for the given id: ${id}`
+      );
+    }
+
+    return trace.hits > 0;
   }
 
   /**
@@ -90,7 +98,7 @@ export class JavaScriptExecutionResult implements ExecutionResult {
         (trace.type === "statement" ||
           trace.type === "function" ||
           trace.type === "branch") && // this line is needed for branches with no control dependent statements
-        trace.line === line &&
+        trace.location.start.line === line &&
         trace.hits > 0
       )
         return true;
