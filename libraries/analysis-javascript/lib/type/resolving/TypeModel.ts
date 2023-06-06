@@ -214,6 +214,9 @@ export class TypeModel {
       id
     );
 
+    console.log(id.split("<->").join("\n\t"));
+    console.log(probabilities);
+
     if (probabilities.size === 0 || prng.nextBoolean(randomTypeProbability)) {
       return prng.pickOne([
         TypeEnum.ARRAY,
@@ -413,13 +416,14 @@ export class TypeModel {
     }
 
     // sanity check
-    // const totalProbability = this._sum(probabilityMap.values());
+    const totalProbability = this._sum(probabilityMap.values());
 
-    // if (Math.abs(totalProbability - 1) > 0.0001) {
-    //   throw new Error(
-    //     `Total probability should be 1, but is ${totalProbability}`
-    //   );
-    // }
+    if (probabilityMap.size > 0 && Math.abs(totalProbability - 1) > 0.0001) {
+      console.log(probabilityMap);
+      throw new Error(
+        `Total probability should be 1, but is ${totalProbability}`
+      );
+    }
 
     // incorporate execution scores
     const executionScoreMap = this._typeExecutionScoreMap.get(id);
