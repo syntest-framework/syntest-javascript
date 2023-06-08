@@ -1,0 +1,14 @@
+{
+  "deepLink": true,
+  "packages": [
+    "../../../syntest-core/libraries/analysis",
+    "../../../syntest-core/libraries/cfg",
+    "../../../syntest-core/libraries/cli-graphics",
+    "../../../syntest-core/libraries/logging",
+    "../../../syntest-core/libraries/metric",
+    "../../../syntest-core/libraries/module",
+    "../../../syntest-core/libraries/search",
+    "../../../syntest-core/tools/base-language",
+    "../../../syntest-core/tools/cli"
+  ]
+}
