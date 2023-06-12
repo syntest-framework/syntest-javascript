@@ -112,7 +112,7 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     const decodedTestCase = this.decoder.decode(testCase, subject.name, false);
 
     const testPath = this.storageManager.store(
-      this.tempTestDirectory,
+      [this.tempTestDirectory],
       "tempTest.spec.js",
       decodedTestCase,
       true
@@ -287,7 +287,7 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
 
     // Remove test file
     this.storageManager.deleteTemporary(
-      this.tempTestDirectory,
+      [this.tempTestDirectory],
       "tempTest.spec.js"
     );
 
