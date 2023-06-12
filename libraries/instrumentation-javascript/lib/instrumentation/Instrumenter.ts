@@ -44,7 +44,10 @@ export class Instrumenter {
       path.basename(absoluteRootPath)
     );
     // copy everything
-    storageManager.copyToTemporaryDirectory(absoluteRootPath, destinationPath);
+    storageManager.copyToTemporaryDirectory(
+      [absoluteRootPath],
+      [...destinationPath.split(path.sep)]
+    );
 
     // overwrite the stuff that needs instrumentation
 
@@ -61,7 +64,12 @@ export class Instrumenter {
       const directory = path.dirname(_path);
       const file = path.basename(_path);
 
-      storageManager.store(directory, file, instrumentedSource, true);
+      storageManager.store(
+        [...directory.split(path.sep)],
+        file,
+        instrumentedSource,
+        true
+      );
     }
   }
 

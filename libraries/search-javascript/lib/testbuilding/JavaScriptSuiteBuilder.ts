@@ -68,7 +68,7 @@ export class JavaScriptSuiteBuilder {
           sourceDirectory
         );
         const testPath = this.storageManager.store(
-          testDirectory,
+          [testDirectory],
           `test-${key}.spec.js`,
           decodedTest,
           !final
@@ -85,7 +85,7 @@ export class JavaScriptSuiteBuilder {
             sourceDirectory
           );
           const testPath = this.storageManager.store(
-            testDirectory,
+            [testDirectory],
             `test${key}${testCase.id}.spec.js`,
             decodedTest,
             !final
@@ -135,12 +135,14 @@ export class JavaScriptSuiteBuilder {
         continue;
       }
 
-      const temporaryLogDirectory = path.join(
+      this.storageManager.clearTemporaryDirectory([
         this.tempLogDirectory,
-        testCase.id
-      );
-      this.storageManager.clearTemporaryDirectory(temporaryLogDirectory);
-      this.storageManager.deleteTemporaryDirectory(temporaryLogDirectory);
+        testCase.id,
+      ]);
+      this.storageManager.deleteTemporaryDirectory([
+        this.tempLogDirectory,
+        testCase.id,
+      ]);
 
       testCase.assertions = assertions;
     }

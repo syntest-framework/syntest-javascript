@@ -123,24 +123,24 @@ export class JavaScriptLauncher extends Launcher {
     initializePseudoRandomNumberGenerator(this.arguments_.randomSeed);
 
     this.storageManager.deleteTemporaryDirectories([
-      this.arguments_.testDirectory,
-      this.arguments_.logDirectory,
-      this.arguments_.instrumentedDirectory,
+      [this.arguments_.testDirectory],
+      [this.arguments_.logDirectory],
+      [this.arguments_.instrumentedDirectory],
     ]);
 
     JavaScriptLauncher.LOGGER.info("Creating directories");
     this.storageManager.createDirectories([
-      this.arguments_.testDirectory,
-      this.arguments_.statisticsDirectory,
-      this.arguments_.logDirectory,
+      [this.arguments_.testDirectory],
+      [this.arguments_.statisticsDirectory],
+      [this.arguments_.logDirectory],
     ]);
 
     JavaScriptLauncher.LOGGER.info("Creating temp directories");
     this.storageManager.createDirectories(
       [
-        this.arguments_.testDirectory,
-        this.arguments_.logDirectory,
-        this.arguments_.instrumentedDirectory,
+        [this.arguments_.testDirectory],
+        [this.arguments_.logDirectory],
+        [this.arguments_.instrumentedDirectory],
       ],
       true
     );
@@ -433,7 +433,9 @@ export class JavaScriptLauncher extends Launcher {
     await suiteBuilder.runSuite(paths);
 
     // reset states
-    this.storageManager.clearTemporaryDirectory(this.arguments_.testDirectory);
+    this.storageManager.clearTemporaryDirectory([
+      this.arguments_.testDirectory,
+    ]);
 
     // run with assertions and report results
     for (const key of reducedArchive.keys()) {
@@ -714,7 +716,9 @@ export class JavaScriptLauncher extends Launcher {
       populationSize: this.arguments_.populationSize,
     });
 
-    this.storageManager.clearTemporaryDirectory(this.arguments_.testDirectory);
+    this.storageManager.clearTemporaryDirectory([
+      this.arguments_.testDirectory,
+    ]);
 
     // allocate budget manager
     const iterationBudget = new IterationBudget(this.arguments_.iterations);
@@ -758,8 +762,10 @@ export class JavaScriptLauncher extends Launcher {
       this.coveredInPath.set(target.path, archive);
     }
 
-    this.storageManager.clearTemporaryDirectory(this.arguments_.logDirectory);
-    this.storageManager.clearTemporaryDirectory(this.arguments_.testDirectory);
+    this.storageManager.clearTemporaryDirectory([this.arguments_.logDirectory]);
+    this.storageManager.clearTemporaryDirectory([
+      this.arguments_.testDirectory,
+    ]);
 
     JavaScriptLauncher.LOGGER.info(
       `Finished testing target ${target.name} in ${target.path}`
@@ -773,9 +779,11 @@ export class JavaScriptLauncher extends Launcher {
     // Finish
     JavaScriptLauncher.LOGGER.info("Deleting temporary directories");
     this.storageManager.deleteTemporaryDirectories([
-      this.arguments_.testDirectory,
-      this.arguments_.logDirectory,
-      this.arguments_.instrumentedDirectory,
+      [this.arguments_.testDirectory],
+      [this.arguments_.logDirectory],
+      [this.arguments_.instrumentedDirectory],
     ]);
+
+    this.storageManager.deleteMainTemporary();
   }
 }
