@@ -17,10 +17,9 @@
  */
 
 import { existsSync, lstatSync } from "node:fs";
-import * as path from "node:path";
 
 import * as t from "@babel/types";
-import { RootContext as CoreRootContext } from "@syntest/analysis";
+import { RootContext as CoreRootContext, Events } from "@syntest/analysis";
 
 import { AbstractSyntaxTreeFactory } from "./ast/AbstractSyntaxTreeFactory";
 import { ControlFlowGraphFactory } from "./cfg/ControlFlowGraphFactory";
@@ -35,6 +34,7 @@ import { TypeModel } from "./type/resolving/TypeModel";
 import { Element } from "./type/discovery/element/Element";
 import { DiscoveredObjectType } from "./type/discovery/object/DiscoveredType";
 import { Relation } from "./type/discovery/relation/Relation";
+import TypedEmitter from "typed-emitter";
 
 export class RootContext extends CoreRootContext<t.Node> {
   protected _exportFactory: ExportFactory;
@@ -82,35 +82,47 @@ export class RootContext extends CoreRootContext<t.Node> {
   // TODO something with the types
 
   override getSource(filePath: string) {
-    let absoluteTargetPath = this.resolvePath(filePath);
+    let absolutePath = this.resolvePath(filePath);
 
-    if (!this._sources.has(absoluteTargetPath)) {
-      if (!existsSync(absoluteTargetPath)) {
-        if (existsSync(absoluteTargetPath + ".js")) {
-          absoluteTargetPath += ".js";
-        } else if (existsSync(absoluteTargetPath + ".ts")) {
-          absoluteTargetPath += ".ts";
+    (<TypedEmitter<Events>>process).emit(
+      "sourceResolvingStart",
+      this,
+      absolutePath
+    );
+
+    if (!this._sources.has(absolutePath)) {
+      if (!existsSync(absolutePath)) {
+        if (existsSync(absolutePath + ".js")) {
+          absolutePath += ".js";
+        } else if (existsSync(absolutePath + ".ts")) {
+          absolutePath += ".ts";
         } else {
-          throw new Error("Cannot find source: " + absoluteTargetPath);
+          throw new Error("Cannot find source: " + absolutePath);
         }
       }
 
-      const stats = lstatSync(absoluteTargetPath);
+      const stats = lstatSync(absolutePath);
 
       if (stats.isDirectory()) {
-        if (existsSync(absoluteTargetPath + "/index.js")) {
-          absoluteTargetPath += "/index.js";
-        } else if (existsSync(absoluteTargetPath + "/index.ts")) {
-          absoluteTargetPath += "/index.ts";
+        if (existsSync(absolutePath + "/index.js")) {
+          absolutePath += "/index.js";
+        } else if (existsSync(absolutePath + "/index.ts")) {
+          absolutePath += "/index.ts";
         } else {
-          throw new Error("Cannot find source: " + absoluteTargetPath);
+          throw new Error("Cannot find source: " + absolutePath);
         }
       }
 
-      this._sources.set(absoluteTargetPath, readFile(absoluteTargetPath));
+      this._sources.set(absolutePath, readFile(absolutePath));
+      (<TypedEmitter<Events>>process).emit(
+        "sourceResolvingComplete",
+        this,
+        absolutePath,
+        this._sources.get(absolutePath)
+      );
     }
 
-    return this._sources.get(absoluteTargetPath);
+    return this._sources.get(absolutePath);
   }
 
   getExports(filePath: string): Export[] {

@@ -18,6 +18,8 @@
 
 import * as path from "node:path";
 
+import { Events } from "@syntest/base-language";
+
 import { Archive } from "@syntest/search";
 import { InstrumentationData } from "@syntest/instrumentation-javascript";
 import cloneDeep = require("lodash.clonedeep");
@@ -29,6 +31,7 @@ import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
 import { JavaScriptDecoder } from "./JavaScriptDecoder";
 import { StorageManager } from "@syntest/storage";
 import { readdirSync, readFileSync } from "node:fs";
+import TypedEmitter from "typed-emitter";
 
 export class JavaScriptSuiteBuilder {
   private storageManager: StorageManager;
@@ -60,9 +63,9 @@ export class JavaScriptSuiteBuilder {
 
     // write the test cases with logs to know what to assert
     if (compact) {
-      for (const key of archive.keys()) {
+      for (const [key, encodings] of archive.entries()) {
         const decodedTest = this.decoder.decode(
-          archive.get(key),
+          encodings,
           `${key}`,
           addLogs,
           sourceDirectory
@@ -74,22 +77,42 @@ export class JavaScriptSuiteBuilder {
           !final
         );
         paths.push(testPath);
+
+        if (final) {
+          for (const encoding of encodings) {
+            (<TypedEmitter<Events>>process).emit(
+              "testCaseFinal",
+              encoding,
+              testPath,
+              decodedTest
+            );
+          }
+        }
       }
     } else {
       for (const key of archive.keys()) {
-        for (const testCase of archive.get(key)) {
+        for (const encoding of archive.get(key)) {
           const decodedTest = this.decoder.decode(
-            testCase,
+            encoding,
             "",
             addLogs,
             sourceDirectory
           );
           const testPath = this.storageManager.store(
             [testDirectory],
-            `test${key}${testCase.id}.spec.js`,
+            `test${key}${encoding.id}.spec.js`,
             decodedTest,
             !final
           );
+
+          if (final) {
+            (<TypedEmitter<Events>>process).emit(
+              "testCaseFinal",
+              encoding,
+              testPath,
+              decodedTest
+            );
+          }
 
           paths.push(testPath);
         }
