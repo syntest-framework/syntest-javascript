@@ -107,7 +107,7 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
             this.tempLogDirectory,
             testCase.id,
             "error"
-          )}', '' + count + '\\n' + e)`,
+          )}', '' + count)`, // TODO we could add the error here and assert that that is the error message we expect
           "}"
         );
       }
