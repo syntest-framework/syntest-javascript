@@ -95,7 +95,7 @@ export class FunctionCall extends RootStatement {
 
     if (options.addLogs) {
       const logDirectory = decoder.getLogDirectory(id, this.varName);
-      decoded += `\nawait fs.writeFileSync('${logDirectory}', '' + ${this.varName} + ';sep;' + JSON.stringify(${this.varName}))`;
+      decoded += `\nawait fs.writeFileSync('${logDirectory}', '' + ';sep;' + JSON.stringify(${this.varName}))`;
     }
 
     return [
