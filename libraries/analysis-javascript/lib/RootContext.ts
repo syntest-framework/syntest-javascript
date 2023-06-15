@@ -17,7 +17,6 @@
  */
 
 import { existsSync, lstatSync } from "node:fs";
-import * as path from "node:path";
 
 import * as t from "@babel/types";
 import { RootContext as CoreRootContext } from "@syntest/analysis";
