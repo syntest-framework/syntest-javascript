@@ -380,23 +380,9 @@ export class VisitState {
           T.stringLiteral("variables"),
           T.ObjectExpression([
             ...variables
-              .filter((v, i, a) => a.indexOf(v) === i)
-              .map((v) => {
-                if (v.includes(".")) {
-                  const split = v.split(".");
-
-                  return T.objectProperty(
-                    T.stringLiteral(v),
-                    T.optionalMemberExpression(
-                      T.identifier(split[0]),
-                      T.identifier(split[1]),
-                      false,
-                      true
-                    )
-                  );
-                } else {
-                  return T.objectProperty(T.stringLiteral(v), T.identifier(v));
-                }
+              .filter((v, i, a) => a.indexOf(v) === i) // remove duplicates
+              .map(([stringForm, ast]) => {
+                return T.objectProperty(T.stringLiteral(stringForm), ast);
               }),
           ])
         ),

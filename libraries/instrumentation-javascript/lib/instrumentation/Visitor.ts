@@ -244,6 +244,36 @@ function convertArrowExpression(path) {
   }
 }
 
+function extractVariablesFromTest(test) {
+  const variables = [];
+  test.traverse(
+    {
+      Identifier: {
+        enter: (p) => {
+          variables.push([p.node.name, p.node]);
+        },
+      },
+      CallExpression: {
+        enter: (p) => {
+          // calls and such are possible but are problamatic because they could have side effects changing the behaviour
+          variables.push([p.getSource(), p.node]);
+          p.skip();
+        },
+      },
+      MemberExpression: {
+        enter: (p) => {
+          variables.push([p.getSource(), p.node]);
+          p.skip();
+        },
+      },
+      // calls and such are possible but are problamatic because they could have side effects changing the behaviour
+    },
+    test
+  );
+
+  return variables;
+}
+
 function coverIfBranches(path) {
   const n = path.node;
   const hint = this.hintFor(n);
@@ -264,37 +294,12 @@ function coverIfBranches(path) {
 
   const T = this.types;
   const test = path.get("test");
-  const variables = [];
-  test.traverse(
-    {
-      Identifier: {
-        enter: (p) => {
-          if (p.parent.type === "MemberExpression") {
-            return;
-          }
-          variables.push(p.node.name);
-        },
-      },
-      MemberExpression: {
-        enter: (p) => {
-          // calls and such are possible but are problamatic because they could have side effects changing the behaviour
-          if (
-            p.node.object.type === "Identifier" &&
-            p.node.property.type === "Identifier"
-          ) {
-            variables.push(p.getSource());
-          }
-        },
-      },
-      // calls and such are possible but are problamatic because they could have side effects changing the behaviour
-    },
-    test
-  );
+
   const metaTracker = this.getBranchMetaTracker(
     branch,
     test.node,
     test.getSource(),
-    variables
+    extractVariablesFromTest(test)
   );
   path.insertBefore(T.expressionStatement(metaTracker));
 }
@@ -325,39 +330,12 @@ function coverLoopBranch(path) {
   });
 
   const test = path.get("test");
-  const variables = [];
-  test.traverse(
-    {
-      Identifier: {
-        enter: (p) => {
-          if (p.parent.type === "MemberExpression") {
-            return;
-          }
-          if (justDefinedVariables.includes(p.node.name)) {
-            return;
-          }
-          variables.push(p.node.name);
-        },
-      },
-      MemberExpression: {
-        enter: (p) => {
-          // calls and such are possible but are problamatic because they could have side effects changing the behaviour
-          if (
-            p.node.object.type === "Identifier" &&
-            p.node.property.type === "Identifier"
-          ) {
-            variables.push(p.getSource());
-          }
-        },
-      },
-    },
-    test
-  );
+
   const metaTracker = this.getBranchMetaTracker(
     branch,
     test.node,
     test.getSource(),
-    variables
+    extractVariablesFromTest(test)
   );
   path.insertBefore(T.expressionStatement(metaTracker));
 }
@@ -393,36 +371,12 @@ function coverTernary(path) {
 
   const T = this.types;
   const test = path.get("test");
-  const variables = [];
-  test.traverse(
-    {
-      Identifier: {
-        enter: (p) => {
-          if (p.parent.type === "MemberExpression") {
-            return;
-          }
-          variables.push(p.node.name);
-        },
-      },
-      MemberExpression: {
-        enter: (p) => {
-          // calls and such are possible but are problamatic because they could have side effects changing the behaviour
-          if (
-            p.node.object.type === "Identifier" &&
-            p.node.property.type === "Identifier"
-          ) {
-            variables.push(p.getSource());
-          }
-        },
-      },
-    },
-    test
-  );
+
   const metaTracker = this.getBranchMetaTracker(
     branch,
     test.node,
     test.getSource(),
-    variables
+    extractVariablesFromTest(test)
   );
   // path.parentPath.insertBefore(metaTracker)
   // path.replaceWith(T.sequenceExpression([metaTracker, path.node]))
