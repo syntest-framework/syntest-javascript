@@ -472,10 +472,9 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
 
     let firstBodyNode = this._nodesList[size];
     if (firstBodyNode === undefined) {
-      // should never happen since we always add the block node
       // empty body
       // create placeholder node
-      const placeholderNode = this._createPlaceholderNode(path);
+      const placeholderNode = this._createPlaceholderNode(path.get("body"));
       this._connectToParents(placeholderNode);
       this._currentParents = [placeholderNode.id];
       firstBodyNode = placeholderNode;
@@ -549,7 +548,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     if (beforeSize === this._nodes.size) {
       // empty body
       // create placeholder node
-      const placeholderNode = this._createPlaceholderNode(path);
+      const placeholderNode = this._createPlaceholderNode(path.get("body"));
       this._connectToParents(placeholderNode);
       this._currentParents = [placeholderNode.id];
     }
