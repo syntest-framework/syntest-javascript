@@ -254,12 +254,36 @@ function coverIfBranches(path) {
   if (ignoreIf) {
     this.setAttr(n.consequent, "skip-all", true);
   } else {
-    this.insertBranchCounter(path, path.get("consequent"), branch, n.loc);
+    if (path.get("consequent").isBlockStatement()) {
+      if (path.get("consequent").has("body")) {
+        this.insertBranchCounter(
+          path,
+          path.get("consequent").get("body")[0],
+          branch
+        );
+      } else {
+        this.insertBranchCounter(path, path.get("consequent"), branch, true);
+      }
+    } else {
+      this.insertBranchCounter(path, path.get("consequent"), branch);
+    }
   }
   if (ignoreElse) {
     this.setAttr(n.alternate, "skip-all", true);
   } else {
-    this.insertBranchCounter(path, path.get("alternate"), branch);
+    if (path.get("alternate").isBlockStatement()) {
+      if (path.get("alternate").has("body")) {
+        this.insertBranchCounter(
+          path,
+          path.get("alternate").get("body")[0],
+          branch
+        );
+      } else {
+        this.insertBranchCounter(path, path.get("alternate"), branch, true);
+      }
+    } else {
+      this.insertBranchCounter(path, path.get("alternate"), branch);
+    }
   }
 
   const T = this.types;
