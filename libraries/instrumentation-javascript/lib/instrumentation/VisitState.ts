@@ -381,8 +381,11 @@ export class VisitState {
           T.ObjectExpression([
             ...variables
               .filter((v, i, a) => a.indexOf(v) === i) // remove duplicates
-              .map(([stringForm, ast]) => {
-                return T.objectProperty(T.stringLiteral(stringForm), ast);
+              .map(([source, identifier]) => {
+                return T.objectProperty(
+                  T.stringLiteral(source),
+                  T.identifier(identifier)
+                );
               }),
           ])
         ),
@@ -400,11 +403,11 @@ export class VisitState {
     ];
   }
 
-  insertBranchCounter(ifPath, path, branchName, loc) {
+  insertBranchCounter(ifPath, path, branchName, placeholder = false) {
     const increment = this.getBranchIncrement(
       ifPath,
       branchName,
-      loc || path.node.loc
+      placeholder ? undefined : path.node.loc
     );
 
     this.insertCounter(path, increment);

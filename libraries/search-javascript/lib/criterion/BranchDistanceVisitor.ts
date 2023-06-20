@@ -550,6 +550,9 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
    * @returns
    */
   private _normalize(x: number): number {
+    if (Number.isNaN(x)) {
+      return 0.999;
+    }
     // return 1 - Math.pow(1.001, -x)
     return x / (x + 1);
   }
