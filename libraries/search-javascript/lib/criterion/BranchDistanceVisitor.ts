@@ -461,7 +461,7 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
         } else {
           // TODO do this for strings maybe
           // cannot compare types
-          value = leftValue > rightValue ? 0 : 1;
+          value = leftValue > rightValue ? 0 : Number.MAX_VALUE;
         }
         break;
       }
@@ -471,7 +471,7 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
         } else {
           // TODO do this for strings maybe
           // cannot compare types
-          value = leftValue < rightValue ? 0 : 1;
+          value = leftValue < rightValue ? 0 : Number.MAX_VALUE;
         }
         break;
       }
@@ -481,7 +481,7 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
         } else {
           // TODO do this for strings maybe
           // cannot compare types
-          value = leftValue >= rightValue ? 0 : 1;
+          value = leftValue >= rightValue ? 0 : Number.MAX_VALUE;
         }
         break;
       }
@@ -491,7 +491,7 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
         } else {
           // TODO do this for strings maybe
           // cannot compare types
-          value = leftValue <= rightValue ? 0 : 1;
+          value = leftValue <= rightValue ? 0 : Number.MAX_VALUE;
         }
         break;
       }

@@ -807,15 +807,15 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
   sampleNumber(id: string, name: string): NumericStatement {
     // by default we create small numbers (do we need very large numbers?)
-    const max = 10;
-    const min = -10;
+    const max = 20;
+    const min = -20;
 
     return new NumericStatement(
       id,
       name,
       TypeEnum.NUMERIC,
       prng.uniqueId(),
-      prng.nextInt(min, max)
+      prng.nextDouble(min, max)
     );
   }
 

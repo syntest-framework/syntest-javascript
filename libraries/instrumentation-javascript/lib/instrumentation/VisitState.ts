@@ -366,7 +366,7 @@ export class VisitState {
     const T = this.types;
 
     const metaTracker = T.callExpression(T.identifier(this.metaVarName), [
-      T.stringLiteral(`"${branchName}"`),
+      T.stringLiteral(`${branchName}`),
       T.objectExpression([
         T.objectProperty(
           T.stringLiteral("condition_ast"),
