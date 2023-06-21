@@ -593,64 +593,66 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   }
 
   sampleArgument(depth: number, id: string, name: string): Statement {
-    let chosenType: string;
+    return this.sampleNumber(id, name);
 
-    if (
-      this.typeInferenceMode === "proportional" ||
-      this.typeInferenceMode === "none"
-    ) {
-      chosenType = this.rootContext
-        .getTypeModel()
-        .getRandomType(
-          this.incorporateExecutionInformation,
-          this.randomTypeProbability,
-          id
-        );
-    } else if (this.typeInferenceMode === "ranked") {
-      chosenType = this.rootContext
-        .getTypeModel()
-        .getHighestProbabilityType(
-          this.incorporateExecutionInformation,
-          this.randomTypeProbability,
-          id
-        );
-    } else {
-      throw new Error("Invalid identifierDescription inference mode selected");
-    }
+    // let chosenType: string;
 
-    switch (chosenType) {
-      case "boolean": {
-        return this.sampleBool(id, name);
-      }
-      case "string": {
-        return this.sampleString(id, name);
-      }
-      case "numeric": {
-        return this.sampleNumber(id, name);
-      }
-      case "null": {
-        return this.sampleNull(id, name);
-      }
-      case "undefined": {
-        return this.sampleUndefined(id, name);
-      }
-      case "regex": {
-        // TODO REGEX
-        return this.sampleString(id, name);
-      }
-      default: {
-        // must be object/array/function
-        if (chosenType.endsWith("object")) {
-          return this.sampleObject(depth, id, name, chosenType);
-        } else if (chosenType.endsWith("array")) {
-          return this.sampleArray(depth, id, name, chosenType);
-        } else if (chosenType.endsWith("function")) {
-          return this.sampleArrowFunction(depth, id, name, chosenType);
-        }
-      }
-    }
+    // if (
+    //   this.typeInferenceMode === "proportional" ||
+    //   this.typeInferenceMode === "none"
+    // ) {
+    //   chosenType = this.rootContext
+    //     .getTypeModel()
+    //     .getRandomType(
+    //       this.incorporateExecutionInformation,
+    //       this.randomTypeProbability,
+    //       id
+    //     );
+    // } else if (this.typeInferenceMode === "ranked") {
+    //   chosenType = this.rootContext
+    //     .getTypeModel()
+    //     .getHighestProbabilityType(
+    //       this.incorporateExecutionInformation,
+    //       this.randomTypeProbability,
+    //       id
+    //     );
+    // } else {
+    //   throw new Error("Invalid identifierDescription inference mode selected");
+    // }
 
-    throw new Error(`unknown type: ${chosenType}`);
+    // switch (chosenType) {
+    //   case "boolean": {
+    //     return this.sampleBool(id, name);
+    //   }
+    //   case "string": {
+    //     return this.sampleString(id, name);
+    //   }
+    //   case "numeric": {
+    //     return this.sampleNumber(id, name);
+    //   }
+    //   case "null": {
+    //     return this.sampleNull(id, name);
+    //   }
+    //   case "undefined": {
+    //     return this.sampleUndefined(id, name);
+    //   }
+    //   case "regex": {
+    //     // TODO REGEX
+    //     return this.sampleString(id, name);
+    //   }
+    //   default: {
+    //     // must be object/array/function
+    //     if (chosenType.endsWith("object")) {
+    //       return this.sampleObject(depth, id, name, chosenType);
+    //     } else if (chosenType.endsWith("array")) {
+    //       return this.sampleArray(depth, id, name, chosenType);
+    //     } else if (chosenType.endsWith("function")) {
+    //       return this.sampleArrowFunction(depth, id, name, chosenType);
+    //     }
+    //   }
+    // }
+
+    // throw new Error(`unknown type: ${chosenType}`);
   }
 
   sampleObject(depth: number, id: string, name: string, type: string) {
@@ -813,7 +815,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       name,
       TypeEnum.NUMERIC,
       prng.uniqueId(),
-      prng.nextDouble(min, max)
+      prng.nextInt(min, max)
     );
   }
 

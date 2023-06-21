@@ -25,13 +25,17 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
   private _K = 1; // punishment factor
 
   private _variables: Record<string, unknown>;
+  private _inverted: boolean;
+
   private _valueMap: Map<string, unknown>;
   private _isDistanceMap: Map<string, boolean>;
   private _distance: number;
 
-  constructor(variables: Record<string, unknown>) {
+  constructor(variables: Record<string, unknown>, inverted: boolean) {
     super("");
     this._variables = variables;
+    this._inverted = inverted;
+
     this._valueMap = new Map();
     this._isDistanceMap = new Map();
     this._distance = -1;
@@ -122,6 +126,11 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
 
     this._isDistanceMap.set(this._getNodeId(path), false);
   };
+
+  // public ObjectExpression: (path: NodePath<t.ObjectExpression>) => void = (path) => {
+  //   this._valueMap.set(this._getNodeId(path), )
+  //   this._isDistanceMap.set(this._getNodeId(path), false);
+  // }
 
   public Identifier: (path: NodePath<t.Identifier>) => void = (path) => {
     if (this._variables[path.node.name] === undefined) {
@@ -296,9 +305,48 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
     if (this._isDistanceMap.get(this._getNodeId(right))) {
       throw new Error("Right should not result in distance value!");
     }
+    let operator = path.node.operator;
+
+    if (this._inverted) {
+      switch (operator) {
+        case "===": {
+          operator = "!==";
+          break;
+        }
+        case "==": {
+          operator = "!=";
+          break;
+        }
+        case "!==": {
+          operator = "===";
+          break;
+        }
+        case "!=": {
+          operator = "==";
+          break;
+        }
+        case ">": {
+          operator = "<=";
+          break;
+        }
+        case ">=": {
+          operator = "<";
+          break;
+        }
+        case "<": {
+          operator = ">=";
+          break;
+        }
+        case "<=": {
+          operator = ">";
+          break;
+        }
+        // No default
+      }
+    }
 
     let value: unknown;
-    switch (path.node.operator) {
+    switch (operator) {
       // values
       case "+": {
         // could also be something else
@@ -356,12 +404,12 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
       // TODO
       case "===": {
         if (typeof leftValue === "number" && typeof rightValue === "number") {
-          value = this._normalize(Math.abs(leftValue - rightValue));
+          value = Math.abs(leftValue - rightValue);
         } else if (
           typeof leftValue === "string" &&
           typeof rightValue === "string"
         ) {
-          value = this._normalize(this._editDistDP(leftValue, rightValue));
+          value = this._editDistDP(leftValue, rightValue);
         } else if (
           typeof leftValue === "boolean" &&
           typeof rightValue === "boolean"
@@ -369,50 +417,82 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
           value = leftValue === rightValue ? 0 : 1;
         } else {
           // TODO type difference?!
-          value = leftValue === rightValue ? 0 : 1;
+          if (operator === "===") {
+            value = leftValue === rightValue ? 0 : 1;
+          } else {
+            value = leftValue == rightValue ? 0 : 1;
+          }
         }
         break;
       }
       case "!=":
       // TODO
       case "!==": {
-        value = leftValue === rightValue ? 1 : 0;
+        if (operator === "!==") {
+          value = leftValue === rightValue ? 1 : 0;
+        } else {
+          value = leftValue == rightValue ? 1 : 0;
+        }
         break;
       }
       case "in": {
         if (rightValue === undefined || rightValue === null) {
-          value = 1;
+          value = 1; // TODO should this one be inverted?
         } else {
-          value = leftValue in rightValue ? 0 : 1;
+          if (this._inverted) {
+            value = leftValue in rightValue ? 1 : 0;
+          } else {
+            value = leftValue in rightValue ? 0 : 1;
+          }
         }
         break;
       }
       case "instanceof": {
-        value = leftValue instanceof rightValue ? 0 : 1;
+        if (this._inverted) {
+          value = leftValue instanceof rightValue ? 1 : 0;
+        } else {
+          value = leftValue instanceof rightValue ? 0 : 1;
+        }
         break;
       }
       case ">": {
-        value =
-          leftValue > rightValue
-            ? 0
-            : this._normalize(rightValue - leftValue + this._K);
+        if (typeof leftValue === "number" && typeof rightValue === "number") {
+          value = leftValue > rightValue ? 0 : rightValue - leftValue + this._K;
+        } else {
+          // TODO do this for strings maybe
+          // cannot compare types
+          value = leftValue > rightValue ? 0 : 1;
+        }
         break;
       }
       case "<": {
-        value =
-          leftValue < rightValue
-            ? 0
-            : this._normalize(leftValue - rightValue + this._K);
+        if (typeof leftValue === "number" && typeof rightValue === "number") {
+          value = leftValue < rightValue ? 0 : leftValue - rightValue + this._K;
+        } else {
+          // TODO do this for strings maybe
+          // cannot compare types
+          value = leftValue < rightValue ? 0 : 1;
+        }
         break;
       }
       case ">=": {
-        value =
-          leftValue >= rightValue ? 0 : this._normalize(rightValue - leftValue);
+        if (typeof leftValue === "number" && typeof rightValue === "number") {
+          value = leftValue >= rightValue ? 0 : rightValue - leftValue;
+        } else {
+          // TODO do this for strings maybe
+          // cannot compare types
+          value = leftValue >= rightValue ? 0 : 1;
+        }
         break;
       }
       case "<=": {
-        value =
-          leftValue <= rightValue ? 0 : this._normalize(leftValue - rightValue);
+        if (typeof leftValue === "number" && typeof rightValue === "number") {
+          value = leftValue <= rightValue ? 0 : leftValue - rightValue;
+        } else {
+          // TODO do this for strings maybe
+          // cannot compare types
+          value = leftValue <= rightValue ? 0 : 1;
+        }
         break;
       }
       case "|>": {
@@ -425,8 +505,6 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
         throw new Error("Invalid operator!");
       }
     }
-
-    this._valueMap.set(this._getNodeId(path), value);
 
     if (
       [
@@ -441,10 +519,12 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
         ">=",
         "<=",
         "|>",
-      ].includes(path.node.operator)
+      ].includes(operator)
     ) {
+      this._valueMap.set(this._getNodeId(path), this._normalize(<number>value));
       this._isDistanceMap.set(this._getNodeId(path), true);
     } else {
+      this._valueMap.set(this._getNodeId(path), value);
       this._isDistanceMap.set(this._getNodeId(path), false);
     }
 
