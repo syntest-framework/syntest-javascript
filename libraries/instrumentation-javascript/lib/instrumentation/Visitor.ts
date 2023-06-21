@@ -321,6 +321,8 @@ function coverIfBranches(path) {
     variables
   );
   path.insertBefore(T.expressionStatement(metaTracker));
+
+  this.insertStatementCounter(path.get("test"));
 }
 
 function coverLoopBranch(path: NodePath<t.Loop>) {
@@ -358,44 +360,47 @@ function coverLoopBranch(path: NodePath<t.Loop>) {
     });
   }
 
-  const test = <
-    NodePath<t.ForStatement | t.WhileStatement | t.DoWhileStatement>
-  >path.get("test");
-  const variables = [];
-  test.traverse(
-    {
-      Identifier: {
-        enter: (p) => {
-          if (p.parent.type === "MemberExpression") {
-            return;
-          }
-          if (justDefinedVariables.includes(p.node.name)) {
-            return;
-          }
-          variables.push(p.node.name);
+  if (path.has("test")) {
+    const test = <
+      NodePath<t.ForStatement | t.WhileStatement | t.DoWhileStatement>
+    >path.get("test");
+    const variables = [];
+    test.traverse(
+      {
+        Identifier: {
+          enter: (p) => {
+            if (p.parent.type === "MemberExpression") {
+              return;
+            }
+            if (justDefinedVariables.includes(p.node.name)) {
+              return;
+            }
+            variables.push(p.node.name);
+          },
+        },
+        MemberExpression: {
+          enter: (p) => {
+            // calls and such are possible but are problamatic because they could have side effects changing the behaviour
+            if (
+              p.node.object.type === "Identifier" &&
+              p.node.property.type === "Identifier"
+            ) {
+              variables.push(p.getSource());
+            }
+          },
         },
       },
-      MemberExpression: {
-        enter: (p) => {
-          // calls and such are possible but are problamatic because they could have side effects changing the behaviour
-          if (
-            p.node.object.type === "Identifier" &&
-            p.node.property.type === "Identifier"
-          ) {
-            variables.push(p.getSource());
-          }
-        },
-      },
-    },
-    test
-  );
-  const metaTracker = this.getBranchMetaTracker(
-    branch,
-    test.node,
-    test.getSource(),
-    variables
-  );
-  path.insertBefore(T.expressionStatement(metaTracker));
+      test
+    );
+    const metaTracker = this.getBranchMetaTracker(
+      branch,
+      test.node,
+      test.getSource(),
+      variables
+    );
+    path.insertBefore(T.expressionStatement(metaTracker));
+    this.insertStatementCounter(test);
+  }
 }
 
 function createSwitchBranch(path) {

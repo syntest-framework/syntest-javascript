@@ -426,13 +426,15 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
       `Entering IfStatement at ${this._getNodeId(path)}`
     );
 
-    const branchNode = this._createNode(path); // or path.get("test") ??
-    // TODO test
-
+    const branchNode = this._createNode(path);
     this._connectToParents(branchNode);
+    this._currentParents = [branchNode.id];
+
+    const testNode = this._createNode(path.get("test"));
+    this._connectToParents(testNode);
+    this._currentParents = [testNode.id];
 
     // consequent
-    this._currentParents = [branchNode.id];
     this._edgeType = EdgeType.CONDITIONAL_TRUE;
     let sizeBefore = this._nodesList.length;
     path.get("consequent").visit();
@@ -446,7 +448,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     const consequentNodes = this._currentParents;
 
     // alternate
-    this._currentParents = [branchNode.id];
+    this._currentParents = [testNode.id];
     this._edgeType = EdgeType.CONDITIONAL_FALSE;
 
     sizeBefore = this._nodesList.length;
@@ -481,6 +483,10 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
       `Entering DoWhileStatement at ${this._getNodeId(path)}`
     );
 
+    const doWhileNode = this._createNode(path);
+    this._connectToParents(doWhileNode);
+    this._currentParents = [doWhileNode.id];
+
     this._breakNodesStack.push(new Set());
     this._continueNodesStack.push(new Set());
 
@@ -499,7 +505,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     }
 
     // loop
-    const loopNode = this._createNode(path); // or path.get("test") ??
+    const loopNode = this._createNode(path.get("test")); // or path.get("test") ??
     // TODO test
 
     this._connectToParents(loopNode);
@@ -547,11 +553,15 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
       `Entering WhileStatement at ${this._getNodeId(path)}`
     );
 
+    const whileNode = this._createNode(path);
+    this._connectToParents(whileNode);
+    this._currentParents = [whileNode.id];
+
     this._breakNodesStack.push(new Set());
     this._continueNodesStack.push(new Set());
 
     // loop
-    const loopNode = this._createNode(path); // or path.get("test") ??
+    const loopNode = this._createNode(path.get("test")); // or path.get("test") ??
     // TODO test
 
     this._connectToParents(loopNode);
@@ -605,6 +615,10 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
       `Entering ForStatement at ${this._getNodeId(path)}`
     );
 
+    const forNode = this._createNode(path);
+    this._connectToParents(forNode);
+    this._currentParents = [forNode.id];
+
     this._breakNodesStack.push(new Set());
     this._continueNodesStack.push(new Set());
 
@@ -630,8 +644,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
       );
     }
 
-    // TODO test
-    const testNode = this._createNode(path); // or path.get("test") ??
+    const testNode = this._createNode(path.get("test"));
     this._connectToParents(testNode);
     this._currentParents = [testNode.id];
 
@@ -701,6 +714,10 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
       `Entering ForInStatement at ${this._getNodeId(path)}`
     );
 
+    const forInNode = this._createNode(path);
+    this._connectToParents(forInNode);
+    this._currentParents = [forInNode.id];
+
     this._breakNodesStack.push(new Set());
     this._continueNodesStack.push(new Set());
 
@@ -720,8 +737,8 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     // left
     path.get("left").visit();
 
-    // TODO test
-    const testNode = this._createNode(path); // or path.get("test") ??
+    // test does not exist so we create placeholder?
+    const testNode = this._createPlaceholderNode(path);
     this._connectToParents(testNode);
     this._currentParents = [testNode.id];
 
@@ -776,6 +793,10 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
       `Entering ForOfStatement at ${this._getNodeId(path)}`
     );
 
+    const forOfNode = this._createNode(path);
+    this._connectToParents(forOfNode);
+    this._currentParents = [forOfNode.id];
+
     this._breakNodesStack.push(new Set());
     this._continueNodesStack.push(new Set());
 
@@ -795,8 +816,8 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     // left
     path.get("left").visit();
 
-    // TODO test
-    const testNode = this._createNode(path); // or path.get("test") ??
+    // test does not exist so we create placeholder?
+    const testNode = this._createPlaceholderNode(path);
     this._connectToParents(testNode);
     this._currentParents = [testNode.id];
 
@@ -853,8 +874,12 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
 
     this._breakNodesStack.push(new Set());
 
+    const switchNode = this._createNode(path);
+    this._connectToParents(switchNode);
+    this._currentParents = [switchNode.id];
+
     // TODO test
-    const testNode = this._createNode(path); // or path.get("test") ??
+    const testNode = this._createNode(path.get("discriminant")); // or path.get("test") ??
     this._connectToParents(testNode);
     this._currentParents = [testNode.id];
 
