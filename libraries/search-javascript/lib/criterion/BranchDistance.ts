@@ -16,7 +16,10 @@
  * limitations under the License.
  */
 
-import { BranchDistance as CoreBranchDistance } from "@syntest/search";
+import {
+  BranchDistance as CoreBranchDistance,
+  shouldNeverHappen,
+} from "@syntest/search";
 import { BranchDistanceVisitor } from "./BranchDistanceVisitor";
 import { transformSync, traverse } from "@babel/core";
 import { defaultBabelOptions } from "@syntest/analysis-javascript";
@@ -37,17 +40,27 @@ export class BranchDistance extends CoreBranchDistance {
     const visitor = new BranchDistanceVisitor(variables, !trueOrFalse);
 
     traverse(ast, visitor);
-    const distance = visitor.distance;
+    const distance = visitor._getDistance(condition);
 
     if (distance > 1 || distance < 0) {
       throw new Error("Invalid distance!");
     }
 
-    // console.log(condition);
-    // console.log(variables);
-    // console.log('distance', distance);
-    // console.log(trueOrFalse);
-    // console.log();
+    // if (
+    //   !(typeof branchDistance === "number" && Number.isFinite(branchDistance))
+    // ) {
+    //   BranchObjectiveFunction.LOGGER.warn()
+    //     // this is a dirty hack to prevent wrong branch distance numbers
+    //   // in the future we need to simply fix the branch distance calculation and remove this
+    //   branchDistance = 0.999;
+    // }
+
+    if (Number.isNaN(distance)) {
+      console.log(condition);
+      console.log(variables);
+
+      throw new TypeError(shouldNeverHappen("BranchDistance"));
+    }
 
     return distance;
   }
