@@ -494,6 +494,20 @@ export class JavaScriptLauncher extends Launcher {
         overall["branch"] += data.b[branchKey][0] ? 1 : 0;
         summary["branch"] += data.b[branchKey][1] ? 1 : 0;
         overall["branch"] += data.b[branchKey][1] ? 1 : 0;
+
+        if (!data.b[branchKey][0]) {
+          console.log(
+            "branch not covered:",
+            data.branchMap[branchKey].locations[0].id
+          );
+        }
+
+        if (!data.b[branchKey][1]) {
+          console.log(
+            "branch not covered:",
+            data.branchMap[branchKey].locations[1].id
+          );
+        }
       }
 
       for (const functionKey of Object.keys(data.f)) {

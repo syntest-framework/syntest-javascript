@@ -43,6 +43,14 @@ export class BranchDistance extends CoreBranchDistance {
       throw new Error("Invalid distance!");
     }
 
+    if (distance === 0) {
+      console.log(condition);
+      console.log(variables);
+      console.log(distance);
+      console.log(trueOrFalse);
+      console.log();
+    }
+
     return distance;
   }
 }
