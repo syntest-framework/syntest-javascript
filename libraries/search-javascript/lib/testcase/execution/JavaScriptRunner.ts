@@ -173,7 +173,7 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
         const hits = <number[]>instrumentationData[key].b[branchKey];
         let meta;
 
-        if (metaData !== undefined) {
+        if (metaData !== undefined && key in metaData) {
           const metaPath = metaData[key];
           const metaMeta = metaPath.meta;
           meta = metaMeta[branchKey.toString()];

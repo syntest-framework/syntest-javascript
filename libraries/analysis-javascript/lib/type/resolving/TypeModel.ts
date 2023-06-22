@@ -56,12 +56,7 @@ export class TypeModel {
 
     this._objectTypeDescription = new Map();
 
-    this._objectTypeDescription.set("anon", {
-      properties: new Map(),
-      elements: new Map(),
-      parameters: new Map(),
-      return: new Set(),
-    });
+    this.addId("anon"); // should be removed at some point
   }
 
   getObjectDescription(element: string): ObjectType {

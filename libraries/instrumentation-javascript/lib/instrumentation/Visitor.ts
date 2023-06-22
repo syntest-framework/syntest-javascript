@@ -460,21 +460,47 @@ function coverLoopBranch(path: NodePath<t.Loop>) {
   }
 }
 
-function createSwitchBranch(path) {
-  const b = this.cov.newBranch("switch", path.node.loc);
-  this.setAttr(path.node, "branchName", b);
+function createSwitchBranch(path: NodePath<t.SwitchStatement>) {
+  // const b = this.cov.newBranch("switch", path.node.loc);
+  // this.setAttr(path.node, "branchName", b);
 }
 
-function coverSwitchCase(path) {
+function coverSwitchCase(path: NodePath<t.SwitchCase>) {
   const T = this.types;
-  const b = this.getAttr(path.parentPath.node, "branchName");
-  /* istanbul ignore if: paranoid check */
-  if (b === null) {
-    throw new Error("Unable to get switch branch name");
+
+  if (!path.has("test")) {
+    // ignore default cases
+    return;
   }
+
+  const b = this.cov.newBranch("switch", path.node.loc);
 
   const increment = this.getBranchIncrement(path, b, path.node.loc);
   path.node.consequent.unshift(T.expressionStatement(increment));
+
+  const falseIncrement = this.getBranchIncrement(path, b, undefined);
+
+  const parent = <NodePath<t.SwitchStatement>>path.parentPath;
+  let next = false;
+  let defaultExists = false;
+  for (const case_ of parent.get("cases")) {
+    // add it to all next cases
+    if (next) {
+      case_.node.consequent.unshift(t.expressionStatement(falseIncrement));
+    }
+
+    if (case_ === path) {
+      next = true;
+    }
+
+    if (!case_.has("test")) {
+      defaultExists = true;
+    }
+  }
+
+  if (!defaultExists) {
+    parent.insertAfter(t.expressionStatement(falseIncrement));
+  }
 }
 
 function coverTernary(path: NodePath<t.Conditional>) {

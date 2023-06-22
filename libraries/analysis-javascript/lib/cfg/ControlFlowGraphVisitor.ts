@@ -738,7 +738,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     path.get("left").visit();
 
     // test does not exist so we create placeholder?
-    const testNode = this._createPlaceholderNode(path);
+    const testNode = this._createPlaceholderNode(path.get("left")); // stupid hack but we cannot have the placeholder twice
     this._connectToParents(testNode);
     this._currentParents = [testNode.id];
 
@@ -817,7 +817,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     path.get("left").visit();
 
     // test does not exist so we create placeholder?
-    const testNode = this._createPlaceholderNode(path);
+    const testNode = this._createPlaceholderNode(path.get("left")); // stupid hack but we cannot have the placeholder twice
     this._connectToParents(testNode);
     this._currentParents = [testNode.id];
 
@@ -878,42 +878,50 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     this._connectToParents(switchNode);
     this._currentParents = [switchNode.id];
 
-    // TODO test
-    const testNode = this._createNode(path.get("discriminant")); // or path.get("test") ??
+    const testNode = this._createNode(path.get("discriminant"));
     this._connectToParents(testNode);
     this._currentParents = [testNode.id];
 
     for (const caseNode of path.get("cases")) {
-      // TODO test
-      const caseTestNode = this._createNode(caseNode); // or path.get("test") ??
-      this._connectToParents(caseTestNode);
-      this._currentParents = [caseTestNode.id];
-
       if (caseNode.has("test")) {
-        // case
+        // test
+        const caseTestNode = this._createNode(caseNode.get("test"));
+        this._connectToParents(caseTestNode);
+        this._currentParents = [caseTestNode.id];
+
+        // consequent
         this._edgeType = EdgeType.CONDITIONAL_TRUE;
-      }
+        const consequentNode = this._createNode(caseNode);
+        this._connectToParents(consequentNode);
+        this._currentParents = [consequentNode.id];
 
-      // consequent
-      if (caseNode.get("consequent").length === 0) {
-        // empty body
-        // create placeholder node
-        const placeholderNode = this._createPlaceholderNode(caseNode);
-        this._connectToParents(placeholderNode);
-        this._currentParents = [placeholderNode.id];
-      } else {
-        for (const consequentNode of caseNode.get("consequent")) {
-          consequentNode.visit();
+        if (caseNode.get("consequent").length > 0) {
+          for (const consequentNode of caseNode.get("consequent")) {
+            consequentNode.visit();
+          }
         }
-      }
 
-      if (caseNode.has("test")) {
-        // case
+        const trueParents = this._currentParents; // if there is a break these should be empty
+        // alternate
+        // placeholder
         this._edgeType = EdgeType.CONDITIONAL_FALSE;
-        this._currentParents = [caseTestNode.id, ...this._currentParents];
+        this._currentParents = [caseTestNode.id];
+        const alternateNode = this._createPlaceholderNode(caseNode);
+        this._connectToParents(alternateNode);
+        this._currentParents = [alternateNode.id, ...trueParents]; // normal + fall through case
       } else {
         // default
-        this._currentParents = [...this._currentParents];
+        if (caseNode.get("consequent").length === 0) {
+          // empty body
+          // create placeholder node
+          const placeholderNode = this._createPlaceholderNode(caseNode);
+          this._connectToParents(placeholderNode);
+          this._currentParents = [placeholderNode.id];
+        } else {
+          for (const consequentNode of caseNode.get("consequent")) {
+            consequentNode.visit();
+          }
+        }
       }
     }
 

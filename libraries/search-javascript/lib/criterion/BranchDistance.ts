@@ -55,6 +55,14 @@ export class BranchDistance extends CoreBranchDistance {
     //   branchDistance = 0.999;
     // }
 
+    if (distance === 0) {
+      console.log("branchdistance is zero");
+      console.log(condition);
+      console.log(variables);
+      console.log(trueOrFalse);
+      console.log();
+    }
+
     if (Number.isNaN(distance)) {
       console.log(condition);
       console.log(variables);

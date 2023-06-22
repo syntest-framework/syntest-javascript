@@ -247,7 +247,13 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
     path
   ) => {
     const argument = path.get("argument");
+    if (path.node.operator === "!") {
+      this._inverted = !this._inverted;
+    }
     argument.visit();
+    if (path.node.operator === "!") {
+      this._inverted = !this._inverted;
+    }
 
     const argumentValue = <any>this._valueMap.get(argument.toString());
 
@@ -276,14 +282,23 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
       }
       case "!": {
         if (argumentIsDistance) {
-          value = 1 - argumentValue;
+          value = this._inverted ? 1 - argumentValue : argumentValue;
         } else {
-          value =
-            typeof argumentValue === "number"
-              ? this._normalize(Math.abs(0 - argumentValue))
-              : argumentValue
-              ? 1
-              : 0;
+          if (this._inverted) {
+            value =
+              typeof argumentValue === "number"
+                ? this._normalize(Math.abs(0 - argumentValue))
+                : argumentValue
+                ? 0
+                : this._normalize(1);
+          } else {
+            value =
+              typeof argumentValue === "number"
+                ? this._normalize(Math.abs(0 - argumentValue))
+                : argumentValue
+                ? this._normalize(1)
+                : 0;
+          }
         }
         break;
       }
