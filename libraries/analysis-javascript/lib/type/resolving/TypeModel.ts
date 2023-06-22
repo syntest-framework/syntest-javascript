@@ -133,6 +133,10 @@ export class TypeModel {
     if (!this._typeExecutionScoreMap.get(id).has(type)) {
       this._typeExecutionScoreMap.get(id).set(type, 0);
     }
+
+    if (type === TypeEnum.NUMERIC) {
+      this.addTypeScore(id, TypeEnum.INTEGER, score);
+    }
   }
 
   addProperty(element: string, property: string, id: string) {
@@ -223,6 +227,7 @@ export class TypeModel {
         TypeEnum.FUNCTION,
         TypeEnum.NULL,
         TypeEnum.NUMERIC,
+        TypeEnum.INTEGER,
         TypeEnum.OBJECT,
         TypeEnum.REGEX,
         TypeEnum.STRING,
@@ -276,6 +281,7 @@ export class TypeModel {
         TypeEnum.FUNCTION,
         TypeEnum.NULL,
         TypeEnum.NUMERIC,
+        TypeEnum.INTEGER,
         TypeEnum.OBJECT,
         TypeEnum.REGEX,
         TypeEnum.STRING,
