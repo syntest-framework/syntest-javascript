@@ -593,8 +593,6 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   }
 
   sampleArgument(depth: number, id: string, name: string): Statement {
-    // return this.sampleNumber(id, name);
-
     let chosenType: string;
 
     if (
@@ -807,8 +805,8 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
   sampleNumber(id: string, name: string): NumericStatement {
     // by default we create small numbers (do we need very large numbers?)
-    const max = 20;
-    const min = -20;
+    const max = 10;
+    const min = -10;
 
     return new NumericStatement(
       id,
