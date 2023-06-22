@@ -46,27 +46,7 @@ export class BranchDistance extends CoreBranchDistance {
       throw new Error("Invalid distance!");
     }
 
-    // if (
-    //   !(typeof branchDistance === "number" && Number.isFinite(branchDistance))
-    // ) {
-    //   BranchObjectiveFunction.LOGGER.warn()
-    //     // this is a dirty hack to prevent wrong branch distance numbers
-    //   // in the future we need to simply fix the branch distance calculation and remove this
-    //   branchDistance = 0.999;
-    // }
-
-    if (distance === 0) {
-      console.log("branchdistance is zero");
-      console.log(condition);
-      console.log(variables);
-      console.log(trueOrFalse);
-      console.log();
-    }
-
     if (Number.isNaN(distance)) {
-      console.log(condition);
-      console.log(variables);
-
       throw new TypeError(shouldNeverHappen("BranchDistance"));
     }
 
