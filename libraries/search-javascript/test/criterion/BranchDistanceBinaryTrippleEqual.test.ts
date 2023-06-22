@@ -25,7 +25,9 @@ describe("BranchDistance a === b test", () => {
     const variables = {};
     const trueOrFalse = true;
 
-    const calculator = new BranchDistance();
+    const calculator = new BranchDistance(
+      "0123456789abcdefghijklmnopqrstuvxyz"
+    );
 
     expect(
       calculator.calculate("", condition, variables, trueOrFalse)
@@ -37,7 +39,9 @@ describe("BranchDistance a === b test", () => {
     const variables = {};
     const trueOrFalse = false;
 
-    const calculator = new BranchDistance();
+    const calculator = new BranchDistance(
+      "0123456789abcdefghijklmnopqrstuvxyz"
+    );
 
     expect(
       calculator.calculate("", condition, variables, trueOrFalse)
@@ -49,7 +53,9 @@ describe("BranchDistance a === b test", () => {
     const variables = {};
     const trueOrFalse = true;
 
-    const calculator = new BranchDistance();
+    const calculator = new BranchDistance(
+      "0123456789abcdefghijklmnopqrstuvxyz"
+    );
 
     expect(
       calculator.calculate("", condition, variables, trueOrFalse)
@@ -61,7 +67,9 @@ describe("BranchDistance a === b test", () => {
     const variables = {};
     const trueOrFalse = false;
 
-    const calculator = new BranchDistance();
+    const calculator = new BranchDistance(
+      "0123456789abcdefghijklmnopqrstuvxyz"
+    );
 
     expect(
       calculator.calculate("", condition, variables, trueOrFalse)
@@ -73,7 +81,9 @@ describe("BranchDistance a === b test", () => {
     const variables = {};
     const trueOrFalse = true;
 
-    const calculator = new BranchDistance();
+    const calculator = new BranchDistance(
+      "0123456789abcdefghijklmnopqrstuvxyz"
+    );
 
     expect(
       calculator.calculate("", condition, variables, trueOrFalse)
@@ -85,7 +95,9 @@ describe("BranchDistance a === b test", () => {
     const variables = {};
     const trueOrFalse = false;
 
-    const calculator = new BranchDistance();
+    const calculator = new BranchDistance(
+      "0123456789abcdefghijklmnopqrstuvxyz"
+    );
 
     expect(
       calculator.calculate("", condition, variables, trueOrFalse)
@@ -98,7 +110,9 @@ describe("BranchDistance a === b test", () => {
     const variables = {};
     const trueOrFalse = true;
 
-    const calculator = new BranchDistance();
+    const calculator = new BranchDistance(
+      "0123456789abcdefghijklmnopqrstuvxyz"
+    );
 
     expect(
       calculator.calculate("", condition, variables, trueOrFalse)
@@ -110,7 +124,9 @@ describe("BranchDistance a === b test", () => {
     const variables = {};
     const trueOrFalse = false;
 
-    const calculator = new BranchDistance();
+    const calculator = new BranchDistance(
+      "0123456789abcdefghijklmnopqrstuvxyz"
+    );
 
     expect(
       calculator.calculate("", condition, variables, trueOrFalse)
@@ -122,7 +138,9 @@ describe("BranchDistance a === b test", () => {
     const variables = {};
     const trueOrFalse = true;
 
-    const calculator = new BranchDistance();
+    const calculator = new BranchDistance(
+      "0123456789abcdefghijklmnopqrstuvxyz"
+    );
 
     expect(
       calculator.calculate("", condition, variables, trueOrFalse)
@@ -134,7 +152,9 @@ describe("BranchDistance a === b test", () => {
     const variables = {};
     const trueOrFalse = false;
 
-    const calculator = new BranchDistance();
+    const calculator = new BranchDistance(
+      "0123456789abcdefghijklmnopqrstuvxyz"
+    );
 
     expect(
       calculator.calculate("", condition, variables, trueOrFalse)
@@ -147,7 +167,9 @@ describe("BranchDistance a === b test", () => {
     const variables = {};
     const trueOrFalse = true;
 
-    const calculator = new BranchDistance();
+    const calculator = new BranchDistance(
+      "0123456789abcdefghijklmnopqrstuvxyz"
+    );
 
     expect(
       calculator.calculate("", condition, variables, trueOrFalse)
@@ -159,7 +181,9 @@ describe("BranchDistance a === b test", () => {
     const variables = {};
     const trueOrFalse = false;
 
-    const calculator = new BranchDistance();
+    const calculator = new BranchDistance(
+      "0123456789abcdefghijklmnopqrstuvxyz"
+    );
 
     expect(
       calculator.calculate("", condition, variables, trueOrFalse)

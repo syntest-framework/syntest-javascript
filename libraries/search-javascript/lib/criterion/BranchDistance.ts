@@ -25,6 +25,13 @@ import { transformSync, traverse } from "@babel/core";
 import { defaultBabelOptions } from "@syntest/analysis-javascript";
 
 export class BranchDistance extends CoreBranchDistance {
+  protected stringAlphabet: string;
+
+  constructor(stringAlphabet: string) {
+    super();
+    this.stringAlphabet = stringAlphabet;
+  }
+
   calculate(
     _conditionAST: string, // deprecated
     condition: string,
@@ -37,7 +44,11 @@ export class BranchDistance extends CoreBranchDistance {
     const options: unknown = JSON.parse(JSON.stringify(defaultBabelOptions));
 
     const ast = transformSync(condition, options).ast;
-    const visitor = new BranchDistanceVisitor(variables, !trueOrFalse);
+    const visitor = new BranchDistanceVisitor(
+      this.stringAlphabet,
+      variables,
+      !trueOrFalse
+    );
 
     traverse(ast, visitor);
     const distance = visitor._getDistance(condition);
@@ -50,6 +61,10 @@ export class BranchDistance extends CoreBranchDistance {
       throw new TypeError(shouldNeverHappen("BranchDistance"));
     }
 
+    console.log(condition);
+    console.log(variables);
+    console.log(distance);
+    console.log();
     return distance;
   }
 }
