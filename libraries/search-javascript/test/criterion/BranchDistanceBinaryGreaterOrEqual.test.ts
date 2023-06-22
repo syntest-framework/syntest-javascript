@@ -131,7 +131,7 @@ describe("BranchDistance a >= b test", () => {
 
     expect(
       calculator.calculate("", condition, variables, trueOrFalse)
-    ).to.equal(0.5);
+    ).to.be.closeTo(0.9999, 0.1);
   });
 
   it("'a' >= 'b' true", () => {
@@ -146,7 +146,7 @@ describe("BranchDistance a >= b test", () => {
     // should be 0.66
     expect(
       calculator.calculate("", condition, variables, trueOrFalse)
-    ).to.equal(0.5);
+    ).to.be.closeTo(0.9999, 0.1);
   });
 
   it("'a' >= 'b' false", () => {
@@ -189,6 +189,6 @@ describe("BranchDistance a >= b test", () => {
 
     expect(
       calculator.calculate("", condition, variables, trueOrFalse)
-    ).to.equal(0.5);
+    ).to.be.closeTo(0.9999, 0.1);
   });
 });

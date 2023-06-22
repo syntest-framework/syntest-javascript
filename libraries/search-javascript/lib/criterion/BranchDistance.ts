@@ -51,7 +51,7 @@ export class BranchDistance extends CoreBranchDistance {
     );
 
     traverse(ast, visitor);
-    const distance = visitor._getDistance(condition);
+    let distance = visitor._getDistance(condition);
 
     if (distance > 1 || distance < 0) {
       throw new Error("Invalid distance!");
@@ -61,10 +61,11 @@ export class BranchDistance extends CoreBranchDistance {
       throw new TypeError(shouldNeverHappen("BranchDistance"));
     }
 
-    console.log(condition);
-    console.log(variables);
-    console.log(distance);
-    console.log();
+    if (distance === 1) {
+      // We dont want a branch distance of 1 because then it will be equal to covering the oposite branch
+      distance = 0.999_999_999_999_999_9;
+    }
+
     return distance;
   }
 }

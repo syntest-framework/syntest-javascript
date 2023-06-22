@@ -294,19 +294,25 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
             : this._normalize(argumentValue);
         } else {
           if (this._inverted) {
-            value =
-              typeof argumentValue === "number"
-                ? this._normalize(Math.abs(0 - argumentValue))
-                : argumentValue
-                ? 0
-                : this._normalize(1);
+            if (typeof argumentValue === "boolean") {
+              value = argumentValue ? 0 : this._normalize(1);
+            } else if (typeof argumentValue === "number") {
+              value = argumentValue ? 0 : this._normalize(1);
+            } else {
+              // could be other type
+              value = argumentValue ? 0 : this._normalize(Number.MAX_VALUE);
+            }
           } else {
-            value =
-              typeof argumentValue === "number"
+            if (typeof argumentValue === "boolean") {
+              value = argumentValue ? this._normalize(1) : 0;
+            } else if (typeof argumentValue === "number") {
+              value = argumentValue
                 ? this._normalize(Math.abs(0 - argumentValue))
-                : argumentValue
-                ? this._normalize(1)
                 : 0;
+            } else {
+              // could be other type
+              value = argumentValue ? this._normalize(Number.MAX_VALUE) : 0;
+            }
           }
         }
         break;
@@ -611,34 +617,62 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
     let rightValue = <any>this._valueMap.get(right.toString());
 
     if (!this._isDistanceMap.get(left.toString())) {
+      // should we check for number /booleans here?
       if (this._inverted) {
-        leftValue = leftValue ? this._normalize(1) : 0;
+        if (typeof leftValue === "boolean") {
+          leftValue = leftValue ? this._normalize(1) : 0;
+        } else if (typeof leftValue === "number") {
+          leftValue = leftValue ? this._normalize(Math.abs(0 - leftValue)) : 0;
+        } else {
+          leftValue = leftValue ? this._normalize(Number.MAX_VALUE) : 0;
+        }
       } else {
-        leftValue = leftValue ? 0 : this._normalize(1);
+        if (typeof leftValue === "boolean") {
+          leftValue = leftValue ? 0 : this._normalize(1);
+        } else if (typeof leftValue === "number") {
+          leftValue = leftValue ? 0 : this._normalize(1);
+        } else {
+          leftValue = leftValue ? 0 : this._normalize(Number.MAX_VALUE);
+        }
       }
     }
 
     if (!this._isDistanceMap.get(right.toString())) {
+      // should we check for number /booleans here?
       if (this._inverted) {
-        rightValue = rightValue ? this._normalize(1) : 0;
+        if (typeof rightValue === "boolean") {
+          rightValue = rightValue ? this._normalize(1) : 0;
+        } else if (typeof rightValue === "number") {
+          rightValue = rightValue
+            ? this._normalize(Math.abs(0 - rightValue))
+            : 0;
+        } else {
+          rightValue = rightValue ? this._normalize(Number.MAX_VALUE) : 0;
+        }
       } else {
-        rightValue = rightValue ? 0 : this._normalize(1);
+        if (typeof rightValue === "boolean") {
+          rightValue = rightValue ? 0 : this._normalize(1);
+        } else if (typeof rightValue === "number") {
+          rightValue = rightValue ? 0 : this._normalize(1);
+        } else {
+          rightValue = rightValue ? 0 : this._normalize(Number.MAX_VALUE);
+        }
       }
     }
 
     let value: unknown;
-    switch (path.node.operator) {
+    switch (operator) {
       case "||": {
-        value = this._normalize(Math.min(leftValue, rightValue));
+        value = Math.min(leftValue, rightValue); // should this be normalized?
         break;
       }
       case "&&": {
-        value = this._normalize(leftValue + rightValue);
+        value = this._normalize(leftValue + rightValue); // should this be normalized?
         break;
       }
       case "??": {
         // TODO no clue
-        value = 0;
+        value = this._normalize(Number.MAX_VALUE);
         break;
       }
       default: {
@@ -734,7 +768,7 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
             !this._stringAlphabet.includes(s_index)
           ) {
             BranchDistanceVisitor.LOGGER.warn(
-              "cannot search for character missing from the sampling alphabet"
+              `cannot search for character missing from the sampling alphabet one of these is missing: ${t_index}, ${s_index}`
             );
             cost = Number.MAX_VALUE;
           } else {
