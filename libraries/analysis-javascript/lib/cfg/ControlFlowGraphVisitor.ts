@@ -435,6 +435,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
 
     const testNode = this._createNode(path.get("test"));
     this._connectToParents(testNode);
+    this._currentParents = [testNode.id];
 
     // consequent
     this._edgeType = EdgeType.CONDITIONAL_TRUE;
