@@ -435,7 +435,6 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
 
     const testNode = this._createNode(path.get("test"));
     this._connectToParents(testNode);
-    this._currentParents = [testNode.id];
 
     // consequent
     this._edgeType = EdgeType.CONDITIONAL_TRUE;
@@ -528,10 +527,10 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     this._currentParents = [loopNode.id];
     this._edgeType = EdgeType.CONDITIONAL_FALSE;
     const alternate = this._createPlaceholderNode(path);
+    this._connectToParents(alternate);
 
     // exit
     this._currentParents = [alternate.id];
-    this._edgeType = EdgeType.CONDITIONAL_FALSE;
     const loopExit = this._createPlaceholderNode(path, true);
 
     // connect all break nodes to loop exit
@@ -573,7 +572,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
 
     this._connectToParents(loopNode);
 
-    // body
+    // true body
     this._currentParents = [loopNode.id];
     this._edgeType = EdgeType.CONDITIONAL_TRUE;
     const beforeSize = this._nodes.size;
@@ -596,10 +595,10 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     this._currentParents = [loopNode.id];
     this._edgeType = EdgeType.CONDITIONAL_FALSE;
     const alternate = this._createPlaceholderNode(path);
+    this._connectToParents(alternate); // TODO should be label back edge too
 
     // exit
     this._currentParents = [alternate.id];
-    this._edgeType = EdgeType.CONDITIONAL_FALSE;
     const loopExit = this._createPlaceholderNode(path, true);
 
     // connect all break nodes to loop exit
@@ -698,10 +697,10 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     this._currentParents = [testNode.id];
     this._edgeType = EdgeType.CONDITIONAL_FALSE;
     const alternate = this._createPlaceholderNode(path);
+    this._connectToParents(alternate);
 
     // exit
     this._currentParents = [alternate.id];
-    this._edgeType = EdgeType.CONDITIONAL_FALSE;
     const loopExit = this._createPlaceholderNode(path, true);
 
     // connect all break nodes to loop exit
@@ -782,10 +781,10 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     this._currentParents = [testNode.id];
     this._edgeType = EdgeType.CONDITIONAL_FALSE;
     const alternate = this._createPlaceholderNode(path);
+    this._connectToParents(alternate);
 
     // exit
     this._currentParents = [alternate.id];
-    this._edgeType = EdgeType.CONDITIONAL_FALSE;
     const loopExit = this._createPlaceholderNode(path, true);
 
     // connect all break nodes to loop exit
@@ -866,10 +865,10 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     this._currentParents = [testNode.id];
     this._edgeType = EdgeType.CONDITIONAL_FALSE;
     const alternate = this._createPlaceholderNode(path);
+    this._connectToParents(alternate);
 
     // exit
     this._currentParents = [alternate.id];
-    this._edgeType = EdgeType.CONDITIONAL_FALSE;
     const loopExit = this._createPlaceholderNode(path, true);
 
     // connect all break nodes to loop exit
