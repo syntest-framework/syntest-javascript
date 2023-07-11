@@ -679,6 +679,8 @@ export class JavaScriptLauncher extends Launcher {
     const sampler = new JavaScriptRandomSampler(
       currentSubject,
       constantPoolManager,
+      this.arguments_.constantPool,
+      this.arguments_.constantPoolProbability,
       (<JavaScriptArguments>this.arguments_).typeInferenceMode,
       (<JavaScriptArguments>this.arguments_).randomTypeProbability,
       (<JavaScriptArguments>this.arguments_).incorporateExecutionInformation,

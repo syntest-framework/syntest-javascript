@@ -40,6 +40,8 @@ export class RandomSamplerPlugin extends SamplerPlugin<JavaScriptTestCase> {
     return new JavaScriptRandomSampler(
       options.subject as unknown as JavaScriptSubject,
       undefined,
+      undefined,
+      undefined,
       (<JavaScriptArguments>(<unknown>this.args)).typeInferenceMode,
       (<JavaScriptArguments>(<unknown>this.args)).randomTypeProbability,
       (<JavaScriptArguments>(
