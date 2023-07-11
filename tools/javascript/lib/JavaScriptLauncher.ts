@@ -33,6 +33,9 @@ import {
   DependencyFactory,
   TypeExtractor,
   isExported,
+  ConstantPoolManager,
+  ConstantVisitor,
+  getAllFiles,
 } from "@syntest/analysis-javascript";
 import {
   ArgumentsObject,
@@ -79,6 +82,7 @@ import { getLogger, Logger } from "@syntest/logging";
 import { TargetType } from "@syntest/analysis";
 import { MetricManager } from "@syntest/metric";
 import { StorageManager } from "@syntest/storage";
+import traverse from "@babel/traverse";
 
 export type JavaScriptArguments = ArgumentsObject & TestCommandOptions;
 export class JavaScriptLauncher extends Launcher {
@@ -182,13 +186,15 @@ export class JavaScriptLauncher extends Launcher {
 
   async preprocess(): Promise<void> {
     JavaScriptLauncher.LOGGER.info("Preprocessing started");
-    const start = Date.now();
+    const startPreProcessing = Date.now();
+
+    const startTargetSelection = Date.now();
     const targetSelector = new TargetSelector(this.rootContext);
     this.targets = targetSelector.loadTargets(
       this.arguments_.include,
       this.arguments_.exclude
     );
-    let timeInMs = (Date.now() - start) / 1000;
+    let timeInMs = (Date.now() - startTargetSelection) / 1000;
     this.metricManager.recordProperty(
       PropertyName.TARGET_LOAD_TIME,
       `${timeInMs}`
@@ -346,19 +352,18 @@ export class JavaScriptLauncher extends Launcher {
     this.rootContext.extractTypes();
     JavaScriptLauncher.LOGGER.info("Resolving types");
     this.rootContext.resolveTypes();
-    JavaScriptLauncher.LOGGER.info("Preprocessing done");
-
     timeInMs = (Date.now() - startTypeResolving) / 1000;
     this.metricManager.recordProperty(
       PropertyName.TYPE_RESOLVE_TIME,
       `${timeInMs}`
     );
 
-    timeInMs = (Date.now() - start) / 1000;
+    timeInMs = (Date.now() - startPreProcessing) / 1000;
     this.metricManager.recordProperty(
       PropertyName.PREPROCESS_TIME,
       `${timeInMs}`
     );
+    JavaScriptLauncher.LOGGER.info("Preprocessing done");
   }
 
   async process(): Promise<void> {
@@ -643,10 +648,37 @@ export class JavaScriptLauncher extends Launcher {
       this.arguments_.testDirectory
     );
 
-    // TODO constant pool
+    JavaScriptLauncher.LOGGER.info("Extracting constants");
+    const constantPoolManager = new ConstantPoolManager();
+    const targetAbstractSyntaxTree = this.rootContext.getAbstractSyntaxTree(
+      target.path
+    );
+    const constantVisitor = new ConstantVisitor(
+      target.path,
+      constantPoolManager.targetConstantPool
+    );
+    traverse(targetAbstractSyntaxTree, constantVisitor);
+
+    const files = getAllFiles(this.rootContext.rootPath, ".js").filter(
+      (x) =>
+        !x.includes("/test/") &&
+        !x.includes(".test.js") &&
+        !x.includes("node_modules")
+    );
+
+    for (const file of files) {
+      const abstractSyntaxTree = this.rootContext.getAbstractSyntaxTree(file);
+      const constantVisitor = new ConstantVisitor(
+        file,
+        constantPoolManager.contextConstantPool
+      );
+      traverse(abstractSyntaxTree, constantVisitor);
+    }
+    JavaScriptLauncher.LOGGER.info("Extracting constants done");
 
     const sampler = new JavaScriptRandomSampler(
       currentSubject,
+      constantPoolManager,
       (<JavaScriptArguments>this.arguments_).typeInferenceMode,
       (<JavaScriptArguments>this.arguments_).randomTypeProbability,
       (<JavaScriptArguments>this.arguments_).incorporateExecutionInformation,

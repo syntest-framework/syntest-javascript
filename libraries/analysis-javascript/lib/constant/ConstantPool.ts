@@ -16,15 +16,22 @@
  * limitations under the License.
  */
 
+import { prng } from "@syntest/prng";
+
 export class ConstantPool {
   protected _numericPool: Map<number, number>;
   protected _integerPool: Map<number, number>;
   protected _bigIntPool: Map<bigint, number>;
   protected _stringPool: Map<string, number>;
+  protected _numericCount: number;
+  protected _integerCount: number;
+  protected _bigIntCount: number;
+  protected _stringCount: number;
 
   constructor() {
     this._numericPool = new Map();
     this._integerPool = new Map();
+    this._bigIntPool = new Map();
     this._stringPool = new Map();
   }
 
@@ -34,6 +41,7 @@ export class ConstantPool {
     } else {
       this._numericPool.set(value, 1);
     }
+    this._numericCount++;
   }
 
   public addInteger(value: number): void {
@@ -42,6 +50,7 @@ export class ConstantPool {
     } else {
       this._integerPool.set(value, 1);
     }
+    this._integerCount++;
   }
 
   public addBigInt(value: bigint): void {
@@ -50,6 +59,7 @@ export class ConstantPool {
     } else {
       this._bigIntPool.set(value, 1);
     }
+    this._bigIntCount++;
   }
 
   public addString(value: string): void {
@@ -58,10 +68,70 @@ export class ConstantPool {
     } else {
       this._stringPool.set(value, 1);
     }
+    this._stringCount++;
   }
 
-  public getRandomNumeric(): number {
-    const index = Math.floor(Math.random() * this._numericPool.size);
-    return [...this._numericPool.keys()][index];
+  public getRandomNumeric(frequencyBased = false): number {
+    if (frequencyBased) {
+      let index = prng.nextDouble() * this._numericCount;
+      for (const [value, frequency] of this._numericPool.entries()) {
+        if (index >= frequency) {
+          return value;
+        } else {
+          index -= frequency;
+        }
+      }
+      return prng.pickOne([...this._numericPool.keys()]);
+    } else {
+      return prng.pickOne([...this._numericPool.keys()]);
+    }
+  }
+
+  public getRandomInteger(frequencyBased = false): number {
+    if (frequencyBased) {
+      let index = prng.nextDouble() * this._integerCount;
+      for (const [value, frequency] of this._integerPool.entries()) {
+        if (index >= frequency) {
+          return value;
+        } else {
+          index -= frequency;
+        }
+      }
+      return prng.pickOne([...this._integerPool.keys()]);
+    } else {
+      return prng.pickOne([...this._integerPool.keys()]);
+    }
+  }
+
+  public getRandomBigInt(frequencyBased = false): bigint {
+    if (frequencyBased) {
+      let index = prng.nextDouble() * this._bigIntCount;
+      for (const [value, frequency] of this._bigIntPool.entries()) {
+        if (index >= frequency) {
+          return value;
+        } else {
+          index -= frequency;
+        }
+      }
+      return prng.pickOne([...this._bigIntPool.keys()]);
+    } else {
+      return prng.pickOne([...this._bigIntPool.keys()]);
+    }
+  }
+
+  public getRandomString(frequencyBased = false): string {
+    if (frequencyBased) {
+      let index = prng.nextDouble() * this._stringCount;
+      for (const [value, frequency] of this._stringPool.entries()) {
+        if (index >= frequency) {
+          return value;
+        } else {
+          index -= frequency;
+        }
+      }
+      return prng.pickOne([...this._stringPool.keys()]);
+    } else {
+      return prng.pickOne([...this._stringPool.keys()]);
+    }
   }
 }

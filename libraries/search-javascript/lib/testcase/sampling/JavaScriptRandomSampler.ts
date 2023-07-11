@@ -18,6 +18,7 @@
 
 import {
   ClassTarget,
+  ConstantPoolManager,
   FunctionTarget,
   getRelationName,
   isExported,
@@ -56,9 +57,11 @@ import { IntegerStatement } from "../statements/primitive/IntegerStatement";
 
 export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   private _rootContext: RootContext;
+  private _constantPoolManager: ConstantPoolManager;
 
   constructor(
     subject: JavaScriptSubject,
+    constantPoolManager: ConstantPoolManager,
     typeInferenceMode: string,
     randomTypeProbability: number,
     incorporateExecutionInformation: boolean,
@@ -81,6 +84,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       deltaMutationProbability,
       exploreIllegalValues
     );
+    this._constantPoolManager = constantPoolManager;
   }
 
   /**
@@ -774,11 +778,15 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     alphabet = this.stringAlphabet,
     maxlength = this.stringMaxLength
   ): StringStatement {
-    const valueLength = prng.nextInt(0, maxlength - 1);
-    let value = "";
+    let value: string;
+    if (prng.nextDouble() >= 0.5) {
+      value = this._constantPoolManager.contextConstantPool.getRandomString();
+    } else {
+      const valueLength = prng.nextInt(0, maxlength - 1);
 
-    for (let index = 0; index < valueLength; index++) {
-      value += prng.pickOne([...alphabet]);
+      for (let index = 0; index < valueLength; index++) {
+        value += prng.pickOne([...alphabet]);
+      }
     }
 
     return new StringStatement(

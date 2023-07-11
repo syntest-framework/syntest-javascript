@@ -19,11 +19,25 @@
 import { ConstantPool } from "./ConstantPool";
 
 export class ConstantPoolManager {
+  protected _targetConstantPool: ConstantPool;
+  protected _contextConstantPool: ConstantPool;
+  protected _dynamicConstantPool: ConstantPool;
+
   constructor() {
-    this._constantPools = [];
+    this._targetConstantPool = new ConstantPool();
+    this._contextConstantPool = new ConstantPool();
+    this._dynamicConstantPool = new ConstantPool();
   }
 
-  public addConstantPool(constantPool: ConstantPool): void {
-    this._constantPools.push(constantPool);
+  public get targetConstantPool(): ConstantPool {
+    return this._targetConstantPool;
+  }
+
+  public get contextConstantPool(): ConstantPool {
+    return this._contextConstantPool;
+  }
+
+  public get dynamicConstantPool(): ConstantPool {
+    return this._dynamicConstantPool;
   }
 }
