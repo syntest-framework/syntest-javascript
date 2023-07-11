@@ -30,9 +30,21 @@ export class ConstantPool {
 
   constructor() {
     this._numericPool = new Map();
+    this.addNumeric(Math.PI);
+    this.addNumeric(Math.E);
+    this.addNumeric(-1);
+    this.addNumeric(0);
+    this.addNumeric(+1);
+
     this._integerPool = new Map();
+    this.addInteger(-1);
+    this.addInteger(0);
+    this.addInteger(+1);
+
     this._bigIntPool = new Map();
+
     this._stringPool = new Map();
+    this.addString("");
   }
 
   public addNumeric(value: number): void {
