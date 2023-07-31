@@ -36,6 +36,7 @@ import { ArrowFunctionStatement } from "../statements/complex/ArrowFunctionState
 import { ArrayStatement } from "../statements/complex/ArrayStatement";
 import { ObjectStatement } from "../statements/complex/ObjectStatement";
 import { IntegerStatement } from "../statements/primitive/IntegerStatement";
+import { FunctionCall } from "../statements/root/FunctionCall";
 
 /**
  * JavaScriptRandomSampler class
@@ -118,7 +119,7 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
     id: string,
     name: string,
     type: string
-  ): ObjectStatement;
+  ): ObjectStatement | ConstructorCall | RootObject | FunctionCall;
 
   abstract sampleArray(
     depth: number,

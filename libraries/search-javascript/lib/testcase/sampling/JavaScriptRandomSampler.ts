@@ -18,6 +18,7 @@
 
 import {
   ClassTarget,
+  DiscoveredObjectKind,
   FunctionTarget,
   getRelationName,
   isExported,
@@ -27,7 +28,7 @@ import {
   RootContext,
   TypeEnum,
 } from "@syntest/analysis-javascript";
-import { prng } from "@syntest/search";
+import { prng } from "@syntest/prng";
 
 import { JavaScriptSubject } from "../../search/JavaScriptSubject";
 import { JavaScriptTestCase } from "../JavaScriptTestCase";
@@ -663,6 +664,37 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
           .getTypeModel()
           .getObjectDescription(type.split("<>")[0])
       : this._rootContext.getTypeModel().getObjectDescription(id);
+
+    const typeFromTypePool = this._rootContext
+      .getTypePool()
+      .getRandomMatchingType(typeObject);
+    if (typeFromTypePool) {
+      // always prefer type from type pool
+      switch (typeFromTypePool.kind) {
+        case DiscoveredObjectKind.CLASS: {
+          return this.sampleSpecificClass(depth + 1, typeFromTypePool.id, name);
+        }
+        case DiscoveredObjectKind.FUNCTION: {
+          return this.sampleSpecificFunctionCall(
+            depth + 1,
+            typeFromTypePool.id,
+            name
+          );
+        }
+        case DiscoveredObjectKind.INTERFACE: {
+          // TODO
+          return this.sampleSpecificClass(depth + 1, typeFromTypePool.id, name);
+        }
+        case DiscoveredObjectKind.OBJECT: {
+          return this.sampleSpecificRootObject(
+            depth + 1,
+            typeFromTypePool.id,
+            name
+          );
+        }
+        // No default
+      }
+    }
 
     const object_: { [key: string]: Statement } = {};
 

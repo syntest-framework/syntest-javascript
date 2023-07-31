@@ -34,6 +34,7 @@ import { TypeModel } from "./type/resolving/TypeModel";
 import { Element } from "./type/discovery/element/Element";
 import { DiscoveredObjectType } from "./type/discovery/object/DiscoveredType";
 import { Relation } from "./type/discovery/relation/Relation";
+import { TypePool } from "./type/resolving/TypePool";
 
 export class RootContext extends CoreRootContext<t.Node> {
   protected _exportFactory: ExportFactory;
@@ -45,6 +46,7 @@ export class RootContext extends CoreRootContext<t.Node> {
   protected _objectMap: Map<string, DiscoveredObjectType>;
 
   protected _typeModel: TypeModel;
+  protected _typePool: TypePool;
 
   // Mapping: filepath -> target name -> Exports
   protected _exportMap: Map<string, Export[]>;
@@ -138,23 +140,33 @@ export class RootContext extends CoreRootContext<t.Node> {
   }
 
   resolveTypes(): void {
-    if (!this._typeModel) {
+    if (!this._elementMap || !this._relationMap || !this._objectMap) {
       this.extractTypes();
+    }
+
+    if (!this._typeModel) {
       this._typeModel = this._typeResolver.resolveTypes(
         this._elementMap,
         this._relationMap
-      ); //, this._objectMap);
+      );
+      this._typePool = new TypePool(this._objectMap);
     }
   }
 
   getTypeModel(): TypeModel {
     if (!this._typeModel) {
-      this.extractTypes();
       this.resolveTypes();
-      // or should this always be done beforehand?
     }
 
     return this._typeModel;
+  }
+
+  getTypePool(): TypePool {
+    if (!this._typePool) {
+      this.resolveTypes();
+    }
+
+    return this._typePool;
   }
 
   getElement(id: string): Element {
