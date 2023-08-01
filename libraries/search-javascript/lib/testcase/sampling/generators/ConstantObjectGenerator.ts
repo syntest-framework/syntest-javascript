@@ -15,32 +15,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { RootContext } from "@syntest/analysis-javascript";
-import { Statement } from "../../statements/Statement";
-import { JavaScriptTestCaseSampler } from "../JavaScriptTestCaseSampler";
+import { TypeEnum } from "@syntest/analysis-javascript";
+import { prng } from "@syntest/prng";
+import { CallGenerator } from "./CallGenerator";
+import { ConstantObject } from "../../statements/action/ConstantObject";
 
-export abstract class Generator<S extends Statement> {
-  protected _sampler: JavaScriptTestCaseSampler;
-  protected _rootContext: RootContext;
-
-  constructor(sampler: JavaScriptTestCaseSampler, rootContext: RootContext) {
-    this._sampler = sampler;
-    this._rootContext = rootContext;
-  }
-
-  abstract generate(
+export class ConstantObjectGenerator extends CallGenerator<ConstantObject> {
+  override generate(
     depth: number,
     variableIdentifier: string,
     typeIdentifier: string,
     exportIdentifier: string,
     name: string
-  ): S;
+  ): ConstantObject {
+    const export_ = [...this.rootContext.getAllExports().values()]
+      .flat()
+      .find((export_) => export_.id === exportIdentifier);
 
-  get sampler() {
-    return this._sampler;
-  }
-
-  get rootContext() {
-    return this._rootContext;
+    return new ConstantObject(
+      variableIdentifier,
+      typeIdentifier,
+      name,
+      TypeEnum.FUNCTION,
+      prng.uniqueId(),
+      export_
+    );
   }
 }

@@ -15,32 +15,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { RootContext } from "@syntest/analysis-javascript";
+import { TypeEnum } from "@syntest/analysis-javascript";
 import { Statement } from "../../statements/Statement";
-import { JavaScriptTestCaseSampler } from "../JavaScriptTestCaseSampler";
+import { prng } from "@syntest/prng";
+import { CallGenerator } from "./CallGenerator";
+import { Setter } from "../../statements/action/Setter";
 
-export abstract class Generator<S extends Statement> {
-  protected _sampler: JavaScriptTestCaseSampler;
-  protected _rootContext: RootContext;
-
-  constructor(sampler: JavaScriptTestCaseSampler, rootContext: RootContext) {
-    this._sampler = sampler;
-    this._rootContext = rootContext;
-  }
-
-  abstract generate(
+export class SetterGenerator extends CallGenerator<Setter> {
+  override generate(
     depth: number,
     variableIdentifier: string,
     typeIdentifier: string,
     exportIdentifier: string,
     name: string
-  ): S;
+  ): Setter {
+    const type_ = this.rootContext
+      .getTypeModel()
+      .getObjectDescription(typeIdentifier);
 
-  get sampler() {
-    return this._sampler;
-  }
+    const arguments_: Statement[] = this.sampleArguments(depth, type_);
 
-  get rootContext() {
-    return this._rootContext;
+    if (arguments_.length !== 1) {
+      throw new Error("Setter must have exactly one argument");
+    }
+
+    const constructor_ = this.sampler.sampleConstructorCall(
+      depth,
+      exportIdentifier
+    );
+
+    return new Setter(
+      variableIdentifier,
+      typeIdentifier,
+      name,
+      TypeEnum.FUNCTION,
+      prng.uniqueId(),
+      arguments_[0],
+      constructor_
+    );
   }
 }

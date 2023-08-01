@@ -31,7 +31,7 @@ import { ActionStatement } from "./ActionStatement";
 /**
  * @author Dimitri Stallenberg
  */
-export class RootObject extends ActionStatement {
+export class ConstantObject extends ActionStatement {
   /**
    * Constructor
    * @param type the return identifierDescription of the constructor
@@ -58,12 +58,12 @@ export class RootObject extends ActionStatement {
     this._classType = "RootObject";
   }
 
-  mutate(sampler: JavaScriptTestCaseSampler, depth: number): RootObject {
+  mutate(sampler: JavaScriptTestCaseSampler, depth: number): ConstantObject {
     if (prng.nextBoolean(sampler.resampleGeneProbability)) {
-      return sampler.sampleRootObject(depth);
+      return sampler.sampleConstantObject(depth);
     }
 
-    return new RootObject(
+    return new ConstantObject(
       this.variableIdentifier,
       this.typeIdentifier,
       this.name,
@@ -73,8 +73,8 @@ export class RootObject extends ActionStatement {
     );
   }
 
-  copy(): RootObject {
-    return new RootObject(
+  copy(): ConstantObject {
+    return new ConstantObject(
       this.variableIdentifier,
       this.typeIdentifier,
       this.name,

@@ -333,7 +333,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
     this.subTargets.push(target);
   };
 
-  private _getParentClassName(
+  private _getParentClassId(
     path: NodePath<
       | t.ClassMethod
       | t.ClassProperty
@@ -341,69 +341,70 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
       | t.ClassPrivateProperty
     >
   ): string {
-    const parentNode = path.parentPath.parentPath.node;
-    const parentOfParentNode = path.parentPath.parentPath.parentPath.node;
-    if (parentNode.type === "ClassDeclaration") {
-      // e.g. class A { ... }
-      if (parentNode.id && parentNode.id.type === "Identifier") {
-        return parentNode.id.name;
-      } else if (
-        parentOfParentNode !== undefined &&
-        parentOfParentNode.type === "ExportDefaultDeclaration"
-      ) {
-        // e.g. export default class { ... }
-        return "default";
-      } else {
-        // e.g. class { ... }
-        // unsupported
-        // should not be possible
-        throw new Error("unknown class method parent");
-      }
-    } else if (parentNode.type === "ClassExpression") {
-      // e.g. const x = class A { ... }
-      // e.g. const x = class { ... }
-      // e.g. { x: class A { ... } }
-      // in all cases the name should be x
+    return this._getNodeId(path.parentPath.parentPath);
+    // const parentNode = path.parentPath.parentPath.node;
+    // const parentOfParentNode = path.parentPath.parentPath.parentPath.node;
+    // if (parentNode.type === "ClassDeclaration") {
+    //   // e.g. class A { ... }
+    //   if (parentNode.id && parentNode.id.type === "Identifier") {
+    //     return parentNode.id.name;
+    //   } else if (
+    //     parentOfParentNode !== undefined &&
+    //     parentOfParentNode.type === "ExportDefaultDeclaration"
+    //   ) {
+    //     // e.g. export default class { ... }
+    //     return "default";
+    //   } else {
+    //     // e.g. class { ... }
+    //     // unsupported
+    //     // should not be possible
+    //     throw new Error("unknown class method parent");
+    //   }
+    // } else if (parentNode.type === "ClassExpression") {
+    //   // e.g. const x = class A { ... }
+    //   // e.g. const x = class { ... }
+    //   // e.g. { x: class A { ... } }
+    //   // in all cases the name should be x
 
-      if (
-        parentOfParentNode !== undefined &&
-        parentOfParentNode.type === "VariableDeclarator"
-      ) {
-        // e.g. ? = class A { ... }
-        if (parentOfParentNode.id.type === "Identifier") {
-          // e.g. const x = class A { ... }
-          return parentOfParentNode.id.name;
-        } else {
-          // e.g. ? = class { ... }
-          // unsupported
-          // should not be possible
-          throw new Error("unknown class method parent");
-        }
-      } else if (
-        parentOfParentNode !== undefined &&
-        parentOfParentNode.type === "ObjectProperty"
-      ) {
-        // e.g. { x: class A { ... } }
-        if (parentOfParentNode.key.type === "Identifier") {
-          return parentOfParentNode.key.name;
-        } else if (parentOfParentNode.key.type.includes("Literal")) {
-          // e.g. { "x": class A { ... } }
-          return "value" in parentOfParentNode.key
-            ? parentOfParentNode.key.value.toString()
-            : "null";
-        } else {
-          // e.g. { ??: class { ... } }
-          // unsupported
-          throw new Error("unknown class method parent");
-        }
-      } else {
-        // unsupported
-        throw new Error("unknown class method parent");
-      }
-    } else {
-      // unsupported
-      throw new Error("unknown class method parent");
-    }
+    //   if (
+    //     parentOfParentNode !== undefined &&
+    //     parentOfParentNode.type === "VariableDeclarator"
+    //   ) {
+    //     // e.g. ? = class A { ... }
+    //     if (parentOfParentNode.id.type === "Identifier") {
+    //       // e.g. const x = class A { ... }
+    //       return parentOfParentNode.id.name;
+    //     } else {
+    //       // e.g. ? = class { ... }
+    //       // unsupported
+    //       // should not be possible
+    //       throw new Error("unknown class method parent");
+    //     }
+    //   } else if (
+    //     parentOfParentNode !== undefined &&
+    //     parentOfParentNode.type === "ObjectProperty"
+    //   ) {
+    //     // e.g. { x: class A { ... } }
+    //     if (parentOfParentNode.key.type === "Identifier") {
+    //       return parentOfParentNode.key.name;
+    //     } else if (parentOfParentNode.key.type.includes("Literal")) {
+    //       // e.g. { "x": class A { ... } }
+    //       return "value" in parentOfParentNode.key
+    //         ? parentOfParentNode.key.value.toString()
+    //         : "null";
+    //     } else {
+    //       // e.g. { ??: class { ... } }
+    //       // unsupported
+    //       throw new Error("unknown class method parent");
+    //     }
+    //   } else {
+    //     // unsupported
+    //     throw new Error("unknown class method parent");
+    //   }
+    // } else {
+    //   // unsupported
+    //   throw new Error("unknown class method parent");
+    // }
   }
 
   public ClassMethod: (path: NodePath<t.ClassMethod>) => void = (path) => {
@@ -413,7 +414,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
       throw new Error("unknown class method parent");
     }
 
-    const parentClassName: string = this._getParentClassName(path);
+    const parentClassId: string = this._getParentClassId(path);
 
     if (path.node.key.type !== "Identifier") {
       // e.g. class A { ?() {} }
@@ -435,7 +436,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
       id: `${this._getNodeId(path)}`,
       name: targetName,
       type: TargetType.METHOD,
-      className: parentClassName,
+      classId: parentClassId,
       isStatic: path.node.static,
       isAsync: path.node.async,
       methodType: path.node.kind,
@@ -506,7 +507,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
                   id: target.id,
                   type: TargetType.METHOD,
                   name: "constructor",
-                  className: prototypeName,
+                  classId: target.id,
 
                   visibility: VisibilityType.PUBLIC,
 
@@ -527,7 +528,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
               id: `${this._getNodeId(path)}`,
               type: TargetType.METHOD,
               name: property.node.name,
-              className: prototypeName,
+              classId: target.id,
 
               visibility: VisibilityType.PUBLIC,
 
@@ -632,7 +633,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
         }
         case "ClassProperty": {
           // e.g. class A { x = () => {} }
-          const parentClassName: string = this._getParentClassName(
+          const parentClassId: string = this._getParentClassId(
             <NodePath<t.ClassProperty>>path.parentPath
           );
 
@@ -646,7 +647,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
 
           const target: MethodTarget = {
             id: `${this._getNodeId(path)}`,
-            className: parentClassName,
+            classId: parentClassId,
             name: targetName,
             type: TargetType.METHOD,
             isStatic: (<t.ClassProperty>parent.node).static,
@@ -961,8 +962,8 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
                       (<MethodTarget>subTarget).methodType &&
                     (<MethodTarget>t).isStatic ===
                       (<MethodTarget>subTarget).isStatic &&
-                    (<MethodTarget>t).className ===
-                      (<MethodTarget>subTarget).className
+                    (<MethodTarget>t).classId ===
+                      (<MethodTarget>subTarget).classId
                   : true)
               );
             })

@@ -309,17 +309,15 @@ export class ObjectVisitor extends AbstractSyntaxTreeVisitor {
       }
     } else if (path.node.object.type === "Identifier") {
       const bindingId = this._getBindingId(path.get("object"));
-      const _object = this.complexTypeMap.get(bindingId);
+      let _object = this.complexTypeMap.get(bindingId);
 
       if (!_object) {
-        // do not consider newly generated objects
-        return;
-        // _object = {
-        //   id: bindingId,
-        //   kind: DiscoveredObjectKind.OBJECT, // not sure actually
-        //   properties: new Map(),
-        // };
-        // this._complexTypeMap.set(bindingId, _object);
+        _object = {
+          id: bindingId,
+          kind: DiscoveredObjectKind.OBJECT, // not sure actually
+          properties: new Map(),
+        };
+        this._complexTypeMap.set(bindingId, _object);
       }
 
       if (path.node.property.type === "PrivateName") {

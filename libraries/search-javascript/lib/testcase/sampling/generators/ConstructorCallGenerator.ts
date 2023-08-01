@@ -18,27 +18,40 @@
 import { TypeEnum } from "@syntest/analysis-javascript";
 import { Statement } from "../../statements/Statement";
 import { prng } from "@syntest/prng";
-import { FunctionCall } from "../../statements/action/FunctionCall";
 import { CallGenerator } from "./CallGenerator";
+import { ConstructorCall } from "../../statements/action/ConstructorCall";
 
-export class ConstructorCallGenerator extends CallGenerator<FunctionCall> {
+export class ConstructorCallGenerator extends CallGenerator<ConstructorCall> {
   override generate(
     depth: number,
     variableIdentifier: string,
     typeIdentifier: string,
+    exportIdentifier: string,
     name: string
-  ): FunctionCall {
+  ): ConstructorCall {
+    const export_ = [...this.rootContext.getAllExports().values()]
+      .flat()
+      .find((export_) => export_.id === exportIdentifier);
+
+    if (exportIdentifier === typeIdentifier) {
+      // default constructor with no type and no args
+      return new ConstructorCall(
+        variableIdentifier,
+        typeIdentifier,
+        name,
+        TypeEnum.FUNCTION,
+        prng.uniqueId(),
+        [],
+        export_
+      );
+    }
     const type_ = this.rootContext
       .getTypeModel()
-      .getObjectDescription(typeIdentifier);
+      .getObjectDescription(variableIdentifier);
 
     const arguments_: Statement[] = this.sampleArguments(depth, type_);
 
-    const export_ = [...this.rootContext.getAllExports().values()]
-      .flat()
-      .find((export_) => export_.id === typeIdentifier);
-
-    return new FunctionCall(
+    return new ConstructorCall(
       variableIdentifier,
       typeIdentifier,
       name,

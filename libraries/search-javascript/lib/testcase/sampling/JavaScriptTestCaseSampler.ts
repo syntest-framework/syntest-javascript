@@ -28,7 +28,7 @@ import { NumericStatement } from "../statements/primitive/NumericStatement";
 import { StringStatement } from "../statements/primitive/StringStatement";
 import { ConstructorCall } from "../statements/action/ConstructorCall";
 import { Statement } from "../statements/Statement";
-import { RootObject } from "../statements/action/RootObject";
+import { ConstantObject } from "../statements/action/ConstantObject";
 import { ObjectFunctionCall } from "../statements/action/ObjectFunctionCall";
 import { NullStatement } from "../statements/primitive/NullStatement";
 import { UndefinedStatement } from "../statements/primitive/UndefinedStatement";
@@ -41,6 +41,12 @@ import { FunctionCallGenerator } from "./generators/FunctionCallGenerator";
 import { RootContext } from "@syntest/analysis-javascript";
 import { StatementPool } from "../StatementPool";
 import { ActionStatement } from "../statements/action/ActionStatement";
+import { ConstructorCallGenerator } from "./generators/ConstructorCallGenerator";
+import { MethodCallGenerator } from "./generators/MethodCallGenerator";
+import { GetterGenerator } from "./generators/GetterGenerator";
+import { SetterGenerator } from "./generators/SetterGenerator";
+import { ConstantObjectGenerator } from "./generators/ConstantObjectGenerator";
+import { ObjectFunctionCallGenerator } from "./generators/ObjectFunctionCallGenerator";
 
 /**
  * JavaScriptRandomSampler class
@@ -63,6 +69,14 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
   private _statementPool: StatementPool | null;
 
   private _functionCallGenerator: FunctionCallGenerator;
+
+  private _constructorCallGenerator: ConstructorCallGenerator;
+  private _methodCallGenerator: MethodCallGenerator;
+  private _getterGenerator: GetterGenerator;
+  private _setterGenerator: SetterGenerator;
+
+  private _constantObjectGenerator: ConstantObjectGenerator;
+  private _objectFunctionCallGenerator: ObjectFunctionCallGenerator;
 
   constructor(
     subject: JavaScriptSubject,
@@ -90,6 +104,21 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
     this._exploreIllegalValues = exploreIllegalValues;
 
     this._functionCallGenerator = new FunctionCallGenerator(this, rootContext);
+    this._constructorCallGenerator = new ConstructorCallGenerator(
+      this,
+      rootContext
+    );
+    this._methodCallGenerator = new MethodCallGenerator(this, rootContext);
+    this._getterGenerator = new GetterGenerator(this, rootContext);
+    this._setterGenerator = new SetterGenerator(this, rootContext);
+    this._constantObjectGenerator = new ConstantObjectGenerator(
+      this,
+      rootContext
+    );
+    this._objectFunctionCallGenerator = new ObjectFunctionCallGenerator(
+      this,
+      rootContext
+    );
   }
 
   get rootContext() {
@@ -98,6 +127,30 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
 
   get functionCallGenerator() {
     return this._functionCallGenerator;
+  }
+
+  get constructorCallGenerator() {
+    return this._constructorCallGenerator;
+  }
+
+  get methodCallGenerator() {
+    return this._methodCallGenerator;
+  }
+
+  get getterGenerator() {
+    return this._getterGenerator;
+  }
+
+  get setterGenerator() {
+    return this._setterGenerator;
+  }
+
+  get constantObjectGenerator() {
+    return this._constantObjectGenerator;
+  }
+
+  get objectFunctionCallGenerator() {
+    return this._objectFunctionCallGenerator;
   }
 
   get statementPool() {
@@ -110,22 +163,25 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
 
   abstract sampleRoot(): ActionStatement;
 
-  abstract sampleConstructorCall(depth: number): ConstructorCall;
+  abstract sampleFunctionCall(depth: number): FunctionCall;
 
+  abstract sampleConstructorCall(
+    depth: number,
+    classId?: string
+  ): ConstructorCall;
   abstract sampleClassAction(depth: number): MethodCall | Getter | Setter;
   abstract sampleMethodCall(depth: number): MethodCall;
   abstract sampleGetter(depth: number): Getter;
   abstract sampleSetter(depth: number): Setter;
 
-  abstract sampleRootObject(depth: number): RootObject;
-  abstract sampleObjectFunctionCall(
+  abstract sampleConstantObject(
     depth: number,
-    objectName: string
-  ): ObjectFunctionCall;
+    objectId?: string
+  ): ConstantObject;
+  abstract sampleObjectFunctionCall(depth: number): ObjectFunctionCall;
 
   // TODO
   // abstract sampleStaticMethodCall(depth: number): MethodCall;
-  // abstract sampleFunctionCall(depth: number): FunctionCall;
 
   abstract sampleArrayArgument(
     depth: number,
@@ -146,7 +202,7 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
     id: string,
     name: string,
     type: string
-  ): ObjectStatement | ConstructorCall | RootObject | FunctionCall;
+  ): ObjectStatement | ConstructorCall | ConstantObject | FunctionCall;
 
   abstract sampleArray(
     depth: number,

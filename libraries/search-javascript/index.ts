@@ -51,7 +51,7 @@ export * from "./lib/testcase/statements/primitive/UndefinedStatement";
 
 export * from "./lib/testcase/statements/action/ConstructorCall";
 export * from "./lib/testcase/statements/action/FunctionCall";
-export * from "./lib/testcase/statements/action/RootObject";
+export * from "./lib/testcase/statements/action/ConstantObject";
 export * from "./lib/testcase/statements/root/RootStatement";
 
 export * from "./lib/testcase/statements/Statement";

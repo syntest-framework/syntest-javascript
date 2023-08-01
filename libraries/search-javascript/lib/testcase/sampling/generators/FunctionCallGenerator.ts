@@ -26,6 +26,7 @@ export class FunctionCallGenerator extends CallGenerator<FunctionCall> {
     depth: number,
     variableIdentifier: string,
     typeIdentifier: string,
+    exportIdentifier: string,
     name: string
   ): FunctionCall {
     const type_ = this.rootContext

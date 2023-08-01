@@ -22,7 +22,6 @@ import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";
 
-import { ActionStatement } from "./ActionStatement";
 import { Getter } from "./Getter";
 import { Setter } from "./Setter";
 import { ConstructorCall } from "./ConstructorCall";

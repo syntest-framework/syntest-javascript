@@ -169,7 +169,7 @@ export class RootContext extends CoreRootContext<t.Node> {
         this._elementMap,
         this._relationMap
       );
-      this._typePool = new TypePool(this._objectMap);
+      this._typePool = new TypePool(this._objectMap, this.getAllExports());
     }
   }
 

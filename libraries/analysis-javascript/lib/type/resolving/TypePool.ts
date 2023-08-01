@@ -19,18 +19,47 @@
 import { prng } from "@syntest/prng";
 import { DiscoveredObjectType } from "../discovery/object/DiscoveredType";
 import { ObjectType } from "./Type";
+import { Export } from "../../target/export/Export";
 
 // TODO we could cache some of this stuff (unless we do dynamic adding of properties at some point)
 export class TypePool {
   private _objectMap: Map<string, DiscoveredObjectType>;
+  private _exports: Map<string, Export[]>;
 
-  constructor(objectMap: Map<string, DiscoveredObjectType>) {
+  private _exportedObjects: Map<string, DiscoveredObjectType>;
+
+  constructor(
+    objectMap: Map<string, DiscoveredObjectType>,
+    exports: Map<string, Export[]>
+  ) {
     this._objectMap = objectMap;
+    this._exports = exports;
+
+    this._exportedObjects = this._extractExportedTypes();
+  }
+
+  private _extractExportedTypes(): Map<string, DiscoveredObjectType> {
+    const exportedTypes: Map<string, DiscoveredObjectType> = new Map();
+
+    for (const [, exports] of this._exports.entries()) {
+      for (const export_ of exports) {
+        for (const [
+          objectName,
+          discoveredObject,
+        ] of this._objectMap.entries()) {
+          if (discoveredObject.id === export_.id) {
+            exportedTypes.set(objectName, discoveredObject);
+          }
+        }
+      }
+    }
+
+    return exportedTypes;
   }
 
   protected _getMatchingTypes(objectType: ObjectType): DiscoveredObjectType[] {
     const matchingTypes: DiscoveredObjectType[] = [];
-    for (const object_ of this._objectMap.values()) {
+    for (const object_ of this._exportedObjects.values()) {
       let match = true;
       for (const property of objectType.properties.keys()) {
         if (!object_.properties.has(property)) {
