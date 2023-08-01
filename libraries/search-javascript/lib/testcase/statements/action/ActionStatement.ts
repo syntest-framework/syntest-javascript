@@ -20,6 +20,7 @@ import { Encoding, EncodingSampler } from "@syntest/search";
 
 import { Statement } from "../Statement";
 import { Export } from "@syntest/analysis-javascript";
+import { prng } from "@syntest/prng";
 
 /**
  * @author Dimitri Stallenberg
@@ -40,6 +41,18 @@ export abstract class ActionStatement extends Statement {
     super(variableIdentifier, typeIdentifier, name, type, uniqueId);
     this._args = arguments_;
     this._export = export_;
+
+    this._varName = "_" + this.generateVarName(name, type);
+  }
+
+  protected override generateVarName(name: string, type: string): string {
+    if (this._export) {
+      return name + "_" + this._export.name + "_" + prng.uniqueId(4);
+    }
+
+    return type.includes("<>")
+      ? name + "_" + type.split("<>")[1] + "_" + prng.uniqueId(4)
+      : name + "_" + type + "_" + prng.uniqueId(4);
   }
 
   abstract override mutate(

@@ -32,13 +32,14 @@ export function getTestCommand(
 ): Command {
   const options = new Map<string, Yargs.Options>();
 
-  const commandGroup = "Type Inference Options:";
+  const typeInferenceGroup = "Type Inference Options:";
+  const variousProbabilitiesGroup = "Various Probabilities:";
 
   options.set("incorporate-execution-information", {
     alias: [],
     default: true,
     description: "Incorporate execution information.",
-    group: commandGroup,
+    group: typeInferenceGroup,
     hidden: false,
     type: "boolean",
   });
@@ -47,7 +48,7 @@ export function getTestCommand(
     alias: [],
     default: "proportional",
     description: "The type inference mode: [proportional, ranked, none].",
-    group: commandGroup,
+    group: typeInferenceGroup,
     hidden: false,
     type: "string",
   });
@@ -57,7 +58,27 @@ export function getTestCommand(
     default: 0.1,
     description:
       "The probability we use a random type regardless of the inferred type.",
-    group: commandGroup,
+    group: typeInferenceGroup,
+    hidden: false,
+    type: "number",
+  });
+
+  options.set("reuse-statement-probability", {
+    alias: [],
+    default: 0.8,
+    description:
+      "The probability we reuse a statement instead of generating a new one.",
+    group: variousProbabilitiesGroup,
+    hidden: false,
+    type: "number",
+  });
+
+  options.set("use-mocked-object-probability", {
+    alias: [],
+    default: 0.1,
+    description:
+      "The probability we use a mocked object instead of generating an actual instance.",
+    group: variousProbabilitiesGroup,
     hidden: false,
     type: "number",
   });
@@ -85,4 +106,6 @@ export type TestCommandOptions = {
   incorporateExecutionInformation: boolean;
   typeInferenceMode: string;
   randomTypeProbability: number;
+  reuseStatementProbability: number;
+  useMockedObjectProbability: number;
 };

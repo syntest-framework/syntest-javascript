@@ -19,6 +19,7 @@
 import { TypeEnum } from "@syntest/analysis-javascript";
 import { ActionStatement } from "./statements/action/ActionStatement";
 import { Statement } from "./statements/Statement";
+import { prng } from "@syntest/prng";
 
 export class StatementPool {
   // type -> statement array
@@ -28,6 +29,16 @@ export class StatementPool {
     this.pool = new Map();
 
     this._fillGenePool(roots);
+  }
+
+  public getRandomStatement(type: string): Statement {
+    const statements = this.pool.get(type);
+
+    if (!statements || statements.length === 0) {
+      return undefined;
+    }
+
+    return prng.pickOne(statements);
   }
 
   private _fillGenePool(roots: ActionStatement[]) {

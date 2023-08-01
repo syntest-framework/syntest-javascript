@@ -18,27 +18,30 @@
 import { TypeEnum } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/prng";
 import { CallGenerator } from "./CallGenerator";
-import { ConstantObject } from "../../statements/action/ConstantObject";
+import { Getter } from "../../../statements/action/Getter";
+import { StatementPool } from "../../../StatementPool";
 
-export class ConstantObjectGenerator extends CallGenerator<ConstantObject> {
+export class GetterGenerator extends CallGenerator<Getter> {
   override generate(
     depth: number,
     variableIdentifier: string,
     typeIdentifier: string,
     exportIdentifier: string,
-    name: string
-  ): ConstantObject {
-    const export_ = [...this.rootContext.getAllExports().values()]
-      .flat()
-      .find((export_) => export_.id === exportIdentifier);
+    name: string,
+    statementPool: StatementPool
+  ): Getter {
+    const constructor_ = this.sampler.sampleConstructorCall(
+      depth + 1,
+      exportIdentifier
+    );
 
-    return new ConstantObject(
+    return new Getter(
       variableIdentifier,
       typeIdentifier,
       name,
       TypeEnum.FUNCTION,
       prng.uniqueId(),
-      export_
+      constructor_
     );
   }
 }

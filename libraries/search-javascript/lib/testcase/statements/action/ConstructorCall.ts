@@ -67,9 +67,9 @@ export class ConstructorCall extends ActionStatement {
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): ConstructorCall {
-    if (prng.nextBoolean(sampler.resampleGeneProbability)) {
-      return sampler.sampleConstructorCall(depth);
-    }
+    // if (prng.nextBoolean(sampler.resampleGeneProbability)) {
+    //   return sampler.sampleConstructorCall(depth);
+    // }
 
     const arguments_ = this.args.map((a: Statement) => a.copy());
 
@@ -118,7 +118,7 @@ export class ConstructorCall extends ActionStatement {
       a.decode(decoder, id, options)
     );
 
-    let decoded = `const ${this.varName} = new ${this.name}(${arguments_})`;
+    let decoded = `const ${this.varName} = new ${this.export.name}(${arguments_})`;
 
     if (options.addLogs) {
       const logDirectory = decoder.getLogDirectory(id, this.varName);

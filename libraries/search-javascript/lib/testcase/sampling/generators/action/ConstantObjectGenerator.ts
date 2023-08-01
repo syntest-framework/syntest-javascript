@@ -16,42 +16,31 @@
  * limitations under the License.
  */
 import { TypeEnum } from "@syntest/analysis-javascript";
-import { Statement } from "../../statements/Statement";
 import { prng } from "@syntest/prng";
 import { CallGenerator } from "./CallGenerator";
-import { Setter } from "../../statements/action/Setter";
+import { ConstantObject } from "../../../statements/action/ConstantObject";
+import { StatementPool } from "../../../StatementPool";
 
-export class SetterGenerator extends CallGenerator<Setter> {
+export class ConstantObjectGenerator extends CallGenerator<ConstantObject> {
   override generate(
     depth: number,
     variableIdentifier: string,
     typeIdentifier: string,
     exportIdentifier: string,
-    name: string
-  ): Setter {
-    const type_ = this.rootContext
-      .getTypeModel()
-      .getObjectDescription(typeIdentifier);
+    name: string,
+    statementPool: StatementPool
+  ): ConstantObject {
+    const export_ = [...this.rootContext.getAllExports().values()]
+      .flat()
+      .find((export_) => export_.id === exportIdentifier);
 
-    const arguments_: Statement[] = this.sampleArguments(depth, type_);
-
-    if (arguments_.length !== 1) {
-      throw new Error("Setter must have exactly one argument");
-    }
-
-    const constructor_ = this.sampler.sampleConstructorCall(
-      depth + 1,
-      exportIdentifier
-    );
-
-    return new Setter(
+    return new ConstantObject(
       variableIdentifier,
       typeIdentifier,
       name,
       TypeEnum.FUNCTION,
       prng.uniqueId(),
-      arguments_[0],
-      constructor_
+      export_
     );
   }
 }

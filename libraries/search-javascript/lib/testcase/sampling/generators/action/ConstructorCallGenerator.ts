@@ -16,10 +16,11 @@
  * limitations under the License.
  */
 import { TypeEnum } from "@syntest/analysis-javascript";
-import { Statement } from "../../statements/Statement";
+import { Statement } from "../../../statements/Statement";
 import { prng } from "@syntest/prng";
 import { CallGenerator } from "./CallGenerator";
-import { ConstructorCall } from "../../statements/action/ConstructorCall";
+import { ConstructorCall } from "../../../statements/action/ConstructorCall";
+import { StatementPool } from "../../../StatementPool";
 
 export class ConstructorCallGenerator extends CallGenerator<ConstructorCall> {
   override generate(
@@ -27,7 +28,8 @@ export class ConstructorCallGenerator extends CallGenerator<ConstructorCall> {
     variableIdentifier: string,
     typeIdentifier: string,
     exportIdentifier: string,
-    name: string
+    name: string,
+    statementPool: StatementPool
   ): ConstructorCall {
     const export_ = [...this.rootContext.getAllExports().values()]
       .flat()
@@ -45,9 +47,16 @@ export class ConstructorCallGenerator extends CallGenerator<ConstructorCall> {
         export_
       );
     }
+
+    const statementFromPool = statementPool.getRandomStatement(typeIdentifier);
+
+    if (statementFromPool && prng.nextBoolean(this.reuseStatementProbability)) {
+      return <ConstructorCall>statementFromPool;
+    }
+
     const type_ = this.rootContext
       .getTypeModel()
-      .getObjectDescription(variableIdentifier);
+      .getObjectDescription(typeIdentifier);
 
     const arguments_: Statement[] = this.sampleArguments(depth, type_);
 

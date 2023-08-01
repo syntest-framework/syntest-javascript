@@ -16,29 +16,39 @@
  * limitations under the License.
  */
 import { TypeEnum } from "@syntest/analysis-javascript";
+import { Statement } from "../../../statements/Statement";
 import { prng } from "@syntest/prng";
 import { CallGenerator } from "./CallGenerator";
-import { Getter } from "../../statements/action/Getter";
+import { MethodCall } from "../../../statements/action/MethodCall";
+import { StatementPool } from "../../../StatementPool";
 
-export class GetterGenerator extends CallGenerator<Getter> {
+export class MethodCallGenerator extends CallGenerator<MethodCall> {
   override generate(
     depth: number,
     variableIdentifier: string,
     typeIdentifier: string,
     exportIdentifier: string,
-    name: string
-  ): Getter {
+    name: string,
+    statementPool: StatementPool
+  ): MethodCall {
+    const type_ = this.rootContext
+      .getTypeModel()
+      .getObjectDescription(typeIdentifier);
+
+    const arguments_: Statement[] = this.sampleArguments(depth, type_);
+
     const constructor_ = this.sampler.sampleConstructorCall(
       depth + 1,
       exportIdentifier
     );
 
-    return new Getter(
+    return new MethodCall(
       variableIdentifier,
       typeIdentifier,
       name,
       TypeEnum.FUNCTION,
       prng.uniqueId(),
+      arguments_,
       constructor_
     );
   }

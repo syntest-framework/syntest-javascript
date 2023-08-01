@@ -648,7 +648,9 @@ export class JavaScriptLauncher extends Launcher {
       this.arguments_.stringMaxLength,
       this.arguments_.resampleGeneProbability,
       this.arguments_.deltaMutationProbability,
-      this.arguments_.exploreIllegalValues
+      this.arguments_.exploreIllegalValues,
+      (<JavaScriptArguments>this.arguments_).reuseStatementProbability,
+      (<JavaScriptArguments>this.arguments_).useMockedObjectProbability
     );
     sampler.rootContext = rootContext;
 

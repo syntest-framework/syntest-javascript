@@ -84,6 +84,8 @@ export class JavaScriptTestCase extends Encoding {
       finalRoots.push(sampler.sampleRoot());
     }
 
+    sampler.statementPool = undefined;
+
     return new JavaScriptTestCase(roots);
   }
 

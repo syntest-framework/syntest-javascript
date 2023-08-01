@@ -37,16 +37,16 @@ import { ArrayStatement } from "../statements/complex/ArrayStatement";
 import { ObjectStatement } from "../statements/complex/ObjectStatement";
 import { IntegerStatement } from "../statements/primitive/IntegerStatement";
 import { FunctionCall } from "../statements/action/FunctionCall";
-import { FunctionCallGenerator } from "./generators/FunctionCallGenerator";
+import { FunctionCallGenerator } from "./generators/action/FunctionCallGenerator";
 import { RootContext } from "@syntest/analysis-javascript";
 import { StatementPool } from "../StatementPool";
 import { ActionStatement } from "../statements/action/ActionStatement";
-import { ConstructorCallGenerator } from "./generators/ConstructorCallGenerator";
-import { MethodCallGenerator } from "./generators/MethodCallGenerator";
-import { GetterGenerator } from "./generators/GetterGenerator";
-import { SetterGenerator } from "./generators/SetterGenerator";
-import { ConstantObjectGenerator } from "./generators/ConstantObjectGenerator";
-import { ObjectFunctionCallGenerator } from "./generators/ObjectFunctionCallGenerator";
+import { ConstructorCallGenerator } from "./generators/action/ConstructorCallGenerator";
+import { MethodCallGenerator } from "./generators/action/MethodCallGenerator";
+import { GetterGenerator } from "./generators/action/GetterGenerator";
+import { SetterGenerator } from "./generators/action/SetterGenerator";
+import { ConstantObjectGenerator } from "./generators/action/ConstantObjectGenerator";
+import { ObjectFunctionCallGenerator } from "./generators/action/ObjectFunctionCallGenerator";
 
 /**
  * JavaScriptRandomSampler class
@@ -65,6 +65,8 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
   private _resampleGeneProbability: number;
   private _deltaMutationProbability: number;
   private _exploreIllegalValues: boolean;
+  private _reuseStatementProbability: number;
+  private _useMockedObjectProbability: number;
 
   private _statementPool: StatementPool | null;
 
@@ -88,7 +90,9 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
     stringMaxLength: number,
     resampleGeneProbability: number,
     deltaMutationProbability: number,
-    exploreIllegalValues: boolean
+    exploreIllegalValues: boolean,
+    reuseStatementProbability: number,
+    useMockedObjectProbability: number
   ) {
     super(subject);
     this._typeInferenceMode = typeInferenceMode;
@@ -100,6 +104,8 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
     this._resampleGeneProbability = resampleGeneProbability;
     this._deltaMutationProbability = deltaMutationProbability;
     this._exploreIllegalValues = exploreIllegalValues;
+    this._reuseStatementProbability = reuseStatementProbability;
+    this._useMockedObjectProbability = useMockedObjectProbability;
   }
 
   get rootContext() {
@@ -109,21 +115,40 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
   set rootContext(rootContext: RootContext) {
     this._rootContext = rootContext;
 
-    this._functionCallGenerator = new FunctionCallGenerator(this, rootContext);
+    this._functionCallGenerator = new FunctionCallGenerator(
+      this,
+      rootContext,
+      this.reuseStatementProbability
+    );
     this._constructorCallGenerator = new ConstructorCallGenerator(
       this,
-      rootContext
+      rootContext,
+      this.reuseStatementProbability
     );
-    this._methodCallGenerator = new MethodCallGenerator(this, rootContext);
-    this._getterGenerator = new GetterGenerator(this, rootContext);
-    this._setterGenerator = new SetterGenerator(this, rootContext);
+    this._methodCallGenerator = new MethodCallGenerator(
+      this,
+      rootContext,
+      this.reuseStatementProbability
+    );
+    this._getterGenerator = new GetterGenerator(
+      this,
+      rootContext,
+      this.reuseStatementProbability
+    );
+    this._setterGenerator = new SetterGenerator(
+      this,
+      rootContext,
+      this.reuseStatementProbability
+    );
     this._constantObjectGenerator = new ConstantObjectGenerator(
       this,
-      rootContext
+      rootContext,
+      this.reuseStatementProbability
     );
     this._objectFunctionCallGenerator = new ObjectFunctionCallGenerator(
       this,
-      rootContext
+      rootContext,
+      this.reuseStatementProbability
     );
   }
 
@@ -271,5 +296,13 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
 
   get exploreIllegalValues(): boolean {
     return this._exploreIllegalValues;
+  }
+
+  get reuseStatementProbability(): number {
+    return this._reuseStatementProbability;
+  }
+
+  get useMockedObjectProbability(): number {
+    return this._useMockedObjectProbability;
   }
 }

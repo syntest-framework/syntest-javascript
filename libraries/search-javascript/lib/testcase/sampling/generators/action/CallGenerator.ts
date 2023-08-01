@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 import { ObjectType, getRelationName } from "@syntest/analysis-javascript";
-import { Statement } from "../../statements/Statement";
+import { Statement } from "../../../statements/Statement";
 import { prng } from "@syntest/prng";
-import { Generator } from "./Generator";
+import { Generator } from "../Generator";
 
 export abstract class CallGenerator<S extends Statement> extends Generator<S> {
   sampleArguments(depth: number, type_: ObjectType): Statement[] {

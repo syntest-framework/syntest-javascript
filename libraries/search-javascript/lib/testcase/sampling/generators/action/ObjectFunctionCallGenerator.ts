@@ -16,37 +16,40 @@
  * limitations under the License.
  */
 import { TypeEnum } from "@syntest/analysis-javascript";
-import { Statement } from "../../statements/Statement";
+import { Statement } from "../../../statements/Statement";
 import { prng } from "@syntest/prng";
-import { FunctionCall } from "../../statements/action/FunctionCall";
 import { CallGenerator } from "./CallGenerator";
+import { ObjectFunctionCall } from "../../../statements/action/ObjectFunctionCall";
+import { StatementPool } from "../../../StatementPool";
 
-export class FunctionCallGenerator extends CallGenerator<FunctionCall> {
+export class ObjectFunctionCallGenerator extends CallGenerator<ObjectFunctionCall> {
   override generate(
     depth: number,
     variableIdentifier: string,
     typeIdentifier: string,
     exportIdentifier: string,
-    name: string
-  ): FunctionCall {
+    name: string,
+    statementPool: StatementPool
+  ): ObjectFunctionCall {
     const type_ = this.rootContext
       .getTypeModel()
       .getObjectDescription(typeIdentifier);
 
     const arguments_: Statement[] = this.sampleArguments(depth, type_);
 
-    const export_ = [...this.rootContext.getAllExports().values()]
-      .flat()
-      .find((export_) => export_.id === typeIdentifier);
+    const object_ = this.sampler.sampleConstantObject(
+      depth + 1,
+      exportIdentifier
+    );
 
-    return new FunctionCall(
+    return new ObjectFunctionCall(
       variableIdentifier,
       typeIdentifier,
       name,
       TypeEnum.FUNCTION,
       prng.uniqueId(),
       arguments_,
-      export_
+      object_
     );
   }
 }

@@ -16,38 +16,44 @@
  * limitations under the License.
  */
 import { TypeEnum } from "@syntest/analysis-javascript";
-import { Statement } from "../../statements/Statement";
+import { Statement } from "../../../statements/Statement";
 import { prng } from "@syntest/prng";
 import { CallGenerator } from "./CallGenerator";
-import { ObjectFunctionCall } from "../../statements/action/ObjectFunctionCall";
+import { Setter } from "../../../statements/action/Setter";
+import { StatementPool } from "../../../StatementPool";
 
-export class ObjectFunctionCallGenerator extends CallGenerator<ObjectFunctionCall> {
+export class SetterGenerator extends CallGenerator<Setter> {
   override generate(
     depth: number,
     variableIdentifier: string,
     typeIdentifier: string,
     exportIdentifier: string,
-    name: string
-  ): ObjectFunctionCall {
+    name: string,
+    statementPool: StatementPool
+  ): Setter {
     const type_ = this.rootContext
       .getTypeModel()
       .getObjectDescription(typeIdentifier);
 
     const arguments_: Statement[] = this.sampleArguments(depth, type_);
 
-    const object_ = this.sampler.sampleConstantObject(
+    if (arguments_.length !== 1) {
+      throw new Error("Setter must have exactly one argument");
+    }
+
+    const constructor_ = this.sampler.sampleConstructorCall(
       depth + 1,
       exportIdentifier
     );
 
-    return new ObjectFunctionCall(
+    return new Setter(
       variableIdentifier,
       typeIdentifier,
       name,
       TypeEnum.FUNCTION,
       prng.uniqueId(),
-      arguments_,
-      object_
+      arguments_[0],
+      constructor_
     );
   }
 }

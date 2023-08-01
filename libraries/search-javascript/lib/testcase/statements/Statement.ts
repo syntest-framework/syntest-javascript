@@ -30,7 +30,7 @@ export abstract class Statement {
   private _name: string;
   private _type: string;
   private _uniqueId: string;
-  private _varName: string;
+  protected _varName: string;
 
   protected _classType: string;
 
@@ -85,10 +85,13 @@ export abstract class Statement {
       throw new Error(shouldNeverHappen("name cannot inlude <>"));
     }
 
-    this._varName = type.includes("<>")
+    this._varName = "_" + this.generateVarName(name, type);
+  }
+
+  protected generateVarName(name: string, type: string): string {
+    return type.includes("<>")
       ? name + "_" + type.split("<>")[1] + "_" + prng.uniqueId(4)
       : name + "_" + type + "_" + prng.uniqueId(4);
-    this._varName = "_" + this.varName;
   }
 
   /**

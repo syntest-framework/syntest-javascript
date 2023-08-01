@@ -18,14 +18,21 @@
 import { RootContext } from "@syntest/analysis-javascript";
 import { Statement } from "../../statements/Statement";
 import { JavaScriptTestCaseSampler } from "../JavaScriptTestCaseSampler";
+import { StatementPool } from "../../StatementPool";
 
 export abstract class Generator<S extends Statement> {
   protected _sampler: JavaScriptTestCaseSampler;
   protected _rootContext: RootContext;
+  protected _reuseStatementProbability: number;
 
-  constructor(sampler: JavaScriptTestCaseSampler, rootContext: RootContext) {
+  constructor(
+    sampler: JavaScriptTestCaseSampler,
+    rootContext: RootContext,
+    reuseStatementProbability: number
+  ) {
     this._sampler = sampler;
     this._rootContext = rootContext;
+    this._reuseStatementProbability = reuseStatementProbability;
   }
 
   abstract generate(
@@ -33,7 +40,8 @@ export abstract class Generator<S extends Statement> {
     variableIdentifier: string,
     typeIdentifier: string,
     exportIdentifier: string,
-    name: string
+    name: string,
+    statementPool: StatementPool
   ): S;
 
   get sampler() {
@@ -42,5 +50,9 @@ export abstract class Generator<S extends Statement> {
 
   get rootContext() {
     return this._rootContext;
+  }
+
+  get reuseStatementProbability() {
+    return this._reuseStatementProbability;
   }
 }
