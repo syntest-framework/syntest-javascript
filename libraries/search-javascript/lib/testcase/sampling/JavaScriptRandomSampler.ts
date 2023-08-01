@@ -88,13 +88,12 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   sample(): JavaScriptTestCase {
     const roots: ActionStatement[] = [];
 
-    this.statementPool = new StatementPool([]);
-
     for (
       let index = 0;
       index < prng.nextInt(1, this.maxActionStatements);
       index++
     ) {
+      this.statementPool = new StatementPool(roots);
       roots.push(this.sampleRoot());
     }
     this.statementPool = undefined;
@@ -429,6 +428,21 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       throw new Error("Invalid identifierDescription inference mode selected");
     }
 
+    if (chosenType.endsWith("object")) {
+      return this.sampleObject(depth, id, name, chosenType);
+    } else if (chosenType.endsWith("array")) {
+      return this.sampleArray(depth, id, name, chosenType);
+    } else if (chosenType.endsWith("function")) {
+      return this.sampleArrowFunction(depth, id, name, chosenType);
+    }
+
+    // take from pool
+    const statementFromPool = this.statementPool.getRandomStatement(id);
+
+    if (statementFromPool && prng.nextBoolean(this.reuseStatementProbability)) {
+      return statementFromPool;
+    }
+
     switch (chosenType) {
       case "boolean": {
         return this.sampleBool(id, name);
@@ -451,16 +465,6 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       case "regex": {
         // TODO REGEX
         return this.sampleString(id, name);
-      }
-      default: {
-        // must be object/array/function
-        if (chosenType.endsWith("object")) {
-          return this.sampleObject(depth, id, name, chosenType);
-        } else if (chosenType.endsWith("array")) {
-          return this.sampleArray(depth, id, name, chosenType);
-        } else if (chosenType.endsWith("function")) {
-          return this.sampleArrowFunction(depth, id, name, chosenType);
-        }
       }
     }
 
