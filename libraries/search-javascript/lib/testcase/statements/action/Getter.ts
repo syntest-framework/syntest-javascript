@@ -40,13 +40,14 @@ export class Getter extends ActionStatement {
    * @param property the name of the property
    */
   constructor(
-    id: string,
+    variableIdentifier: string,
+    typeIdentifier: string,
     name: string,
     type: string,
     uniqueId: string,
     className: string
   ) {
-    super(id, name, type, uniqueId, []);
+    super(variableIdentifier, typeIdentifier, name, type, uniqueId, []);
     this._classType = "Getter";
     this._className = className;
   }
@@ -68,7 +69,7 @@ export class Getter extends ActionStatement {
     }
 
     return new Getter(
-      this.id,
+      this.variableIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -78,7 +79,7 @@ export class Getter extends ActionStatement {
 
   copy(): Getter {
     return new Getter(
-      this.id,
+      this.variableIdentifier,
       this.name,
       this.type,
       this.uniqueId,

@@ -39,14 +39,15 @@ export class ObjectFunctionCall extends ActionStatement {
    * @param args the arguments of the function
    */
   constructor(
-    id: string,
+    variableIdentifier: string,
+    typeIdentifier: string,
     name: string,
     type: string,
     uniqueId: string,
     objectName: string,
     arguments_: Statement[]
   ) {
-    super(id, name, type, uniqueId, arguments_);
+    super(variableIdentifier, typeIdentifier, name, type, uniqueId, arguments_);
     this._classType = "ObjectFunctionCall";
     this._objectName = objectName;
   }
@@ -68,7 +69,7 @@ export class ObjectFunctionCall extends ActionStatement {
     }
 
     return new ObjectFunctionCall(
-      this.id,
+      this.variableIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -81,7 +82,7 @@ export class ObjectFunctionCall extends ActionStatement {
     const deepCopyArguments = this.args.map((a: Statement) => a.copy());
 
     return new ObjectFunctionCall(
-      this.id,
+      this.variableIdentifier,
       this.name,
       this.type,
       this.uniqueId,

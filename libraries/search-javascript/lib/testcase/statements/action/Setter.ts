@@ -41,14 +41,15 @@ export class Setter extends ActionStatement {
    * @param arg the argument of the setter
    */
   constructor(
-    id: string,
+    variableIdentifier: string,
+    typeIdentifier: string,
     name: string,
     type: string,
     uniqueId: string,
     className: string,
     argument: Statement
   ) {
-    super(id, name, type, uniqueId, [argument]);
+    super(variableIdentifier, typeIdentifier, name, type, uniqueId, [argument]);
     this._classType = "Setter";
     this._className = className;
   }
@@ -66,7 +67,7 @@ export class Setter extends ActionStatement {
     argument = argument.mutate(sampler, depth + 1);
 
     return new Setter(
-      this.id,
+      this.variableIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -79,7 +80,7 @@ export class Setter extends ActionStatement {
     const deepCopyArgument = this.args.map((a: Statement) => a.copy())[0];
 
     return new Setter(
-      this.id,
+      this.variableIdentifier,
       this.name,
       this.type,
       this.uniqueId,

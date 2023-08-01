@@ -30,20 +30,29 @@ export class ArrayStatement extends Statement {
   private _children: Statement[];
 
   constructor(
-    id: string,
+    variableIdentifier: string,
+    typeIdentifier: string,
     name: string,
     type: string,
     uniqueId: string,
     children: Statement[]
   ) {
-    super(id, name, type, uniqueId);
+    super(
+      variableIdentifier,
+      typeIdentifier,
+      nameIdentifier,
+      typeIdentifier,
+      name,
+      type,
+      uniqueId
+    );
     this._children = children;
     this._classType = "ArrayStatement";
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
     if (prng.nextBoolean(sampler.resampleGeneProbability)) {
-      return sampler.sampleArgument(depth, this.id, this.name);
+      return sampler.sampleArgument(depth, this.variableIdentifier, this.name);
     }
     const children = this._children.map((a: Statement) => a.copy());
 
@@ -62,10 +71,12 @@ export class ArrayStatement extends Statement {
     // If there are no children, add one
     if (children.length === 0) {
       // add a item
-      finalChildren.push(sampler.sampleArrayArgument(depth + 1, this.id, 0));
+      finalChildren.push(
+        sampler.sampleArrayArgument(depth + 1, this.variableIdentifier, 0)
+      );
 
       return new ArrayStatement(
-        this.id,
+        this.variableIdentifier,
         this.name,
         this.type,
         prng.uniqueId(),
@@ -82,7 +93,11 @@ export class ArrayStatement extends Statement {
         if (choice < 0.1) {
           // 10% chance to add a argument on this position
           finalChildren.push(
-            sampler.sampleArrayArgument(depth + 1, this.id, index),
+            sampler.sampleArrayArgument(
+              depth + 1,
+              this.variableIdentifier,
+              index
+            ),
             children[index]
           );
         } else if (choice < 0.2) {
@@ -95,7 +110,7 @@ export class ArrayStatement extends Statement {
     }
 
     return new ArrayStatement(
-      this.id,
+      this.variableIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -105,7 +120,7 @@ export class ArrayStatement extends Statement {
 
   copy(): ArrayStatement {
     return new ArrayStatement(
-      this.id,
+      this.variableIdentifier,
       this.name,
       this.type,
       this.uniqueId,

@@ -37,6 +37,8 @@ import { ArrayStatement } from "../statements/complex/ArrayStatement";
 import { ObjectStatement } from "../statements/complex/ObjectStatement";
 import { IntegerStatement } from "../statements/primitive/IntegerStatement";
 import { FunctionCall } from "../statements/root/FunctionCall";
+import { FunctionCallGenerator } from "./generators/FunctionCallGenerator";
+import { RootContext } from "@syntest/analysis-javascript";
 
 /**
  * JavaScriptRandomSampler class
@@ -44,6 +46,8 @@ import { FunctionCall } from "../statements/root/FunctionCall";
  * @author Dimitri Stallenberg
  */
 export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScriptTestCase> {
+  private _rootContext: RootContext;
+
   private _typeInferenceMode: string;
   private _randomTypeProbability: number;
   private _incorporateExecutionInformation: boolean;
@@ -54,8 +58,11 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
   private _deltaMutationProbability: number;
   private _exploreIllegalValues: boolean;
 
+  private _functionCallGenerator: FunctionCallGenerator;
+
   constructor(
     subject: JavaScriptSubject,
+    rootContext: RootContext,
     typeInferenceMode: string,
     randomTypeProbability: number,
     incorporateExecutionInformation: boolean,
@@ -67,6 +74,7 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
     exploreIllegalValues: boolean
   ) {
     super(subject);
+    this._rootContext = rootContext;
     this._typeInferenceMode = typeInferenceMode;
     this._randomTypeProbability = randomTypeProbability;
     this._incorporateExecutionInformation = incorporateExecutionInformation;
@@ -76,6 +84,16 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
     this._resampleGeneProbability = resampleGeneProbability;
     this._deltaMutationProbability = deltaMutationProbability;
     this._exploreIllegalValues = exploreIllegalValues;
+
+    this._functionCallGenerator = new FunctionCallGenerator(this, rootContext);
+  }
+
+  get rootContext() {
+    return this._rootContext;
+  }
+
+  get functionCallGenerator() {
+    return this._functionCallGenerator;
   }
 
   abstract sampleClass(depth: number): ConstructorCall;

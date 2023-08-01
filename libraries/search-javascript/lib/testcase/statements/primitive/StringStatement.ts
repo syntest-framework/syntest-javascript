@@ -31,7 +31,8 @@ export class StringStatement extends PrimitiveStatement<string> {
   private readonly maxlength: number;
 
   constructor(
-    id: string,
+    variableIdentifier: string,
+    typeIdentifier: string,
     name: string,
     type: string,
     uniqueId: string,
@@ -39,7 +40,7 @@ export class StringStatement extends PrimitiveStatement<string> {
     alphabet: string,
     maxlength: number
   ) {
-    super(id, name, type, uniqueId, value);
+    super(variableIdentifier, typeIdentifier, name, type, uniqueId, value);
     this._classType = "StringStatement";
 
     this.alphabet = alphabet;
@@ -48,7 +49,11 @@ export class StringStatement extends PrimitiveStatement<string> {
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
     if (prng.nextBoolean(sampler.resampleGeneProbability)) {
-      return sampler.sampleArgument(depth + 1, this.id, this.name);
+      return sampler.sampleArgument(
+        depth + 1,
+        this.variableIdentifier,
+        this.name
+      );
     }
 
     if (this.value.length > 0 && this.value.length < this.maxlength) {
@@ -99,7 +104,7 @@ export class StringStatement extends PrimitiveStatement<string> {
     }
 
     return new StringStatement(
-      this.id,
+      this.variableIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -122,7 +127,7 @@ export class StringStatement extends PrimitiveStatement<string> {
     }
 
     return new StringStatement(
-      this.id,
+      this.variableIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -144,7 +149,7 @@ export class StringStatement extends PrimitiveStatement<string> {
     }
 
     return new StringStatement(
-      this.id,
+      this.variableIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -170,7 +175,7 @@ export class StringStatement extends PrimitiveStatement<string> {
     }
 
     return new StringStatement(
-      this.id,
+      this.variableIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -182,7 +187,7 @@ export class StringStatement extends PrimitiveStatement<string> {
 
   copy(): StringStatement {
     return new StringStatement(
-      this.id,
+      this.variableIdentifier,
       this.name,
       this.type,
       this.uniqueId,

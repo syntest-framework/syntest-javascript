@@ -26,6 +26,7 @@ import { Decoding, Statement } from "../Statement";
 
 import { RootStatement } from "./RootStatement";
 import { ObjectFunctionCall } from "../action/ObjectFunctionCall";
+import { Export } from "@syntest/analysis-javascript";
 
 /**
  * @author Dimitri Stallenberg
@@ -38,13 +39,24 @@ export class RootObject extends RootStatement {
    * @param calls the child calls on the object
    */
   constructor(
-    id: string,
+    variableIdentifier: string,
+    typeIdentifier: string,
     name: string,
     type: string,
     uniqueId: string,
-    calls: Statement[]
+    calls: Statement[],
+    export_: Export
   ) {
-    super(id, name, type, uniqueId, [], calls);
+    super(
+      variableIdentifier,
+      typeIdentifier,
+      name,
+      type,
+      uniqueId,
+      [],
+      calls,
+      export_
+    );
     this._classType = "RootObject";
 
     for (const call of calls) {
@@ -72,11 +84,12 @@ export class RootObject extends RootStatement {
       // add a call
       finalCalls.push(sampler.sampleObjectFunctionCall(depth + 1, this.name));
       return new RootObject(
-        this.id,
+        this.variableIdentifier,
         this.name,
         this.type,
         prng.uniqueId(),
-        finalCalls
+        finalCalls,
+        this.export
       );
     }
 
@@ -108,11 +121,12 @@ export class RootObject extends RootStatement {
     }
 
     return new RootObject(
-      this.id,
+      this.variableIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
-      finalCalls
+      finalCalls,
+      this.export
     );
   }
 
@@ -120,11 +134,12 @@ export class RootObject extends RootStatement {
     const deepCopyChildren = this.children.map((a: Statement) => a.copy());
 
     return new RootObject(
-      this.id,
+      this.variableIdentifier,
       this.name,
       this.type,
       this.uniqueId,
-      deepCopyChildren
+      deepCopyChildren,
+      this.export
     );
   }
 

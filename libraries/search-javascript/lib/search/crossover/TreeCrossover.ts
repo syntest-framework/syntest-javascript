@@ -147,7 +147,7 @@ export class TreeCrossover extends Crossover<JavaScriptTestCase> {
       }
 
       // TODO not sure about the ids
-      if (wanted.id === pair.child.id) {
+      if (wanted.variableIdentifier === pair.child.variableIdentifier) {
         // && wanted.classType === pair.child.classType) { TODO this might be necessary
         similar.push(pair);
       }

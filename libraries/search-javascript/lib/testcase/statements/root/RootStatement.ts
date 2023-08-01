@@ -20,23 +20,28 @@ import { Encoding, EncodingSampler } from "@syntest/search";
 
 import { ActionStatement } from "../action/ActionStatement";
 import { Statement } from "../Statement";
+import { Export } from "@syntest/analysis-javascript";
 
 /**
  * @author Dimitri Stallenberg
  */
 export abstract class RootStatement extends ActionStatement {
-  private _children: Statement[];
+  protected _children: Statement[];
+  protected _export: Export;
 
   protected constructor(
-    id: string,
+    variableIdentifier: string,
+    typeIdentifier: string,
     name: string,
     type: string,
     uniqueId: string,
     arguments_: Statement[],
-    children: Statement[]
+    children: Statement[],
+    export_: Export
   ) {
-    super(id, name, type, uniqueId, arguments_);
+    super(variableIdentifier, typeIdentifier, name, type, uniqueId, arguments_);
     this._children = children;
+    this._export = export_;
   }
 
   abstract override mutate(
@@ -80,5 +85,9 @@ export abstract class RootStatement extends ActionStatement {
       ...this.args.flatMap((a) => a.getFlatTypes()),
       ...this.children.flatMap((a) => a.getFlatTypes()),
     ];
+  }
+
+  get export() {
+    return this._export;
   }
 }

@@ -28,6 +28,7 @@ import { Setter } from "../action/Setter";
 import { Decoding, Statement } from "../Statement";
 
 import { RootStatement } from "./RootStatement";
+import { Export } from "@syntest/analysis-javascript";
 
 /**
  * @author Dimitri Stallenberg
@@ -41,14 +42,25 @@ export class ConstructorCall extends RootStatement {
    * @param calls the child calls on the object
    */
   constructor(
-    id: string,
+    variableIdentifier: string,
+    typeIdentifier: string,
     name: string,
     type: string,
     uniqueId: string,
     arguments_: Statement[],
-    calls: Statement[]
+    calls: Statement[],
+    export_: Export
   ) {
-    super(id, name, type, uniqueId, arguments_, calls);
+    super(
+      variableIdentifier,
+      typeIdentifier,
+      name,
+      type,
+      uniqueId,
+      arguments_,
+      calls,
+      export_
+    );
     this._classType = "ConstructorCall";
 
     for (const argument of arguments_) {
@@ -101,12 +113,13 @@ export class ConstructorCall extends RootStatement {
       // add a call
       finalCalls.push(sampler.sampleMethodCall(depth + 1, this.name));
       return new ConstructorCall(
-        this.id,
+        this.variableIdentifier,
         this.name,
         this.type,
         prng.uniqueId(),
         arguments_,
-        finalCalls
+        finalCalls,
+        this.export
       );
     }
 
@@ -136,12 +149,13 @@ export class ConstructorCall extends RootStatement {
     }
 
     return new ConstructorCall(
-      this.id,
+      this.variableIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
       arguments_,
-      finalCalls
+      finalCalls,
+      this.export
     );
   }
 
@@ -150,12 +164,13 @@ export class ConstructorCall extends RootStatement {
     const deepCopyChildren = this.children.map((a: Statement) => a.copy());
 
     return new ConstructorCall(
-      this.id,
+      this.variableIdentifier,
       this.name,
       this.type,
       this.uniqueId,
       deepCopyArguments,
-      deepCopyChildren
+      deepCopyChildren,
+      this.export
     );
   }
 

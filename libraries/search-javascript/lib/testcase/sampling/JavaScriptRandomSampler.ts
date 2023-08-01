@@ -20,7 +20,6 @@ import {
   ClassTarget,
   DiscoveredObjectKind,
   FunctionTarget,
-  getRelationName,
   isExported,
   MethodTarget,
   ObjectFunctionTarget,
@@ -56,10 +55,9 @@ import { ObjectType } from "@syntest/analysis-javascript";
 import { IntegerStatement } from "../statements/primitive/IntegerStatement";
 
 export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
-  private _rootContext: RootContext;
-
   constructor(
     subject: JavaScriptSubject,
+    rootContext: RootContext,
     typeInferenceMode: string,
     randomTypeProbability: number,
     incorporateExecutionInformation: boolean,
@@ -72,6 +70,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   ) {
     super(
       subject,
+      rootContext,
       typeInferenceMode,
       randomTypeProbability,
       incorporateExecutionInformation,
@@ -82,20 +81,6 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       deltaMutationProbability,
       exploreIllegalValues
     );
-  }
-
-  /**
-   * Set the root context
-   *
-   * this cannot be part of the constructor because the root context is not available at that point
-   * because of the plugin structure.
-   */
-  set rootContext(rootContext: RootContext) {
-    this._rootContext = rootContext;
-  }
-
-  get rootContext(): RootContext {
-    return this._rootContext;
   }
 
   sample(): JavaScriptTestCase {
@@ -158,24 +143,11 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       )
     );
 
-    return this.sampleSpecificFunctionCall(depth, function_.id, function_.name);
-  }
-
-  sampleSpecificFunctionCall(
-    depth: number,
-    id: string,
-    name: string
-  ): FunctionCall {
-    const type_ = this.rootContext.getTypeModel().getObjectDescription(id);
-
-    const arguments_: Statement[] = this._sampleArguments(depth, type_);
-
-    return new FunctionCall(
-      id,
-      name,
-      TypeEnum.FUNCTION,
-      prng.uniqueId(),
-      arguments_
+    return this.functionCallGenerator.generate(
+      depth,
+      function_.id,
+      function_.id,
+      function_.name
     );
   }
 
@@ -191,6 +163,8 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
     return this.sampleSpecificClass(depth, class_.id, class_.name);
   }
+
+  sampleConstructor;
 
   sampleSpecificClass(
     depth: number,
@@ -219,7 +193,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
         .getTypeModel()
         .getObjectDescription(action.id);
 
-      arguments_ = this._sampleArguments(depth, type_);
+      arguments_ = this.sampleArguments(depth, type_);
     }
 
     const calls: Statement[] = [];
@@ -390,7 +364,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   ): MethodCall {
     const type_ = this.rootContext.getTypeModel().getObjectDescription(id);
 
-    const arguments_: Statement[] = this._sampleArguments(depth, type_);
+    const arguments_: Statement[] = this.sampleArguments(depth, type_);
 
     return new MethodCall(
       id,
@@ -447,7 +421,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   ): Setter {
     const type_ = this.rootContext.getTypeModel().getObjectDescription(id);
 
-    const arguments_: Statement[] = this._sampleArguments(depth, type_);
+    const arguments_: Statement[] = this.sampleArguments(depth, type_);
 
     if (arguments_.length !== 1) {
       throw new Error("Setter must have exactly one argument");
@@ -533,7 +507,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   ): ObjectFunctionCall {
     const type_ = this.rootContext.getTypeModel().getObjectDescription(id);
 
-    const arguments_: Statement[] = this._sampleArguments(depth, type_);
+    const arguments_: Statement[] = this.sampleArguments(depth, type_);
 
     return new ObjectFunctionCall(
       id,
@@ -668,10 +642,13 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     const typeFromTypePool = this._rootContext
       .getTypePool()
       .getRandomMatchingType(typeObject);
+
     if (typeFromTypePool) {
       // always prefer type from type pool
       switch (typeFromTypePool.kind) {
         case DiscoveredObjectKind.CLASS: {
+          console.log(name);
+          console.log(typeFromTypePool);
           return this.sampleSpecificClass(depth + 1, typeFromTypePool.id, name);
         }
         case DiscoveredObjectKind.FUNCTION: {
@@ -874,47 +851,5 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       TypeEnum.UNDEFINED,
       prng.uniqueId()
     );
-  }
-
-  private _sampleArguments(depth: number, type_: ObjectType): Statement[] {
-    const arguments_: Statement[] = [];
-
-    for (const [index, parameterId] of type_.parameters.entries()) {
-      const element = this.rootContext.getElement(parameterId);
-
-      if (element) {
-        const name = "name" in element ? element.name : element.value;
-
-        arguments_[index] = this.sampleArgument(depth + 1, parameterId, name);
-        continue;
-      }
-
-      const relation = this.rootContext.getRelation(parameterId);
-
-      if (relation) {
-        const name = getRelationName(relation.type);
-
-        arguments_[index] = this.sampleArgument(depth + 1, parameterId, name);
-        continue;
-      }
-
-      throw new Error(
-        `Could not find element or relation with id ${parameterId}`
-      );
-    }
-
-    // if some params are missing, fill them with fake params
-    const parameterIds = [...type_.parameters.values()];
-    for (let index = 0; index < arguments_.length; index++) {
-      if (!arguments_[index]) {
-        arguments_[index] = this.sampleArgument(
-          depth + 1,
-          prng.pickOne(parameterIds),
-          String(index)
-        );
-      }
-    }
-
-    return arguments_;
   }
 }

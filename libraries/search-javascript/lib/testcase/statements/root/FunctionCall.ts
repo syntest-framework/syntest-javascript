@@ -23,6 +23,7 @@ import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSamp
 import { Decoding, Statement } from "../Statement";
 
 import { RootStatement } from "./RootStatement";
+import { Export } from "@syntest/analysis-javascript";
 
 /**
  * @author Dimitri Stallenberg
@@ -36,13 +37,24 @@ export class FunctionCall extends RootStatement {
    * @param args the arguments of the function
    */
   constructor(
-    id: string,
+    variableIdentifier: string,
+    typeIdentifier: string,
     name: string,
     type: string,
     uniqueId: string,
-    arguments_: Statement[]
+    arguments_: Statement[],
+    export_: Export
   ) {
-    super(id, name, type, uniqueId, arguments_, []);
+    super(
+      variableIdentifier,
+      typeIdentifier,
+      name,
+      type,
+      uniqueId,
+      arguments_,
+      [],
+      export_
+    );
     this._classType = "FunctionCall";
   }
 
@@ -60,11 +72,12 @@ export class FunctionCall extends RootStatement {
     }
 
     return new FunctionCall(
-      this.id,
+      this.variableIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
-      arguments_
+      arguments_,
+      this.export
     );
   }
 
@@ -72,11 +85,12 @@ export class FunctionCall extends RootStatement {
     const deepCopyArguments = this.args.map((a: Statement) => a.copy());
 
     return new FunctionCall(
-      this.id,
+      this.variableIdentifier,
       this.name,
       this.type,
       this.uniqueId,
-      deepCopyArguments
+      deepCopyArguments,
+      this.export
     );
   }
 

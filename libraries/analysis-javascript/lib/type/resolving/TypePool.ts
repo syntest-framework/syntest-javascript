@@ -31,7 +31,7 @@ export class TypePool {
   protected _getMatchingTypes(objectType: ObjectType): DiscoveredObjectType[] {
     const matchingTypes: DiscoveredObjectType[] = [];
     for (const object_ of this._objectMap.values()) {
-      let match = false;
+      let match = true;
       for (const property of objectType.properties.keys()) {
         if (!object_.properties.has(property)) {
           match = false;

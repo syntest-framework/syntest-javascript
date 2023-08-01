@@ -27,13 +27,14 @@ export abstract class ActionStatement extends Statement {
   private _args: Statement[];
 
   protected constructor(
-    id: string,
+    variableIdentifier: string,
+    typeIdentifier: string,
     name: string,
     type: string,
     uniqueId: string,
     arguments_: Statement[]
   ) {
-    super(id, name, type, uniqueId);
+    super(variableIdentifier, typeIdentifier, name, type, uniqueId);
     this._args = arguments_;
   }
 

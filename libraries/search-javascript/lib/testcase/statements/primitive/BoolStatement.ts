@@ -28,23 +28,28 @@ import { Statement } from "../Statement";
  */
 export class BoolStatement extends PrimitiveStatement<boolean> {
   constructor(
-    id: string,
+    variableIdentifier: string,
+    typeIdentifier: string,
     name: string,
     type: string,
     uniqueId: string,
     value: boolean
   ) {
-    super(id, name, type, uniqueId, value);
+    super(variableIdentifier, typeIdentifier, name, type, uniqueId, value);
     this._classType = "BoolStatement";
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
     if (prng.nextBoolean(sampler.resampleGeneProbability)) {
-      return sampler.sampleArgument(depth + 1, this.id, this.name);
+      return sampler.sampleArgument(
+        depth + 1,
+        this.variableIdentifier,
+        this.name
+      );
     }
 
     return new BoolStatement(
-      this.id,
+      this.variableIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -54,7 +59,7 @@ export class BoolStatement extends PrimitiveStatement<boolean> {
 
   copy(): BoolStatement {
     return new BoolStatement(
-      this.id,
+      this.variableIdentifier,
       this.name,
       this.type,
       this.uniqueId,
