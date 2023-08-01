@@ -38,7 +38,7 @@ export class ExecutionInformationIntegrator {
       return;
     }
 
-    const queue: Statement[] = [testCase.roots];
+    const queue: Statement[] = testCase.roots;
 
     while (queue.length > 0) {
       const root = queue.pop();

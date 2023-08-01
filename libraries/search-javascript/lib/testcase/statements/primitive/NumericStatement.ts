@@ -37,16 +37,7 @@ export class NumericStatement extends PrimitiveStatement<number> {
     uniqueId: string,
     value: number
   ) {
-    super(
-      variableIdentifier,
-      typeIdentifier,
-      nameIdentifier,
-      typeIdentifier,
-      name,
-      type,
-      uniqueId,
-      value
-    );
+    super(variableIdentifier, typeIdentifier, name, type, uniqueId, value);
     this._classType = "NumericStatement";
   }
 
@@ -86,6 +77,7 @@ export class NumericStatement extends PrimitiveStatement<number> {
 
     return new NumericStatement(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -96,6 +88,7 @@ export class NumericStatement extends PrimitiveStatement<number> {
   copy(): NumericStatement {
     return new NumericStatement(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),

@@ -83,6 +83,7 @@ export class ObjectStatement extends Statement {
 
     return new ObjectStatement(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -99,6 +100,7 @@ export class ObjectStatement extends Statement {
 
     return new ObjectStatement(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       this.uniqueId,

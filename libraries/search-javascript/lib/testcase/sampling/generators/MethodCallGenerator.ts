@@ -36,7 +36,7 @@ export class MethodCallGenerator extends CallGenerator<MethodCall> {
     const arguments_: Statement[] = this.sampleArguments(depth, type_);
 
     const constructor_ = this.sampler.sampleConstructorCall(
-      depth,
+      depth + 1,
       exportIdentifier
     );
 

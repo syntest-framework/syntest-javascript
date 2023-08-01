@@ -16,10 +16,8 @@
  * limitations under the License.
  */
 import { TypeEnum } from "@syntest/analysis-javascript";
-import { Statement } from "../../statements/Statement";
 import { prng } from "@syntest/prng";
 import { CallGenerator } from "./CallGenerator";
-import { MethodCall } from "../../statements/action/MethodCall";
 import { Getter } from "../../statements/action/Getter";
 
 export class GetterGenerator extends CallGenerator<Getter> {
@@ -31,7 +29,7 @@ export class GetterGenerator extends CallGenerator<Getter> {
     name: string
   ): Getter {
     const constructor_ = this.sampler.sampleConstructorCall(
-      depth,
+      depth + 1,
       exportIdentifier
     );
 

@@ -71,6 +71,7 @@ export class FunctionCall extends ActionStatement {
 
     return new FunctionCall(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -84,6 +85,7 @@ export class FunctionCall extends ActionStatement {
 
     return new FunctionCall(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       this.uniqueId,

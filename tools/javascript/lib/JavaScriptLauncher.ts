@@ -383,7 +383,6 @@ export class JavaScriptLauncher extends Launcher {
     JavaScriptLauncher.LOGGER.info("Postprocessing started");
     const start = Date.now();
     const decoder = new JavaScriptDecoder(
-      this.rootContext.getAllExports(),
       this.arguments_.targetRootDirectory,
       path.join(
         this.arguments_.tempSyntestDirectory,
@@ -618,10 +617,8 @@ export class JavaScriptLauncher extends Launcher {
     const dependencies = rootContext.getDependencies(target.path);
     const dependencyMap = new Map<string, string[]>();
     dependencyMap.set(target.name, dependencies);
-    const exports = rootContext.getAllExports();
 
     const decoder = new JavaScriptDecoder(
-      exports,
       this.arguments_.targetRootDirectory,
       path.join(
         this.arguments_.tempSyntestDirectory,
@@ -643,7 +640,6 @@ export class JavaScriptLauncher extends Launcher {
 
     const sampler = new JavaScriptRandomSampler(
       currentSubject,
-      rootContext,
       (<JavaScriptArguments>this.arguments_).typeInferenceMode,
       (<JavaScriptArguments>this.arguments_).randomTypeProbability,
       (<JavaScriptArguments>this.arguments_).incorporateExecutionInformation,
@@ -654,6 +650,7 @@ export class JavaScriptLauncher extends Launcher {
       this.arguments_.deltaMutationProbability,
       this.arguments_.exploreIllegalValues
     );
+    sampler.rootContext = rootContext;
 
     const secondaryObjectives = new Set(
       this.arguments_.secondaryObjectives.map((secondaryObjective) => {

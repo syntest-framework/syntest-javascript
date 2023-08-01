@@ -50,6 +50,7 @@ export class BoolStatement extends PrimitiveStatement<boolean> {
 
     return new BoolStatement(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -60,6 +61,7 @@ export class BoolStatement extends PrimitiveStatement<boolean> {
   copy(): BoolStatement {
     return new BoolStatement(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       this.uniqueId,

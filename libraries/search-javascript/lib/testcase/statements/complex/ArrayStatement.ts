@@ -37,15 +37,7 @@ export class ArrayStatement extends Statement {
     uniqueId: string,
     children: Statement[]
   ) {
-    super(
-      variableIdentifier,
-      typeIdentifier,
-      nameIdentifier,
-      typeIdentifier,
-      name,
-      type,
-      uniqueId
-    );
+    super(variableIdentifier, typeIdentifier, name, type, uniqueId);
     this._children = children;
     this._classType = "ArrayStatement";
   }
@@ -77,6 +69,7 @@ export class ArrayStatement extends Statement {
 
       return new ArrayStatement(
         this.variableIdentifier,
+        this.typeIdentifier,
         this.name,
         this.type,
         prng.uniqueId(),
@@ -111,6 +104,7 @@ export class ArrayStatement extends Statement {
 
     return new ArrayStatement(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -121,6 +115,7 @@ export class ArrayStatement extends Statement {
   copy(): ArrayStatement {
     return new ArrayStatement(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       this.uniqueId,

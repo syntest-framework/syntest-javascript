@@ -20,9 +20,8 @@ import { prng } from "@syntest/prng";
 
 import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
-import { Decoding, Statement } from "../Statement";
+import { Decoding } from "../Statement";
 
-import { ActionStatement } from "./ActionStatement";
 import { MethodCall } from "./MethodCall";
 import { Setter } from "./Setter";
 import { ClassActionStatement } from "./ClassActionStatement";

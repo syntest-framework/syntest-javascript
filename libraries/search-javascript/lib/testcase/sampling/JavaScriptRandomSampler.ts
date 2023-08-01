@@ -24,7 +24,6 @@ import {
   MethodTarget,
   ObjectFunctionTarget,
   ObjectTarget,
-  RootContext,
   TypeEnum,
 } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/prng";
@@ -45,7 +44,6 @@ import { UndefinedStatement } from "../statements/primitive/UndefinedStatement";
 import { ConstructorCall } from "../statements/action/ConstructorCall";
 import { FunctionCall } from "../statements/action/FunctionCall";
 import { ConstantObject } from "../statements/action/ConstantObject";
-import { RootStatement } from "../statements/root/RootStatement";
 import { Statement } from "../statements/Statement";
 
 import { JavaScriptTestCaseSampler } from "./JavaScriptTestCaseSampler";
@@ -58,7 +56,6 @@ import { ActionStatement } from "../statements/action/ActionStatement";
 export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   constructor(
     subject: JavaScriptSubject,
-    rootContext: RootContext,
     typeInferenceMode: string,
     randomTypeProbability: number,
     incorporateExecutionInformation: boolean,
@@ -71,7 +68,6 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   ) {
     super(
       subject,
-      rootContext,
       typeInferenceMode,
       randomTypeProbability,
       incorporateExecutionInformation,
@@ -498,8 +494,10 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
           );
         }
         case DiscoveredObjectKind.OBJECT: {
-          return this.sampleSpecificRootObject(
-            depth + 1,
+          return this.constantObjectGenerator.generate(
+            depth,
+            id,
+            typeFromTypePool.id,
             typeFromTypePool.id,
             name
           );

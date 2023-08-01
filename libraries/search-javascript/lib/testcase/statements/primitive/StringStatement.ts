@@ -105,6 +105,7 @@ export class StringStatement extends PrimitiveStatement<string> {
 
     return new StringStatement(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -128,6 +129,7 @@ export class StringStatement extends PrimitiveStatement<string> {
 
     return new StringStatement(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -150,6 +152,7 @@ export class StringStatement extends PrimitiveStatement<string> {
 
     return new StringStatement(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -176,6 +179,7 @@ export class StringStatement extends PrimitiveStatement<string> {
 
     return new StringStatement(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -188,6 +192,7 @@ export class StringStatement extends PrimitiveStatement<string> {
   copy(): StringStatement {
     return new StringStatement(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       this.uniqueId,

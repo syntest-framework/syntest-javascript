@@ -39,7 +39,7 @@ export class StatementPool {
 
         if (statement.type === TypeEnum.OBJECT) {
           // use type identifier
-          if (this.pool.has(statement.typeIdentifier)) {
+          if (!this.pool.has(statement.typeIdentifier)) {
             this.pool.set(statement.typeIdentifier, []);
           }
           this.pool.get(statement.typeIdentifier).push(statement);
@@ -48,7 +48,7 @@ export class StatementPool {
           // TODO
         } else {
           // use type enum for primitives and arrays
-          if (this.pool.has(statement.type)) {
+          if (!this.pool.has(statement.type)) {
             this.pool.set(statement.type, []);
           }
           this.pool.get(statement.type).push(statement);

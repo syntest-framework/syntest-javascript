@@ -17,14 +17,11 @@
  */
 
 import { prng } from "@syntest/prng";
-import { TargetType } from "@syntest/analysis";
 
-import { JavaScriptSubject } from "../../../search/JavaScriptSubject";
 import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
-import { Decoding, Statement } from "../Statement";
+import { Decoding } from "../Statement";
 
-import { ObjectFunctionCall } from "./ObjectFunctionCall";
 import { Export } from "@syntest/analysis-javascript";
 import { ActionStatement } from "./ActionStatement";
 

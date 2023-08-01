@@ -53,6 +53,7 @@ export class ArrowFunctionStatement extends Statement {
 
     return new ArrowFunctionStatement(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -66,6 +67,7 @@ export class ArrowFunctionStatement extends Statement {
   copy(): ArrowFunctionStatement {
     return new ArrowFunctionStatement(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       this.uniqueId,

@@ -49,6 +49,7 @@ export class NullStatement extends PrimitiveStatement<boolean> {
 
     return new NullStatement(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       prng.uniqueId()
@@ -58,6 +59,7 @@ export class NullStatement extends PrimitiveStatement<boolean> {
   copy(): NullStatement {
     return new NullStatement(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       this.uniqueId

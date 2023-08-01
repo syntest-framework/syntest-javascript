@@ -84,6 +84,7 @@ export class IntegerStatement extends PrimitiveStatement<number> {
 
     return new IntegerStatement(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -94,6 +95,7 @@ export class IntegerStatement extends PrimitiveStatement<number> {
   copy(): IntegerStatement {
     return new IntegerStatement(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),

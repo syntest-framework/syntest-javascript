@@ -604,7 +604,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
           };
           const objectFunctionTarget: ObjectFunctionTarget = {
             type: TargetType.OBJECT_FUNCTION,
-            objectName: object.node.name,
+            objectId: `${this._getBindingId(object)}`,
             name: functionName,
             id: `${this._getNodeId(path)}`,
             isAsync: path.node.async,

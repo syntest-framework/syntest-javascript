@@ -22,20 +22,14 @@ import { Export } from "@syntest/analysis-javascript";
 import { Decoder } from "@syntest/search";
 
 import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
-import { RootStatement } from "../testcase/statements/root/RootStatement";
 import { Decoding } from "../testcase/statements/Statement";
+import { ActionStatement } from "../testcase/statements/action/ActionStatement";
 
 export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
-  private exports: Map<string, Export[]>;
   private targetRootDirectory: string;
   private tempLogDirectory: string;
 
-  constructor(
-    exports: Map<string, Export[]>,
-    targetRootDirectory: string,
-    temporaryLogDirectory: string
-  ) {
-    this.exports = exports;
+  constructor(targetRootDirectory: string, temporaryLogDirectory: string) {
     this.targetRootDirectory = targetRootDirectory;
     this.tempLogDirectory = temporaryLogDirectory;
   }
@@ -54,13 +48,15 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
     const imports: string[] = [];
 
     for (const testCase of testCases) {
-      const root = testCase.roots;
+      const roots: ActionStatement[] = testCase.roots;
 
-      const importableGenes: RootStatement[] = [];
-      let statements: Decoding[] = root.decode(this, testCase.id, {
-        addLogs,
-        exception: false,
-      });
+      const importableGenes: ActionStatement[] = [];
+      let statements: Decoding[] = roots.flatMap((root) =>
+        root.decode(this, testCase.id, {
+          addLogs,
+          exception: false,
+        })
+      );
 
       const testString: string[] = [];
       if (addLogs) {
@@ -89,7 +85,10 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
       }
 
       for (const [index, value] of statements.entries()) {
-        if (value.reference instanceof RootStatement) {
+        if (
+          value.reference instanceof ActionStatement &&
+          value.reference.export
+        ) {
           importableGenes.push(value.reference);
         }
         if (addLogs) {
@@ -200,7 +199,7 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
   gatherImports(
     sourceDirectory: string,
     testStrings: string[],
-    importableGenes: RootStatement[]
+    importableGenes: ActionStatement[]
   ): string[] {
     const imports: string[] = [];
     const importedDependencies: Set<string> = new Set<string>();
@@ -208,20 +207,7 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
     for (const gene of importableGenes) {
       // TODO how to get the export of a variable?
       // the below does not work with duplicate exports
-      let export_: Export = [...this.exports.values()]
-        .flat()
-        .find((x) => x.id === gene.variableIdentifier);
-
-      if (!export_) {
-        // dirty hack to fix certain exports
-        export_ = [...this.exports.values()]
-          .flat()
-          .find(
-            (x) =>
-              gene.variableIdentifier.split(":")[0] === x.filePath &&
-              (x.name === gene.name || x.renamedTo === gene.name)
-          );
-      }
+      const export_: Export = gene.export;
 
       if (!export_) {
         throw new Error(

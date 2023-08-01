@@ -80,7 +80,6 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
 
   constructor(
     subject: JavaScriptSubject,
-    rootContext: RootContext,
     typeInferenceMode: string,
     randomTypeProbability: number,
     incorporateExecutionInformation: boolean,
@@ -92,7 +91,6 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
     exploreIllegalValues: boolean
   ) {
     super(subject);
-    this._rootContext = rootContext;
     this._typeInferenceMode = typeInferenceMode;
     this._randomTypeProbability = randomTypeProbability;
     this._incorporateExecutionInformation = incorporateExecutionInformation;
@@ -102,6 +100,14 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
     this._resampleGeneProbability = resampleGeneProbability;
     this._deltaMutationProbability = deltaMutationProbability;
     this._exploreIllegalValues = exploreIllegalValues;
+  }
+
+  get rootContext() {
+    return this._rootContext;
+  }
+
+  set rootContext(rootContext: RootContext) {
+    this._rootContext = rootContext;
 
     this._functionCallGenerator = new FunctionCallGenerator(this, rootContext);
     this._constructorCallGenerator = new ConstructorCallGenerator(
@@ -119,10 +125,6 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
       this,
       rootContext
     );
-  }
-
-  get rootContext() {
-    return this._rootContext;
   }
 
   get functionCallGenerator() {

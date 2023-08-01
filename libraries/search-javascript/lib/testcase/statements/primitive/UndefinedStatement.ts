@@ -33,15 +33,14 @@ export class UndefinedStatement extends PrimitiveStatement<boolean> {
     type: string,
     uniqueId: string
   ) {
-    // eslint-disable-next-line unicorn/no-useless-undefined
     super(
       variableIdentifier,
       typeIdentifier,
-      nameIdentifier,
-      typeIdentifier,
       name,
       type,
-      uniqueId
+      uniqueId,
+      // eslint-disable-next-line unicorn/no-useless-undefined
+      undefined
     );
     this._classType = "UndefinedStatement";
   }
@@ -56,6 +55,7 @@ export class UndefinedStatement extends PrimitiveStatement<boolean> {
     }
     return new UndefinedStatement(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       prng.uniqueId()
@@ -65,6 +65,7 @@ export class UndefinedStatement extends PrimitiveStatement<boolean> {
   copy(): UndefinedStatement {
     return new UndefinedStatement(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       this.uniqueId

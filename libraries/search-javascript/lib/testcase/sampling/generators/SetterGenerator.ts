@@ -40,7 +40,7 @@ export class SetterGenerator extends CallGenerator<Setter> {
     }
 
     const constructor_ = this.sampler.sampleConstructorCall(
-      depth,
+      depth + 1,
       exportIdentifier
     );
 
