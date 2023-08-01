@@ -58,6 +58,10 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
         })
       );
 
+      if (statements.length === 0) {
+        throw new Error("No statements in test case");
+      }
+
       const testString: string[] = [];
       if (addLogs) {
         testString.push(
@@ -84,19 +88,30 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
         statements = statements.slice(0, index + 1);
       }
 
+      if (statements.length === 0) {
+        throw new Error("No statements in test case");
+      }
+
       for (const [index, value] of statements.entries()) {
+        const asString = "\t\t" + value.decoded.replace("\n", "\n\t\t");
+        if (testString.includes(asString)) {
+          // skip repeated statements
+          continue;
+        }
+
         if (
           value.reference instanceof ActionStatement &&
           value.reference.export
         ) {
           importableGenes.push(value.reference);
         }
+
         if (addLogs) {
           // add log per statement
           testString.push("\t\t" + `count = ${index};`);
         }
 
-        testString.push("\t\t" + value.decoded.replace("\n", "\n\t\t"));
+        testString.push(asString);
       }
 
       if (addLogs) {

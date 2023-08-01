@@ -30,6 +30,12 @@ import { ActionStatement } from "./ActionStatement";
  * @author Dimitri Stallenberg
  */
 export class ConstructorCall extends ActionStatement {
+  private _classIdentifier: string;
+
+  get classIdentifier(): string {
+    return this._classIdentifier;
+  }
+
   /**
    * Constructor
    * @param type the return identifierDescription of the constructor
@@ -40,6 +46,7 @@ export class ConstructorCall extends ActionStatement {
   constructor(
     variableIdentifier: string,
     typeIdentifier: string,
+    classIdentifier: string,
     name: string,
     type: string,
     uniqueId: string,
@@ -55,6 +62,7 @@ export class ConstructorCall extends ActionStatement {
       arguments_,
       export_
     );
+    this._classIdentifier = classIdentifier;
     this._classType = "ConstructorCall";
 
     for (const argument of arguments_) {
@@ -68,7 +76,7 @@ export class ConstructorCall extends ActionStatement {
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): ConstructorCall {
     // if (prng.nextBoolean(sampler.resampleGeneProbability)) {
-    //   return sampler.sampleConstructorCall(depth);
+    //   return sampler.sampleConstructorCall(depth, this._classIdentifier);
     // }
 
     const arguments_ = this.args.map((a: Statement) => a.copy());
@@ -85,6 +93,7 @@ export class ConstructorCall extends ActionStatement {
     return new ConstructorCall(
       this.variableIdentifier,
       this.typeIdentifier,
+      this._classIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -99,6 +108,7 @@ export class ConstructorCall extends ActionStatement {
     return new ConstructorCall(
       this.variableIdentifier,
       this.typeIdentifier,
+      this._classIdentifier,
       this.name,
       this.type,
       this.uniqueId,

@@ -40,6 +40,7 @@ export class ConstructorCallGenerator extends CallGenerator<ConstructorCall> {
       return new ConstructorCall(
         variableIdentifier,
         typeIdentifier,
+        exportIdentifier,
         name,
         TypeEnum.FUNCTION,
         prng.uniqueId(),
@@ -48,7 +49,8 @@ export class ConstructorCallGenerator extends CallGenerator<ConstructorCall> {
       );
     }
 
-    const statementFromPool = statementPool.getRandomStatement(typeIdentifier);
+    const statementFromPool =
+      statementPool.getRandomStatement(exportIdentifier);
 
     if (statementFromPool && prng.nextBoolean(this.reuseStatementProbability)) {
       return <ConstructorCall>statementFromPool;
@@ -63,6 +65,7 @@ export class ConstructorCallGenerator extends CallGenerator<ConstructorCall> {
     return new ConstructorCall(
       variableIdentifier,
       typeIdentifier,
+      exportIdentifier,
       name,
       TypeEnum.FUNCTION,
       prng.uniqueId(),

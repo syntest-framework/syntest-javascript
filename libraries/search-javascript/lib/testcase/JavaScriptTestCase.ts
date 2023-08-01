@@ -44,7 +44,11 @@ export class JavaScriptTestCase extends Encoding {
   constructor(roots: ActionStatement[]) {
     super();
     JavaScriptTestCase.LOGGER = getLogger(JavaScriptTestCase.name);
-    this._roots = roots;
+    this._roots = [...roots];
+
+    if (roots.length === 0) {
+      throw new Error("Requires atleast one root action statement");
+    }
 
     this._statementPool = new StatementPool(roots);
   }
@@ -77,6 +81,8 @@ export class JavaScriptTestCase extends Encoding {
           // 80% chance to just mutate the root
           finalRoots.push(roots[index].mutate(sampler, 1));
         }
+      } else {
+        finalRoots.push(roots[index]);
       }
     }
     // add one at the end 10% * (1 / |roots|)
@@ -86,7 +92,7 @@ export class JavaScriptTestCase extends Encoding {
 
     sampler.statementPool = undefined;
 
-    return new JavaScriptTestCase(roots);
+    return new JavaScriptTestCase(finalRoots);
   }
 
   hashCode(decoder: Decoder<Encoding, string>): number {
@@ -102,7 +108,7 @@ export class JavaScriptTestCase extends Encoding {
 
   copy<E extends Encoding>(): E {
     return <E>(
-      (<unknown>new JavaScriptTestCase(this.roots.map((root) => root.copy())))
+      (<unknown>new JavaScriptTestCase(this._roots.map((root) => root.copy())))
     );
   }
 
@@ -111,6 +117,6 @@ export class JavaScriptTestCase extends Encoding {
   }
 
   get roots(): ActionStatement[] {
-    return this._roots;
+    return [...this._roots];
   }
 }

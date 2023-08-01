@@ -437,7 +437,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     }
 
     // take from pool
-    const statementFromPool = this.statementPool.getRandomStatement(id);
+    const statementFromPool = this.statementPool.getRandomStatement(chosenType);
 
     if (statementFromPool && prng.nextBoolean(this.reuseStatementProbability)) {
       return statementFromPool;

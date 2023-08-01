@@ -20,6 +20,7 @@ import { TypeEnum } from "@syntest/analysis-javascript";
 import { ActionStatement } from "./statements/action/ActionStatement";
 import { Statement } from "./statements/Statement";
 import { prng } from "@syntest/prng";
+import { ConstructorCall } from "./statements/action/ConstructorCall";
 
 export class StatementPool {
   // type -> statement array
@@ -56,7 +57,14 @@ export class StatementPool {
           this.pool.get(statement.typeIdentifier).push(statement);
         } else if (statement.type === TypeEnum.FUNCTION) {
           // use return type
-          // TODO
+          if (statement instanceof ConstructorCall) {
+            if (!this.pool.has(statement.classIdentifier)) {
+              this.pool.set(statement.classIdentifier, []);
+            }
+            this.pool.get(statement.classIdentifier).push(statement);
+          }
+
+          // TODO other function return types
         } else {
           // use type enum for primitives and arrays
           if (!this.pool.has(statement.type)) {

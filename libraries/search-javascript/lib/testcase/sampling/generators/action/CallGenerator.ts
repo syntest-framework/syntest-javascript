@@ -42,6 +42,7 @@ export abstract class CallGenerator<S extends Statement> extends Generator<S> {
 
       if (relation) {
         const name = getRelationName(relation.type);
+        // TODO look deeper into the relation
 
         arguments_[index] = this.sampler.sampleArgument(
           depth + 1,
