@@ -105,7 +105,14 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     const action = prng.pickOne(
       (<JavaScriptSubject>this._subject)
         .getActionableTargets()
-        .filter((target) => isExported(target))
+        .filter(
+          (target) =>
+            (target.type === TargetType.FUNCTION && isExported(target)) ||
+            (target.type === TargetType.CLASS && isExported(target)) ||
+            (target.type === TargetType.OBJECT && isExported(target)) ||
+            target.type === TargetType.METHOD ||
+            target.type === TargetType.OBJECT_FUNCTION
+        )
     );
 
     switch (action.type) {
