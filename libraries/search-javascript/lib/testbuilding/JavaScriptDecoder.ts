@@ -54,7 +54,7 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
     const imports: string[] = [];
 
     for (const testCase of testCases) {
-      const root = testCase.root;
+      const root = testCase.roots;
 
       const importableGenes: RootStatement[] = [];
       let statements: Decoding[] = root.decode(this, testCase.id, {

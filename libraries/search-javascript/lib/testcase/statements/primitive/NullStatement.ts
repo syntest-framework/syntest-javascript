@@ -63,8 +63,4 @@ export class NullStatement extends PrimitiveStatement<boolean> {
       this.uniqueId
     );
   }
-
-  getFlatTypes(): string[] {
-    return ["null"];
-  }
 }

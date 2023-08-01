@@ -163,8 +163,4 @@ export class ObjectStatement extends Statement {
       .filter((key) => this._object[key] !== undefined)
       .map((key) => this._object[key]);
   }
-
-  getFlatTypes(): string[] {
-    return ["object", ...this.children.flatMap((a) => a.getFlatTypes())];
-  }
 }

@@ -50,8 +50,8 @@ export class TreeCrossover extends Crossover<JavaScriptTestCase> {
       throw new Error("Expected exactly 2 parents, got: " + parents.length);
     }
 
-    const rootA: RootStatement = (<JavaScriptTestCase>parents[0].copy()).root;
-    const rootB: RootStatement = (<JavaScriptTestCase>parents[1].copy()).root;
+    const rootA: RootStatement = (<JavaScriptTestCase>parents[0].copy()).roots;
+    const rootB: RootStatement = (<JavaScriptTestCase>parents[1].copy()).roots;
 
     const queueA: QueueEntry[] = [];
 

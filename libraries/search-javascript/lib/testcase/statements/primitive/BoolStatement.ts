@@ -66,8 +66,4 @@ export class BoolStatement extends PrimitiveStatement<boolean> {
       this.value
     );
   }
-
-  getFlatTypes(): string[] {
-    return ["bool"];
-  }
 }

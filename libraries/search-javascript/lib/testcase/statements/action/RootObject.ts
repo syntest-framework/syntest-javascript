@@ -24,14 +24,14 @@ import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";
 
-import { RootStatement } from "./RootStatement";
-import { ObjectFunctionCall } from "../action/ObjectFunctionCall";
+import { ObjectFunctionCall } from "./ObjectFunctionCall";
 import { Export } from "@syntest/analysis-javascript";
+import { ActionStatement } from "./ActionStatement";
 
 /**
  * @author Dimitri Stallenberg
  */
-export class RootObject extends RootStatement {
+export class RootObject extends ActionStatement {
   /**
    * Constructor
    * @param type the return identifierDescription of the constructor
@@ -44,7 +44,6 @@ export class RootObject extends RootStatement {
     name: string,
     type: string,
     uniqueId: string,
-    calls: Statement[],
     export_: Export
   ) {
     super(
@@ -54,91 +53,33 @@ export class RootObject extends RootStatement {
       type,
       uniqueId,
       [],
-      calls,
       export_
     );
     this._classType = "RootObject";
-
-    for (const call of calls) {
-      if (!(call instanceof ObjectFunctionCall)) {
-        throw new TypeError(
-          "Constructor children must be of identifierDescription MethodCall"
-        );
-      }
-    }
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): RootObject {
-    // TODO replace entire constructor?
-    const calls = this.children.map((a: Statement) => a.copy());
-
-    const methodsAvailable =
-      (<JavaScriptSubject>sampler.subject).getActionableTargetsByType(
-        TargetType.METHOD
-      ).length > 0;
-
-    const finalCalls = [];
-
-    // If there are no calls, add one if there are methods available
-    if (calls.length === 0 && methodsAvailable) {
-      // add a call
-      finalCalls.push(sampler.sampleObjectFunctionCall(depth + 1, this.name));
-      return new RootObject(
-        this.variableIdentifier,
-        this.name,
-        this.type,
-        prng.uniqueId(),
-        finalCalls,
-        this.export
-      );
-    }
-
-    // go over each call
-    for (let index = 0; index < calls.length; index++) {
-      if (prng.nextBoolean(1 / calls.length)) {
-        // Mutate this position
-        const choice = prng.nextDouble();
-
-        if (choice < 0.1 && methodsAvailable) {
-          // 10% chance to add a call on this position
-          finalCalls.push(
-            sampler.sampleObjectFunctionCall(depth + 1, this.name),
-            calls[index]
-          );
-        } else if (choice < 0.2) {
-          // 10% chance to delete the call
-        } else {
-          // 80% chance to just mutate the call
-          if (prng.nextBoolean(sampler.resampleGeneProbability)) {
-            finalCalls.push(
-              sampler.sampleObjectFunctionCall(depth + 1, this.name)
-            );
-          } else {
-            finalCalls.push(calls[index].mutate(sampler, depth + 1));
-          }
-        }
-      }
+    if (prng.nextBoolean(sampler.resampleGeneProbability)) {
+      return sampler.sampleRootObject(depth);
     }
 
     return new RootObject(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
-      finalCalls,
       this.export
     );
   }
 
   copy(): RootObject {
-    const deepCopyChildren = this.children.map((a: Statement) => a.copy());
-
     return new RootObject(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       this.uniqueId,
-      deepCopyChildren,
       this.export
     );
   }
@@ -148,15 +89,6 @@ export class RootObject extends RootStatement {
     id: string,
     options: { addLogs: boolean; exception: boolean }
   ): Decoding[] {
-    const childStatements: Decoding[] = this.children.flatMap(
-      (a: Statement) => {
-        if (a instanceof ObjectFunctionCall) {
-          return a.decodeWithObject(decoder, id, options, this.varName);
-        }
-        return a.decode(decoder, id, options);
-      }
-    );
-
     let decoded = `const ${this.varName} = ${this.name}`;
 
     if (options.addLogs) {
@@ -169,7 +101,6 @@ export class RootObject extends RootStatement {
         decoded: decoded,
         reference: this,
       },
-      ...childStatements,
     ];
   }
 }

@@ -125,8 +125,6 @@ export abstract class Statement {
     id: string,
     options: { addLogs: boolean; exception: boolean }
   ): Decoding[];
-
-  abstract getFlatTypes(): string[];
 }
 
 export interface Decoding {

@@ -42,9 +42,9 @@ import { NullStatement } from "../statements/primitive/NullStatement";
 import { NumericStatement } from "../statements/primitive/NumericStatement";
 import { StringStatement } from "../statements/primitive/StringStatement";
 import { UndefinedStatement } from "../statements/primitive/UndefinedStatement";
-import { ConstructorCall } from "../statements/root/ConstructorCall";
-import { FunctionCall } from "../statements/root/FunctionCall";
-import { RootObject } from "../statements/root/RootObject";
+import { ConstructorCall } from "../statements/action/ConstructorCall";
+import { FunctionCall } from "../statements/action/FunctionCall";
+import { RootObject } from "../statements/action/RootObject";
 import { RootStatement } from "../statements/root/RootStatement";
 import { Statement } from "../statements/Statement";
 
@@ -164,7 +164,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     return this.sampleSpecificClass(depth, class_.id, class_.name);
   }
 
-  sampleConstructor;
+  sampleConstructorCall;
 
   sampleSpecificClass(
     depth: number,

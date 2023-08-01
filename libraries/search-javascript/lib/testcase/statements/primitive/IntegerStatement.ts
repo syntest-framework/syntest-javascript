@@ -100,8 +100,4 @@ export class IntegerStatement extends PrimitiveStatement<number> {
       this.value
     );
   }
-
-  getFlatTypes(): string[] {
-    return ["integer"];
-  }
 }

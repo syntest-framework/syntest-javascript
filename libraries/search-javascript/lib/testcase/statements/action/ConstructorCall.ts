@@ -20,21 +20,22 @@ import { prng } from "@syntest/prng";
 
 import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
+import { MethodCall } from "./MethodCall";
 import { Decoding, Statement } from "../Statement";
 
-import { RootStatement } from "./RootStatement";
 import { Export } from "@syntest/analysis-javascript";
+import { ActionStatement } from "./ActionStatement";
 
 /**
  * @author Dimitri Stallenberg
  */
-export class FunctionCall extends RootStatement {
+export class ConstructorCall extends ActionStatement {
   /**
    * Constructor
-   * @param type the return identifierDescription of the function
-   * @param uniqueId id of the gene
-   * @param functionName the name of the function
-   * @param args the arguments of the function
+   * @param type the return identifierDescription of the constructor
+   * @param uniqueId optional argument
+   * @param args the arguments of the constructor
+   * @param calls the child calls on the object
    */
   constructor(
     variableIdentifier: string,
@@ -52,14 +53,24 @@ export class FunctionCall extends RootStatement {
       type,
       uniqueId,
       arguments_,
-      [],
       export_
     );
-    this._classType = "FunctionCall";
+    this._classType = "ConstructorCall";
+
+    for (const argument of arguments_) {
+      if (argument instanceof MethodCall) {
+        throw new TypeError(
+          "Constructor args cannot be of identifierDescription MethodCall"
+        );
+      }
+    }
   }
 
-  mutate(sampler: JavaScriptTestCaseSampler, depth: number): FunctionCall {
-    // replace entire function call
+  mutate(sampler: JavaScriptTestCaseSampler, depth: number): ConstructorCall {
+    if (prng.nextBoolean(sampler.resampleGeneProbability)) {
+      return sampler.sampleConstructorCall(depth);
+    }
+
     const arguments_ = this.args.map((a: Statement) => a.copy());
 
     if (arguments_.length > 0) {
@@ -71,8 +82,9 @@ export class FunctionCall extends RootStatement {
       }
     }
 
-    return new FunctionCall(
+    return new ConstructorCall(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -81,11 +93,12 @@ export class FunctionCall extends RootStatement {
     );
   }
 
-  copy(): FunctionCall {
+  copy(): ConstructorCall {
     const deepCopyArguments = this.args.map((a: Statement) => a.copy());
 
-    return new FunctionCall(
+    return new ConstructorCall(
       this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       this.uniqueId,
@@ -105,7 +118,7 @@ export class FunctionCall extends RootStatement {
       a.decode(decoder, id, options)
     );
 
-    let decoded = `const ${this.varName} = await ${this.name}(${arguments_})`;
+    let decoded = `const ${this.varName} = new ${this.name}(${arguments_})`;
 
     if (options.addLogs) {
       const logDirectory = decoder.getLogDirectory(id, this.varName);
@@ -119,10 +132,5 @@ export class FunctionCall extends RootStatement {
         reference: this,
       },
     ];
-  }
-
-  decodeErroring(): string {
-    const arguments_ = this.args.map((a) => a.varName).join(", ");
-    return `await expect(${this.name}(${arguments_})).to.be.rejectedWith(Error);`;
   }
 }

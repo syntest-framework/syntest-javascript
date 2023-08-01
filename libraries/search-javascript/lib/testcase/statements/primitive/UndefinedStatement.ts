@@ -70,8 +70,4 @@ export class UndefinedStatement extends PrimitiveStatement<boolean> {
       this.uniqueId
     );
   }
-
-  getFlatTypes(): string[] {
-    return ["undefined"];
-  }
 }

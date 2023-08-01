@@ -18,7 +18,7 @@
 import { TypeEnum } from "@syntest/analysis-javascript";
 import { Statement } from "../../statements/Statement";
 import { prng } from "@syntest/prng";
-import { FunctionCall } from "../../statements/root/FunctionCall";
+import { FunctionCall } from "../../statements/action/FunctionCall";
 import { CallGenerator } from "./CallGenerator";
 
 export class FunctionCallGenerator extends CallGenerator<FunctionCall> {

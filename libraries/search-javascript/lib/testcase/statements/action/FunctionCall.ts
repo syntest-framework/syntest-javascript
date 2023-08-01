@@ -22,23 +22,18 @@ import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";
 
+import { Export } from "@syntest/analysis-javascript";
 import { ActionStatement } from "./ActionStatement";
-import { Getter } from "./Getter";
-import { MethodCall } from "./MethodCall";
-import { ClassActionStatement } from "./ClassActionStatement";
-import { ConstructorCall } from "./ConstructorCall";
 
 /**
  * @author Dimitri Stallenberg
  */
-export class Setter extends ClassActionStatement {
+export class FunctionCall extends ActionStatement {
   /**
    * Constructor
-   * @param identifierDescription the return type options of the function
-   * @param type always void
    * @param uniqueId id of the gene
-   * @param property the name of the property
-   * @param arg the argument of the setter
+   * @param functionName the name of the function
+   * @param args the arguments of the function
    */
   constructor(
     variableIdentifier: string,
@@ -46,8 +41,8 @@ export class Setter extends ClassActionStatement {
     name: string,
     type: string,
     uniqueId: string,
-    argument: Statement,
-    constructor_: ConstructorCall
+    arguments_: Statement[],
+    export_: Export
   ) {
     super(
       variableIdentifier,
@@ -55,51 +50,45 @@ export class Setter extends ClassActionStatement {
       name,
       type,
       uniqueId,
-      [argument],
-      constructor_
+      arguments_,
+      export_
     );
-    this._classType = "Setter";
+    this._classType = "FunctionCall";
   }
 
-  mutate(
-    sampler: JavaScriptTestCaseSampler,
-    depth: number
-  ): Getter | Setter | MethodCall {
-    if (prng.nextBoolean(sampler.resampleGeneProbability)) {
-      return sampler.sampleClassAction(depth);
-    }
-    const probability = 1 / 2; // plus one for the constructor
+  mutate(sampler: JavaScriptTestCaseSampler, depth: number): FunctionCall {
+    // replace entire function call
+    const arguments_ = this.args.map((a: Statement) => a.copy());
 
-    let argument = this.args.map((a: Statement) => a.copy())[0];
-    let constructor_ = this.constructor_.copy();
-    if (prng.nextBoolean(probability)) {
-      argument = argument.mutate(sampler, depth + 1);
-    } else {
-      constructor_ = constructor_.mutate(sampler, depth + 1);
+    if (arguments_.length > 0) {
+      // go over each arg
+      for (let index = 0; index < arguments_.length; index++) {
+        if (prng.nextBoolean(1 / arguments_.length)) {
+          arguments_[index] = arguments_[index].mutate(sampler, depth + 1);
+        }
+      }
     }
 
-    return new Setter(
+    return new FunctionCall(
       this.variableIdentifier,
-      this.typeIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
-      argument,
-      constructor_
+      arguments_,
+      this.export
     );
   }
 
-  copy(): Setter {
-    const deepCopyArgument = this.args.map((a: Statement) => a.copy())[0];
+  copy(): FunctionCall {
+    const deepCopyArguments = this.args.map((a: Statement) => a.copy());
 
-    return new Setter(
+    return new FunctionCall(
       this.variableIdentifier,
-      this.typeIdentifier,
       this.name,
       this.type,
       this.uniqueId,
-      deepCopyArgument,
-      this.constructor_.copy()
+      deepCopyArguments,
+      this.export
     );
   }
 
@@ -108,13 +97,13 @@ export class Setter extends ClassActionStatement {
     id: string,
     options: { addLogs: boolean; exception: boolean }
   ): Decoding[] {
-    const argument = this.args.map((a) => a.varName).join(", ");
+    const arguments_ = this.args.map((a) => a.varName).join(", ");
 
-    const argumentStatement: Decoding[] = this.args.flatMap((a) =>
+    const argumentStatements: Decoding[] = this.args.flatMap((a) =>
       a.decode(decoder, id, options)
     );
 
-    let decoded = `${this.constructor_.varName}.${this.name} = ${argument}`;
+    let decoded = `const ${this.varName} = await ${this.name}(${arguments_})`;
 
     if (options.addLogs) {
       const logDirectory = decoder.getLogDirectory(id, this.varName);
@@ -122,8 +111,7 @@ export class Setter extends ClassActionStatement {
     }
 
     return [
-      ...this.constructor_.decode(decoder, id, options),
-      ...argumentStatement,
+      ...argumentStatements,
       {
         decoded: decoded,
         reference: this,
@@ -131,9 +119,8 @@ export class Setter extends ClassActionStatement {
     ];
   }
 
-  // TODO
   decodeErroring(): string {
-    const argument = this.args.map((a) => a.varName).join(", ");
-    return `await expect(${this.constructor_.varName}.${this.name} = ${argument}).to.be.rejectedWith(Error);`;
+    const arguments_ = this.args.map((a) => a.varName).join(", ");
+    return `await expect(${this.name}(${arguments_})).to.be.rejectedWith(Error);`;
   }
 }

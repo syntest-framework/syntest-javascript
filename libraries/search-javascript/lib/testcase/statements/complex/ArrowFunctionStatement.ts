@@ -123,8 +123,4 @@ export class ArrowFunctionStatement extends Statement {
   get returnValue(): Statement {
     return this._returnValue;
   }
-
-  getFlatTypes(): string[] {
-    return ["arrowfunction"];
-  }
 }

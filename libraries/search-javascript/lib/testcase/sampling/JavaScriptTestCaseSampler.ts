@@ -26,9 +26,9 @@ import { Setter } from "../statements/action/Setter";
 import { BoolStatement } from "../statements/primitive/BoolStatement";
 import { NumericStatement } from "../statements/primitive/NumericStatement";
 import { StringStatement } from "../statements/primitive/StringStatement";
-import { ConstructorCall } from "../statements/root/ConstructorCall";
+import { ConstructorCall } from "../statements/action/ConstructorCall";
 import { Statement } from "../statements/Statement";
-import { RootObject } from "../statements/root/RootObject";
+import { RootObject } from "../statements/action/RootObject";
 import { ObjectFunctionCall } from "../statements/action/ObjectFunctionCall";
 import { NullStatement } from "../statements/primitive/NullStatement";
 import { UndefinedStatement } from "../statements/primitive/UndefinedStatement";
@@ -36,9 +36,11 @@ import { ArrowFunctionStatement } from "../statements/complex/ArrowFunctionState
 import { ArrayStatement } from "../statements/complex/ArrayStatement";
 import { ObjectStatement } from "../statements/complex/ObjectStatement";
 import { IntegerStatement } from "../statements/primitive/IntegerStatement";
-import { FunctionCall } from "../statements/root/FunctionCall";
+import { FunctionCall } from "../statements/action/FunctionCall";
 import { FunctionCallGenerator } from "./generators/FunctionCallGenerator";
 import { RootContext } from "@syntest/analysis-javascript";
+import { StatementPool } from "../StatementPool";
+import { ActionStatement } from "../statements/action/ActionStatement";
 
 /**
  * JavaScriptRandomSampler class
@@ -57,6 +59,8 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
   private _resampleGeneProbability: number;
   private _deltaMutationProbability: number;
   private _exploreIllegalValues: boolean;
+
+  private _statementPool: StatementPool | null;
 
   private _functionCallGenerator: FunctionCallGenerator;
 
@@ -96,17 +100,22 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
     return this._functionCallGenerator;
   }
 
-  abstract sampleClass(depth: number): ConstructorCall;
-  // TODO sampleConstructor
-  abstract sampleClassCall(
-    depth: number,
-    className: string
-  ): MethodCall | Getter | Setter;
-  abstract sampleMethodCall(depth: number, className: string): MethodCall;
+  get statementPool() {
+    return this._statementPool;
+  }
 
-  abstract sampleGetter(depth: number, className: string): Getter;
+  set statementPool(statementPool: StatementPool) {
+    this._statementPool = statementPool;
+  }
 
-  abstract sampleSetter(depth: number, className: string): Setter;
+  abstract sampleRoot(): ActionStatement;
+
+  abstract sampleConstructorCall(depth: number): ConstructorCall;
+
+  abstract sampleClassAction(depth: number): MethodCall | Getter | Setter;
+  abstract sampleMethodCall(depth: number): MethodCall;
+  abstract sampleGetter(depth: number): Getter;
+  abstract sampleSetter(depth: number): Setter;
 
   abstract sampleRootObject(depth: number): RootObject;
   abstract sampleObjectFunctionCall(
