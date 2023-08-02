@@ -207,15 +207,22 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     if (constructor_.length > 1) {
       throw new Error("Multiple constructors found for class");
     }
+
     if (constructor_.length === 0) {
       // default constructor no args
-      return this.constructorCallGenerator.generate(
-        depth,
+      const export_ = [...this.rootContext.getAllExports().values()]
+        .flat()
+        .find((export_) => export_.id === class_.id);
+
+      return new ConstructorCall(
         class_.id,
         class_.id,
         class_.id,
         class_.name,
-        this.statementPool
+        TypeEnum.FUNCTION,
+        prng.uniqueId(),
+        [],
+        export_
       );
     } else {
       const action = constructor_[0];

@@ -35,19 +35,20 @@ export class ConstructorCallGenerator extends CallGenerator<ConstructorCall> {
       .flat()
       .find((export_) => export_.id === exportIdentifier);
 
-    if (exportIdentifier === typeIdentifier) {
-      // default constructor with no type and no args
-      return new ConstructorCall(
-        variableIdentifier,
-        typeIdentifier,
-        exportIdentifier,
-        name,
-        TypeEnum.FUNCTION,
-        prng.uniqueId(),
-        [],
-        export_
-      );
-    }
+    //   console.log(exportIdentifier, typeIdentifier)
+    // if (exportIdentifier === typeIdentifier) {
+    //   // default constructor with no type and no args
+    //   return new ConstructorCall(
+    //     variableIdentifier,
+    //     typeIdentifier,
+    //     exportIdentifier,
+    //     name,
+    //     TypeEnum.FUNCTION,
+    //     prng.uniqueId(),
+    //     [],
+    //     export_
+    //   );
+    // }
 
     const statementFromPool =
       statementPool.getRandomStatement(exportIdentifier);
