@@ -128,6 +128,76 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
     path.skip();
   };
 
+  public CallExpression: (path: NodePath<t.CallExpression>) => void = (
+    path
+  ) => {
+    const callee = path.get("callee");
+
+    if (callee.isMemberExpression()) {
+      const object = callee.get("object");
+      object.visit();
+      const property = callee.get("property");
+
+      if (property.isIdentifier()) {
+        if (property.node.name === "endsWith") {
+          const argument = path.get("arguments")[0];
+          argument.visit();
+          const objectValue = <string>this._valueMap.get(object.toString());
+          const argumentValue = <string>this._valueMap.get(argument.toString());
+
+          const endOfObject =
+            objectValue.length > argumentValue.length
+              ? objectValue.slice(-argumentValue.length)
+              : objectValue;
+
+          if (this._inverted) {
+            if (endOfObject === argumentValue) {
+              this._valueMap.set(path.toString(), this._normalize(1));
+            } else {
+              this._valueMap.set(path.toString(), this._normalize(0));
+            }
+          } else {
+            if (endOfObject === argumentValue) {
+              this._valueMap.set(path.toString(), this._normalize(0));
+            } else {
+              console.log(
+                endOfObject,
+                argumentValue,
+                this._realCodedEditDistance(endOfObject, argumentValue),
+                this._realCodedEditDistance(argumentValue, endOfObject)
+              );
+              this._valueMap.set(
+                path.toString(),
+                this._normalize(
+                  this._realCodedEditDistance(endOfObject, argumentValue)
+                )
+              );
+            }
+          }
+
+          this._isDistanceMap.set(path.toString(), true);
+        } else if (property.node.name === "startsWith") {
+          const argument = path.get("arguments")[0];
+          argument.visit();
+          const objectValue = <string>this._valueMap.get(object.toString());
+          const argumentValue = <string>this._valueMap.get(argument.toString());
+
+          const startOfObject =
+            objectValue.length > argumentValue.length
+              ? objectValue.slice(0, argumentValue.length)
+              : objectValue;
+
+          this._valueMap.set(
+            path.toString(),
+            this._realCodedEditDistance(startOfObject, argumentValue)
+          );
+          this._isDistanceMap.set(path.toString(), true);
+        }
+      }
+    }
+    console.log(path.toString());
+  };
+
   public Literal: (path: NodePath<t.Literal>) => void = (path) => {
     switch (path.node.type) {
       case "NullLiteral": {
