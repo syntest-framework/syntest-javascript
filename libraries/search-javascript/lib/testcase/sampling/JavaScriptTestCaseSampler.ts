@@ -47,6 +47,7 @@ import { GetterGenerator } from "./generators/action/GetterGenerator";
 import { SetterGenerator } from "./generators/action/SetterGenerator";
 import { ConstantObjectGenerator } from "./generators/action/ConstantObjectGenerator";
 import { ObjectFunctionCallGenerator } from "./generators/action/ObjectFunctionCallGenerator";
+import { ConstantPoolManager } from "@syntest/analysis-javascript";
 
 /**
  * JavaScriptRandomSampler class
@@ -56,6 +57,9 @@ import { ObjectFunctionCallGenerator } from "./generators/action/ObjectFunctionC
 export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScriptTestCase> {
   private _rootContext: RootContext;
 
+  private _constantPoolManager: ConstantPoolManager;
+  private _constantPoolEnabled: boolean;
+  private _constantPoolProbability: number;
   private _typeInferenceMode: string;
   private _randomTypeProbability: number;
   private _incorporateExecutionInformation: boolean;
@@ -82,6 +86,9 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
 
   constructor(
     subject: JavaScriptSubject,
+    constantPoolManager: ConstantPoolManager,
+    constantPoolEnabled: boolean,
+    constantPoolProbability: number,
     typeInferenceMode: string,
     randomTypeProbability: number,
     incorporateExecutionInformation: boolean,
@@ -95,6 +102,9 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
     useMockedObjectProbability: number
   ) {
     super(subject);
+    this._constantPoolManager = constantPoolManager;
+    this._constantPoolEnabled = constantPoolEnabled;
+    this._constantPoolProbability = constantPoolProbability;
     this._typeInferenceMode = typeInferenceMode;
     this._randomTypeProbability = randomTypeProbability;
     this._incorporateExecutionInformation = incorporateExecutionInformation;
@@ -261,6 +271,18 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
   abstract sampleInteger(id: string, name: string): IntegerStatement;
 
   abstract sampleUndefined(id: string, name: string): UndefinedStatement;
+
+  get constantPoolManager(): ConstantPoolManager {
+    return this._constantPoolManager;
+  }
+
+  get constantPoolEnabled(): boolean {
+    return this._constantPoolEnabled;
+  }
+
+  get constantPoolProbability(): number {
+    return this._constantPoolProbability;
+  }
 
   get typeInferenceMode(): string {
     return this._typeInferenceMode;

@@ -32,14 +32,14 @@ export function getTestCommand(
 ): Command {
   const options = new Map<string, Yargs.Options>();
 
-  const typeInferenceGroup = "Type Inference Options:";
-  const variousProbabilitiesGroup = "Various Probabilities:";
+  const commandGroup = "Type Inference Options:";
+  const samplingGroup = "Sampling Options:";
 
   options.set("incorporate-execution-information", {
     alias: [],
     default: true,
     description: "Incorporate execution information.",
-    group: typeInferenceGroup,
+    group: commandGroup,
     hidden: false,
     type: "boolean",
   });
@@ -48,7 +48,7 @@ export function getTestCommand(
     alias: [],
     default: "proportional",
     description: "The type inference mode: [proportional, ranked, none].",
-    group: typeInferenceGroup,
+    group: commandGroup,
     hidden: false,
     type: "string",
   });
@@ -58,7 +58,7 @@ export function getTestCommand(
     default: 0.1,
     description:
       "The probability we use a random type regardless of the inferred type.",
-    group: typeInferenceGroup,
+    group: commandGroup,
     hidden: false,
     type: "number",
   });
@@ -68,7 +68,7 @@ export function getTestCommand(
     default: 0.9,
     description:
       "The probability we reuse a statement instead of generating a new one.",
-    group: variousProbabilitiesGroup,
+    group: samplingGroup,
     hidden: false,
     type: "number",
   });
@@ -78,7 +78,26 @@ export function getTestCommand(
     default: 0.1,
     description:
       "The probability we use a mocked object instead of generating an actual instance.",
-    group: variousProbabilitiesGroup,
+    group: samplingGroup,
+    hidden: false,
+    type: "number",
+  });
+
+  options.set("constant-pool", {
+    alias: [],
+    default: false,
+    description: "Enable constant pool.",
+    group: samplingGroup,
+    hidden: false,
+    type: "boolean",
+  });
+
+  options.set("constant-pool-probability", {
+    alias: [],
+    default: 0.5,
+    description:
+      "Probability to sample from the constant pool instead creating random values",
+    group: samplingGroup,
     hidden: false,
     type: "number",
   });
@@ -108,4 +127,6 @@ export type TestCommandOptions = {
   randomTypeProbability: number;
   reuseStatementProbability: number;
   useMockedObjectProbability: number;
+  constantPool: boolean;
+  constantPoolProbability: number;
 };
