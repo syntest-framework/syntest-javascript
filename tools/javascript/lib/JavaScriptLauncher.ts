@@ -119,6 +119,17 @@ export class JavaScriptLauncher extends Launcher {
     JavaScriptLauncher.LOGGER.info("Initialization started");
     const start = Date.now();
 
+    this.metricManager.recordProperty(
+      PropertyName.CONSTANT_POOL_ENABLED,
+      `${(<JavaScriptArguments>this.arguments_).constantPool.toString()}`
+    );
+    this.metricManager.recordProperty(
+      PropertyName.CONSTANT_POOL_PROBABILITY,
+      `${(<JavaScriptArguments>(
+        this.arguments_
+      )).constantPoolProbability.toString()}`
+    );
+
     this.storageManager.deleteTemporaryDirectories([
       [this.arguments_.testDirectory],
       [this.arguments_.logDirectory],
@@ -287,10 +298,13 @@ export class JavaScriptLauncher extends Launcher {
           "Sample Output Values",
           `${this.arguments_.sampleFunctionOutputAsArgument}`,
         ],
-        ["Use Constant Pool Values", `${this.arguments_.constantPool}`],
+        [
+          "Use Constant Pool Values",
+          `${(<JavaScriptArguments>this.arguments_).constantPool}`,
+        ],
         [
           "Use Constant Pool Probability",
-          `${this.arguments_.constantPoolProbability}`,
+          `${(<JavaScriptArguments>this.arguments_).constantPoolProbability}`,
         ],
       ],
       footers: ["", ""],
@@ -679,8 +693,8 @@ export class JavaScriptLauncher extends Launcher {
     const sampler = new JavaScriptRandomSampler(
       currentSubject,
       constantPoolManager,
-      this.arguments_.constantPool,
-      this.arguments_.constantPoolProbability,
+      (<JavaScriptArguments>this.arguments_).constantPool,
+      (<JavaScriptArguments>this.arguments_).constantPoolProbability,
       (<JavaScriptArguments>this.arguments_).typeInferenceMode,
       (<JavaScriptArguments>this.arguments_).randomTypeProbability,
       (<JavaScriptArguments>this.arguments_).incorporateExecutionInformation,

@@ -84,6 +84,10 @@ export class ConstantPool {
   }
 
   public getRandomNumeric(frequencyBased = false): number {
+    if (this._numericPool.size === 0) {
+      return undefined;
+    }
+
     if (frequencyBased) {
       let index = prng.nextDouble() * this._numericCount;
       for (const [value, frequency] of this._numericPool.entries()) {
@@ -100,6 +104,10 @@ export class ConstantPool {
   }
 
   public getRandomInteger(frequencyBased = false): number {
+    if (this._integerPool.size === 0) {
+      return undefined;
+    }
+
     if (frequencyBased) {
       let index = prng.nextDouble() * this._integerCount;
       for (const [value, frequency] of this._integerPool.entries()) {
@@ -116,6 +124,10 @@ export class ConstantPool {
   }
 
   public getRandomBigInt(frequencyBased = false): bigint {
+    if (this._bigIntPool.size === 0) {
+      return undefined;
+    }
+
     if (frequencyBased) {
       let index = prng.nextDouble() * this._bigIntCount;
       for (const [value, frequency] of this._bigIntPool.entries()) {
@@ -132,6 +144,10 @@ export class ConstantPool {
   }
 
   public getRandomString(frequencyBased = false): string {
+    if (this._stringPool.size === 0) {
+      return undefined;
+    }
+
     if (frequencyBased) {
       let index = prng.nextDouble() * this._stringCount;
       for (const [value, frequency] of this._stringPool.entries()) {

@@ -57,9 +57,6 @@ import { IntegerStatement } from "../statements/primitive/IntegerStatement";
 
 export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   private _rootContext: RootContext;
-  private _constantPoolManager: ConstantPoolManager;
-  private _constantPoolEnabled: boolean;
-  private _constantPoolProbability: number;
 
   constructor(
     subject: JavaScriptSubject,
@@ -78,6 +75,9 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   ) {
     super(
       subject,
+      constantPoolManager,
+      constantPoolEnabled,
+      constantPoolProbability,
       typeInferenceMode,
       randomTypeProbability,
       incorporateExecutionInformation,
@@ -88,9 +88,6 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       deltaMutationProbability,
       exploreIllegalValues
     );
-    this._constantPoolManager = constantPoolManager;
-    this._constantPoolEnabled = constantPoolEnabled;
-    this._constantPoolProbability = constantPoolProbability;
   }
 
   /**
@@ -786,11 +783,13 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   ): StringStatement {
     let value: string;
     if (
-      prng.nextDouble() >= this._constantPoolProbability &&
-      this._constantPoolEnabled
+      this.constantPoolEnabled &&
+      prng.nextBoolean(this.constantPoolProbability)
     ) {
-      value = this._constantPoolManager.contextConstantPool.getRandomString();
-    } else {
+      value = this.constantPoolManager.contextConstantPool.getRandomString();
+    }
+
+    if (value === undefined) {
       const valueLength = prng.nextInt(0, maxlength - 1);
 
       for (let index = 0; index < valueLength; index++) {
@@ -830,10 +829,13 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     const min = -10;
 
     const value =
-      prng.nextDouble() >= this._constantPoolProbability &&
-      this._constantPoolEnabled
-        ? this._constantPoolManager.contextConstantPool.getRandomNumeric()
+      this.constantPoolEnabled && prng.nextBoolean(this.constantPoolProbability)
+        ? this.constantPoolManager.contextConstantPool.getRandomNumeric()
         : prng.nextDouble(min, max);
+
+    if (value === undefined) {
+      prng.nextDouble(min, max);
+    }
 
     return new NumericStatement(
       id,
@@ -850,10 +852,13 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     const min = -10;
 
     const value =
-      prng.nextDouble() >= this._constantPoolProbability &&
-      this._constantPoolEnabled
-        ? this._constantPoolManager.contextConstantPool.getRandomInteger()
+      this.constantPoolEnabled && prng.nextBoolean(this.constantPoolProbability)
+        ? this.constantPoolManager.contextConstantPool.getRandomInteger()
         : prng.nextInt(min, max);
+
+    if (value === undefined) {
+      prng.nextInt(min, max);
+    }
 
     return new IntegerStatement(
       id,
