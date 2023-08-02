@@ -118,6 +118,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
           (target.type === TargetType.CLASS && isExported(target)) ||
           (target.type === TargetType.OBJECT && isExported(target)) ||
           (target.type === TargetType.METHOD &&
+            (<MethodTarget>target).methodType !== "constructor" &&
             isExported(
               targets.find(
                 (classTarget) =>
