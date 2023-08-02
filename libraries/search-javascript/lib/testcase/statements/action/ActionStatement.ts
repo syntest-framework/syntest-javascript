@@ -46,6 +46,7 @@ export abstract class ActionStatement extends Statement {
   }
 
   protected override generateVarName(name: string, type: string): string {
+    // TODO should use return type
     if (this._export) {
       return name + "_" + this._export.name + "_" + prng.uniqueId(4);
     }

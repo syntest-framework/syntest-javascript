@@ -105,7 +105,7 @@ export class FunctionCall extends ActionStatement {
       a.decode(decoder, id, options)
     );
 
-    let decoded = `const ${this.varName} = await ${this.name}(${arguments_})`;
+    let decoded = `const ${this.varName} = await ${this._export.name}(${arguments_})`;
 
     if (options.addLogs) {
       const logDirectory = decoder.getLogDirectory(id, this.varName);
