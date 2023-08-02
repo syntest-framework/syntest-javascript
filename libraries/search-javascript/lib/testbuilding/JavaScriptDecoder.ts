@@ -190,7 +190,7 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
 
       return (
         importsString +
-        `describe('${targetName}', () => {\n` +
+        `describe('${targetName}', function() {\n\t` +
         tests.join("\n\n") +
         `\n})`
       );
@@ -203,7 +203,7 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
           .join("\n\t") + `\n\n`;
 
       return (
-        `describe('${targetName}', () => {\n\t` +
+        `describe('${targetName}', function() {\n\t` +
         importsString +
         tests.join("\n\n") +
         `\n})`
