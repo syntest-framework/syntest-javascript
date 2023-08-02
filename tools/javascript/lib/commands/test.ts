@@ -65,7 +65,7 @@ export function getTestCommand(
 
   options.set("reuse-statement-probability", {
     alias: [],
-    default: 0.8,
+    default: 0.9,
     description:
       "The probability we reuse a statement instead of generating a new one.",
     group: variousProbabilitiesGroup,
