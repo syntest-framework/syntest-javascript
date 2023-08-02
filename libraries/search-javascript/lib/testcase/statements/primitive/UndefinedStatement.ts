@@ -25,7 +25,7 @@ import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSamp
 /**
  * @author Dimitri Stallenberg
  */
-export class UndefinedStatement extends PrimitiveStatement<boolean> {
+export class UndefinedStatement extends PrimitiveStatement<undefined> {
   constructor(
     variableIdentifier: string,
     typeIdentifier: string,
