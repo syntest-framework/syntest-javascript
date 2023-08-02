@@ -790,6 +790,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     }
 
     if (value === undefined) {
+      value = "";
       const valueLength = prng.nextInt(0, maxlength - 1);
 
       for (let index = 0; index < valueLength; index++) {
