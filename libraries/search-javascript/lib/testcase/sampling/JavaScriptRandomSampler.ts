@@ -102,17 +102,29 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   }
 
   sampleRoot(): ActionStatement {
+    const targets = (<JavaScriptSubject>this._subject).getActionableTargets();
+
     const action = prng.pickOne(
-      (<JavaScriptSubject>this._subject)
-        .getActionableTargets()
-        .filter(
-          (target) =>
-            (target.type === TargetType.FUNCTION && isExported(target)) ||
-            (target.type === TargetType.CLASS && isExported(target)) ||
-            (target.type === TargetType.OBJECT && isExported(target)) ||
-            target.type === TargetType.METHOD ||
-            target.type === TargetType.OBJECT_FUNCTION
-        )
+      targets.filter(
+        (target) =>
+          (target.type === TargetType.FUNCTION && isExported(target)) ||
+          (target.type === TargetType.CLASS && isExported(target)) ||
+          (target.type === TargetType.OBJECT && isExported(target)) ||
+          (target.type === TargetType.METHOD &&
+            isExported(
+              targets.find(
+                (classTarget) =>
+                  classTarget.id === (<MethodTarget>target).classId
+              )
+            )) || // check whether parent class is exported
+          (target.type === TargetType.OBJECT_FUNCTION &&
+            isExported(
+              targets.find(
+                (objectTarget) =>
+                  objectTarget.id === (<ObjectFunctionTarget>target).objectId
+              )
+            )) // check whether parent object is exported
+      )
     );
 
     switch (action.type) {
@@ -353,7 +365,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     return this.objectFunctionCallGenerator.generate(
       depth,
       randomFunction.id,
-      randomFunction.name,
+      randomFunction.id,
       object_.id,
       randomFunction.name,
       this.statementPool

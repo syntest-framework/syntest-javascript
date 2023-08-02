@@ -52,13 +52,13 @@ export class ConstantObject extends ActionStatement {
       [],
       export_
     );
-    this._classType = "RootObject";
+    this._classType = "ConstantObject";
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): ConstantObject {
-    if (prng.nextBoolean(sampler.resampleGeneProbability)) {
-      return sampler.sampleConstantObject(depth);
-    }
+    // if (prng.nextBoolean(sampler.resampleGeneProbability)) {
+    //   return sampler.sampleConstantObject(depth);
+    // }
 
     return new ConstantObject(
       this.variableIdentifier,
