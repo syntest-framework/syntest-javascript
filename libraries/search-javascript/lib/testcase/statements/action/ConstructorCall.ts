@@ -75,7 +75,7 @@ export class ConstructorCall extends ActionStatement {
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): ConstructorCall {
-    // if (prng.nextBoolean(sampler.resampleGeneProbability)) {
+    // if (prng.nextBoolean(sampler.resampleGeneProbability)) { // TODO
     //   return sampler.sampleConstructorCall(depth, this._classIdentifier);
     // }
 

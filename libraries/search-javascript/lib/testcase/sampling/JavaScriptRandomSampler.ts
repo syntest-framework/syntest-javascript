@@ -102,17 +102,28 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   }
 
   sampleRoot(): ActionStatement {
+    const targets = (<JavaScriptSubject>this._subject).getActionableTargets();
     const action = prng.pickOne(
-      (<JavaScriptSubject>this._subject)
-        .getActionableTargets()
-        .filter(
-          (target) =>
-            (target.type === TargetType.FUNCTION && isExported(target)) ||
-            (target.type === TargetType.CLASS && isExported(target)) ||
-            (target.type === TargetType.OBJECT && isExported(target)) ||
-            target.type === TargetType.METHOD ||
-            target.type === TargetType.OBJECT_FUNCTION
-        )
+      targets.filter(
+        (target) =>
+          (target.type === TargetType.FUNCTION && isExported(target)) ||
+          (target.type === TargetType.CLASS && isExported(target)) ||
+          (target.type === TargetType.OBJECT && isExported(target)) ||
+          (target.type === TargetType.METHOD &&
+            isExported(
+              targets.find(
+                (classTarget) =>
+                  classTarget.id === (<MethodTarget>target).classId
+              )
+            )) || // check whether parent class is exported
+          (target.type === TargetType.OBJECT_FUNCTION &&
+            isExported(
+              targets.find(
+                (objectTarget) =>
+                  objectTarget.id === (<ObjectFunctionTarget>target).objectId
+              )
+            )) // check whether parent object is exported
+      )
     );
 
     switch (action.type) {
@@ -174,6 +185,31 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       prng.pickOne(
         (<JavaScriptSubject>this._subject)
           .getActionableTargetsByType(TargetType.CLASS)
+          .filter((target) => isExported(target))
+      )
+    );
+  }
+
+  private _getObject(id?: string) {
+    if (id) {
+      const result = <ObjectTarget>(
+        (<JavaScriptSubject>this._subject)
+          .getActionableTargetsByType(TargetType.OBJECT)
+          .find((target) => (<ObjectTarget>target).id === id)
+      );
+      if (!result) {
+        throw new Error("missing object with id: " + id);
+      } else if (!isExported(result)) {
+        throw new Error("object with id: " + id + "is not exported");
+      }
+      return result;
+    }
+
+    // random
+    return <ObjectTarget>(
+      prng.pickOne(
+        (<JavaScriptSubject>this._subject)
+          .getActionableTargetsByType(TargetType.OBJECT)
           .filter((target) => isExported(target))
       )
     );
@@ -300,31 +336,6 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       class_.id,
       method.name,
       this.statementPool
-    );
-  }
-
-  private _getObject(id?: string) {
-    if (id) {
-      const result = <ObjectTarget>(
-        (<JavaScriptSubject>this._subject)
-          .getActionableTargetsByType(TargetType.OBJECT)
-          .find((target) => (<ObjectTarget>target).id === id)
-      );
-      if (!result) {
-        throw new Error("missing object with id: " + id);
-      } else if (!isExported(result)) {
-        throw new Error("object with id: " + id + "is not exported");
-      }
-      return result;
-    }
-
-    // random
-    return <ObjectTarget>(
-      prng.pickOne(
-        (<JavaScriptSubject>this._subject)
-          .getActionableTargetsByType(TargetType.OBJECT)
-          .filter((target) => isExported(target))
-      )
     );
   }
 
