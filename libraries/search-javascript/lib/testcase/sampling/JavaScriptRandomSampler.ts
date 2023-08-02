@@ -246,19 +246,21 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   }
 
   override sampleClassAction(depth: number): MethodCall | Getter | Setter {
+    const targets = (<JavaScriptSubject>this._subject).getActionableTargets();
+
     const methods = (<JavaScriptSubject>this._subject)
       .getActionableTargetsByType(TargetType.METHOD)
-      .filter((method) => (<MethodTarget>method).methodType === "method");
-    const getters = (<JavaScriptSubject>this._subject)
-      .getActionableTargetsByType(TargetType.METHOD)
-      .filter((method) => (<MethodTarget>method).methodType === "get");
-    const setters = (<JavaScriptSubject>this._subject)
-      .getActionableTargetsByType(TargetType.METHOD)
-      .filter((method) => (<MethodTarget>method).methodType === "set");
+      .filter(
+        (method) =>
+          (<MethodTarget>method).methodType !== "constructor" &&
+          isExported(
+            targets.find(
+              (classTarget) => classTarget.id === (<MethodTarget>method).classId
+            )
+          )
+      );
 
-    const randomMethod = <MethodTarget>(
-      prng.pickOne([...methods, ...getters, ...setters])
-    );
+    const randomMethod = <MethodTarget>prng.pickOne(methods);
     switch (randomMethod.methodType) {
       case "method": {
         return this.sampleMethodCall(depth);
