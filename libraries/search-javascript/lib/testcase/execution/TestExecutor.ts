@@ -31,6 +31,7 @@ export type Message = RunMessage | DoneMessage;
 export type RunMessage = {
   message: "run";
   paths: string[];
+  timeout: number;
 };
 
 export type DoneMessage = {
@@ -39,6 +40,7 @@ export type DoneMessage = {
   stats: Mocha.Stats;
   instrumentationData: InstrumentationData;
   metaData: MetaData;
+  error?: string;
 };
 
 export type Suite = {
@@ -64,17 +66,17 @@ process.on("message", async (data: Message) => {
     throw new TypeError("Invalid data received from child process");
   }
   if (data.message === "run") {
-    await runMocha(data.paths);
+    await runMocha(data.paths, data.timeout);
   }
 });
 
-async function runMocha(paths: string[]) {
+async function runMocha(paths: string[], timeout: number) {
   const argv: Mocha.MochaOptions = <Mocha.MochaOptions>(<unknown>{
     reporter: SilentMochaReporter,
     // diff: false,
     // checkLeaks: false,
     // slow: 75,
-    // timeout: 100,
+    timeout: timeout,
 
     // watch: false,
     // parallel: false,

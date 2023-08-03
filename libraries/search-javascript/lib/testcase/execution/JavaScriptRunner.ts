@@ -31,153 +31,89 @@ import { JavaScriptTestCase } from "../JavaScriptTestCase";
 
 import { ExecutionInformationIntegrator } from "./ExecutionInformationIntegrator";
 import { StorageManager } from "@syntest/storage";
-import { DoneMessage, Message, Suite } from "./TestExecutor";
+import { DoneMessage, Message } from "./TestExecutor";
 import { ChildProcess, fork } from "node:child_process";
 import {
   InstrumentationData,
   MetaData,
 } from "@syntest/instrumentation-javascript";
-import cloneDeep = require("lodash.clonedeep");
-import { Runner } from "mocha";
-import Mocha = require("mocha");
-import { SilentMochaReporter } from "./SilentMochaReporter";
 
 export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
   protected static LOGGER: Logger;
 
   protected storageManager: StorageManager;
   protected decoder: JavaScriptDecoder;
-  protected tempTestDirectory: string;
   protected executionInformationIntegrator: ExecutionInformationIntegrator;
 
-  private workers: number;
-  private processes: ChildProcess[];
-  private currentProcessIndex: number;
+  protected tempTestDirectory: string;
+
+  protected executionTimeout: number;
+  protected testTimeout: number;
+
+  private process: ChildProcess;
 
   constructor(
     storageManager: StorageManager,
     decoder: JavaScriptDecoder,
     executionInformationIntergrator: ExecutionInformationIntegrator,
-    temporaryTestDirectory: string
+    temporaryTestDirectory: string,
+    executionTimeout: number,
+    testTimeout: number
   ) {
     JavaScriptRunner.LOGGER = getLogger(JavaScriptRunner.name);
     this.storageManager = storageManager;
     this.decoder = decoder;
     this.executionInformationIntegrator = executionInformationIntergrator;
     this.tempTestDirectory = temporaryTestDirectory;
+    this.executionTimeout = executionTimeout;
+    this.testTimeout = testTimeout;
 
-    this.processes = [];
-    this.workers = 2;
-    this.currentProcessIndex = 0;
-    for (let index = 0; index < this.workers; index++) {
-      // eslint-disable-next-line unicorn/prefer-module
-      this.processes.push(fork(path.join(__dirname, "TestExecutor.js")));
-    }
+    // eslint-disable-next-line unicorn/prefer-module
+    this.process = fork(path.join(__dirname, "TestExecutor.js"));
   }
 
   async run(paths: string[]): Promise<Omit<DoneMessage, "message">> {
     paths = paths.map((p) => path.resolve(p));
-    // const childProcess = fork(path.join(__dirname, 'TestExecutor.js'))
 
-    const childProcess = this.processes[this.currentProcessIndex];
+    if (!this.process.connected || this.process.killed) {
+      // eslint-disable-next-line unicorn/prefer-module
+      this.process = fork(path.join(__dirname, "TestExecutor.js"));
+    }
 
-    childProcess.send({ message: "run", paths: paths });
+    const childProcess = this.process;
 
-    return await new Promise((resolve) => {
+    return await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        JavaScriptRunner.LOGGER.warn(
+          "Execution timeout reached killing process"
+        );
+        childProcess.removeAllListeners();
+        childProcess.kill();
+        reject("timeout");
+      }, this.executionTimeout);
+
       childProcess.on("message", (data: Message) => {
         if (typeof data !== "object") {
-          throw new TypeError("Invalid data received from child process");
+          reject(new TypeError("Invalid data received from child process"));
         }
         if (data.message === "done") {
           // childProcess.kill()
+          childProcess.removeAllListeners();
+          clearTimeout(timeout);
           resolve(data);
         }
       });
+
+      childProcess.on("error", (error) => {
+        reject(error);
+      });
+
+      childProcess.send({
+        message: "run",
+        paths: paths,
+        timeout: this.testTimeout,
+      });
     });
-  }
-
-  async runOld(paths: string[]): Promise<Omit<DoneMessage, "message">> {
-    paths = paths.map((p) => path.resolve(p));
-
-    const argv: Mocha.MochaOptions = <Mocha.MochaOptions>(<unknown>{
-      reporter: SilentMochaReporter,
-      // diff: false,
-      // checkLeaks: false,
-      // slow: 75,
-      // timeout: 100,
-
-      // watch: false,
-      // parallel: false,
-      // recursive: false,
-      // sort: false,
-    });
-
-    const mocha = new Mocha(argv); // require('ts-node/register')
-    // eslint-disable-next-line unicorn/prefer-module
-    require("regenerator-runtime/runtime");
-    // eslint-disable-next-line unicorn/prefer-module, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-var-requires
-    require("@babel/register")({
-      // eslint-disable-next-line unicorn/prefer-module
-      presets: [require.resolve("@babel/preset-env")],
-    });
-
-    for (const _path of paths) {
-      // eslint-disable-next-line unicorn/prefer-module
-      delete require.cache[_path];
-      mocha.addFile(_path);
-    }
-
-    let runner: Runner;
-
-    // Finally, run mocha.
-    await new Promise((resolve) => {
-      runner = mocha.run((failures) => resolve(failures));
-    });
-
-    const suites: Suite[] = runner.suite.suites.map((suite) => {
-      return {
-        tests: suite.tests.map((test) => {
-          let status: JavaScriptExecutionStatus;
-          if (test.isPassed()) {
-            status = JavaScriptExecutionStatus.PASSED;
-          } else if (test.timedOut) {
-            status = JavaScriptExecutionStatus.TIMED_OUT;
-          } else {
-            status = JavaScriptExecutionStatus.FAILED;
-          }
-          return {
-            status: status,
-            exception:
-              status === JavaScriptExecutionStatus.FAILED
-                ? test.err.message
-                : undefined,
-            duration: test.duration,
-          };
-        }),
-      };
-    });
-
-    // Retrieve execution traces
-    const instrumentationData = <InstrumentationData>(
-      cloneDeep(
-        (<{ __coverage__: InstrumentationData }>(<unknown>global)).__coverage__
-      )
-    );
-    const metaData = <MetaData>(
-      cloneDeep((<{ __meta__: MetaData }>(<unknown>global)).__meta__)
-    );
-
-    const result: DoneMessage = {
-      message: "done",
-      suites: suites,
-      stats: runner.stats,
-      instrumentationData: instrumentationData,
-      metaData: metaData,
-    };
-
-    mocha.dispose();
-
-    return result;
   }
 
   async execute(
@@ -195,16 +131,57 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
       true
     );
 
+    let executionResult: JavaScriptExecutionResult;
     const last = Date.now();
-    const { suites, stats, instrumentationData, metaData } = await this.run([
-      testPath,
-    ]);
-    console.log("time", Date.now() - last);
-    const test = suites[0].tests[0]; // only one test in this case
+    try {
+      const { suites, stats, instrumentationData, metaData } = await this.run([
+        testPath,
+      ]);
+      JavaScriptRunner.LOGGER.debug(`test run took: ${Date.now() - last} ms`);
+      const test = suites[0].tests[0]; // only one test in this case
 
-    // If one of the executions failed, log it
-    this.executionInformationIntegrator.process(testCase, test, stats);
+      // If one of the executions failed, log it
+      this.executionInformationIntegrator.process(testCase, test, stats);
 
+      const traces: Datapoint[] = this._extractTraces(
+        instrumentationData,
+        metaData
+      );
+
+      // Retrieve execution information
+      executionResult = new JavaScriptExecutionResult(
+        test.status,
+        traces,
+        test.duration,
+        test.exception
+      );
+    } catch (error) {
+      if (error === "timeout") {
+        JavaScriptRunner.LOGGER.debug(`test run took: ${Date.now() - last} ms`);
+        executionResult = new JavaScriptExecutionResult(
+          JavaScriptExecutionStatus.INFINITE_LOOP,
+          [],
+          -1,
+          ""
+        );
+      } else {
+        JavaScriptRunner.LOGGER.error(error);
+      }
+    }
+
+    // Remove test file
+    this.storageManager.deleteTemporary(
+      [this.tempTestDirectory],
+      "tempTest.spec.js"
+    );
+
+    return executionResult;
+  }
+
+  private _extractTraces(
+    instrumentationData: InstrumentationData,
+    metaData: MetaData
+  ): Datapoint[] {
     const traces: Datapoint[] = [];
 
     for (const key of Object.keys(instrumentationData)) {
@@ -321,20 +298,6 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
       }
     }
 
-    // Retrieve execution information
-    const executionResult = new JavaScriptExecutionResult(
-      test.status,
-      traces,
-      test.duration,
-      test.exception
-    );
-
-    // Remove test file
-    this.storageManager.deleteTemporary(
-      [this.tempTestDirectory],
-      "tempTest.spec.js"
-    );
-
-    return executionResult;
+    return traces;
   }
 }

@@ -418,7 +418,9 @@ export class JavaScriptLauncher extends Launcher {
       this.storageManager,
       decoder,
       executionInformationIntegrator,
-      this.arguments_.testDirectory
+      this.arguments_.testDirectory,
+      (<JavaScriptArguments>this.arguments_).executionTimeout,
+      (<JavaScriptArguments>this.arguments_).testTimeout
     );
 
     const suiteBuilder = new JavaScriptSuiteBuilder(
@@ -652,7 +654,9 @@ export class JavaScriptLauncher extends Launcher {
       this.storageManager,
       decoder,
       executionInformationIntegrator,
-      this.arguments_.testDirectory
+      this.arguments_.testDirectory,
+      (<JavaScriptArguments>this.arguments_).executionTimeout,
+      (<JavaScriptArguments>this.arguments_).testTimeout
     );
 
     JavaScriptLauncher.LOGGER.info("Extracting constants");

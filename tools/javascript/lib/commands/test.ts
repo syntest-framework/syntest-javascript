@@ -34,6 +34,7 @@ export function getTestCommand(
 
   const commandGroup = "Type Inference Options:";
   const samplingGroup = "Sampling Options:";
+  const executorGroup = "Test Execution Options:";
 
   options.set("incorporate-execution-information", {
     alias: [],
@@ -102,6 +103,25 @@ export function getTestCommand(
     type: "number",
   });
 
+  options.set("execution-timeout", {
+    alias: [],
+    default: 5000,
+    description:
+      "The timeout for one execution of one or more tests (must be larger than the test-timeout).",
+    group: executorGroup,
+    hidden: false,
+    type: "number",
+  });
+
+  options.set("test-timeout", {
+    alias: [],
+    default: 2000,
+    description: "The timeout for one test.",
+    group: executorGroup,
+    hidden: false,
+    type: "number",
+  });
+
   return new Command(
     moduleManager,
     tool,
@@ -129,4 +149,6 @@ export type TestCommandOptions = {
   useMockedObjectProbability: number;
   constantPool: boolean;
   constantPoolProbability: number;
+  executionTimeout: number;
+  testTimeout: number;
 };
