@@ -19,9 +19,6 @@
 import * as path from "node:path";
 
 import { Archive } from "@syntest/search";
-import { InstrumentationData } from "@syntest/instrumentation-javascript";
-import cloneDeep = require("lodash.clonedeep");
-import { Runner } from "mocha";
 
 import { JavaScriptRunner } from "../testcase/execution/JavaScriptRunner";
 import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
@@ -100,17 +97,8 @@ export class JavaScriptSuiteBuilder {
   }
 
   async runSuite(paths: string[]) {
-    const runner: Runner = await this.runner.run(paths);
-
-    const stats = runner.stats;
-
-    const instrumentationData = <InstrumentationData>(
-      cloneDeep(
-        (<{ __coverage__: InstrumentationData }>(<unknown>global)).__coverage__
-      )
-    );
-
-    this.runner.resetInstrumentationData();
+    const { stats, instrumentationData } = await this.runner.run(paths);
+    // TODO use the results of the tests to show some statistics
 
     return { stats, instrumentationData };
   }

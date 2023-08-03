@@ -19,14 +19,7 @@
 import * as path from "node:path";
 
 import { Datapoint, EncodingRunner, ExecutionResult } from "@syntest/search";
-import {
-  InstrumentationData,
-  MetaData,
-} from "@syntest/instrumentation-javascript";
 import { getLogger, Logger } from "@syntest/logging";
-import cloneDeep = require("lodash.clonedeep");
-import { Runner } from "mocha";
-import Mocha = require("mocha");
 
 import {
   JavaScriptExecutionResult,
@@ -37,8 +30,17 @@ import { JavaScriptDecoder } from "../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCase } from "../JavaScriptTestCase";
 
 import { ExecutionInformationIntegrator } from "./ExecutionInformationIntegrator";
-// import { SilentMochaReporter } from "./SilentMochaReporter";
 import { StorageManager } from "@syntest/storage";
+import { DoneMessage, Message, Suite } from "./TestExecutor";
+import { ChildProcess, fork } from "node:child_process";
+import {
+  InstrumentationData,
+  MetaData,
+} from "@syntest/instrumentation-javascript";
+import cloneDeep = require("lodash.clonedeep");
+import { Runner } from "mocha";
+import Mocha = require("mocha");
+import { SilentMochaReporter } from "./SilentMochaReporter";
 
 export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
   protected static LOGGER: Logger;
@@ -47,6 +49,10 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
   protected decoder: JavaScriptDecoder;
   protected tempTestDirectory: string;
   protected executionInformationIntegrator: ExecutionInformationIntegrator;
+
+  private workers: number;
+  private processes: ChildProcess[];
+  private currentProcessIndex: number;
 
   constructor(
     storageManager: StorageManager,
@@ -60,33 +66,53 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     this.executionInformationIntegrator = executionInformationIntergrator;
     this.tempTestDirectory = temporaryTestDirectory;
 
-    process.on("uncaughtException", (reason) => {
-      throw reason;
-    });
-    process.on("unhandledRejection", (reason) => {
-      throw reason;
+    this.processes = [];
+    this.workers = 2;
+    this.currentProcessIndex = 0;
+    for (let index = 0; index < this.workers; index++) {
+      // eslint-disable-next-line unicorn/prefer-module
+      this.processes.push(fork(path.join(__dirname, "TestExecutor.js")));
+    }
+  }
+
+  async run(paths: string[]): Promise<Omit<DoneMessage, "message">> {
+    paths = paths.map((p) => path.resolve(p));
+    // const childProcess = fork(path.join(__dirname, 'TestExecutor.js'))
+
+    const childProcess = this.processes[this.currentProcessIndex];
+
+    childProcess.send({ message: "run", paths: paths });
+
+    return await new Promise((resolve) => {
+      childProcess.on("message", (data: Message) => {
+        if (typeof data !== "object") {
+          throw new TypeError("Invalid data received from child process");
+        }
+        if (data.message === "done") {
+          // childProcess.kill()
+          resolve(data);
+        }
+      });
     });
   }
 
-  async run(paths: string[]): Promise<Runner> {
+  async runOld(paths: string[]): Promise<Omit<DoneMessage, "message">> {
     paths = paths.map((p) => path.resolve(p));
 
     const argv: Mocha.MochaOptions = <Mocha.MochaOptions>(<unknown>{
-      spec: paths,
-      // reporter: SilentMochaReporter,
-      diff: true,
-      checkLeaks: true,
-      slow: 1,
-      timeout: 1,
+      reporter: SilentMochaReporter,
+      // diff: false,
+      // checkLeaks: false,
+      // slow: 75,
+      // timeout: 100,
 
-      watch: false,
-      parallel: false,
-      recursive: false,
-      sort: false,
+      // watch: false,
+      // parallel: false,
+      // recursive: false,
+      // sort: false,
     });
 
     const mocha = new Mocha(argv); // require('ts-node/register')
-
     // eslint-disable-next-line unicorn/prefer-module
     require("regenerator-runtime/runtime");
     // eslint-disable-next-line unicorn/prefer-module, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-var-requires
@@ -108,8 +134,50 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
       runner = mocha.run((failures) => resolve(failures));
     });
 
+    const suites: Suite[] = runner.suite.suites.map((suite) => {
+      return {
+        tests: suite.tests.map((test) => {
+          let status: JavaScriptExecutionStatus;
+          if (test.isPassed()) {
+            status = JavaScriptExecutionStatus.PASSED;
+          } else if (test.timedOut) {
+            status = JavaScriptExecutionStatus.TIMED_OUT;
+          } else {
+            status = JavaScriptExecutionStatus.FAILED;
+          }
+          return {
+            status: status,
+            exception:
+              status === JavaScriptExecutionStatus.FAILED
+                ? test.err.message
+                : undefined,
+            duration: test.duration,
+          };
+        }),
+      };
+    });
+
+    // Retrieve execution traces
+    const instrumentationData = <InstrumentationData>(
+      cloneDeep(
+        (<{ __coverage__: InstrumentationData }>(<unknown>global)).__coverage__
+      )
+    );
+    const metaData = <MetaData>(
+      cloneDeep((<{ __meta__: MetaData }>(<unknown>global)).__meta__)
+    );
+
+    const result: DoneMessage = {
+      message: "done",
+      suites: suites,
+      stats: runner.stats,
+      instrumentationData: instrumentationData,
+      metaData: metaData,
+    };
+
     mocha.dispose();
-    return runner;
+
+    return result;
   }
 
   async execute(
@@ -127,22 +195,15 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
       true
     );
 
-    const runner = await this.run([testPath]);
-    const test = runner.suite.suites[0].tests[0];
-    const stats = runner.stats;
+    const last = Date.now();
+    const { suites, stats, instrumentationData, metaData } = await this.run([
+      testPath,
+    ]);
+    console.log("time", Date.now() - last);
+    const test = suites[0].tests[0]; // only one test in this case
 
     // If one of the executions failed, log it
     this.executionInformationIntegrator.process(testCase, test, stats);
-
-    // Retrieve execution traces
-    const instrumentationData = <InstrumentationData>(
-      cloneDeep(
-        (<{ __coverage__: InstrumentationData }>(<unknown>global)).__coverage__
-      )
-    );
-    const metaData = <MetaData>(
-      cloneDeep((<{ __meta__: MetaData }>(<unknown>global)).__meta__)
-    );
 
     const traces: Datapoint[] = [];
 
@@ -261,43 +322,12 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     }
 
     // Retrieve execution information
-    let executionResult: JavaScriptExecutionResult;
-    if (
-      runner.suite.suites.length > 0 &&
-      runner.suite.suites[0].tests.length > 0
-    ) {
-      const test = runner.suite.suites[0].tests[0];
-
-      let status: JavaScriptExecutionStatus;
-      let exception: string;
-
-      if (test.isPassed()) {
-        status = JavaScriptExecutionStatus.PASSED;
-      } else if (test.timedOut) {
-        status = JavaScriptExecutionStatus.TIMED_OUT;
-      } else {
-        status = JavaScriptExecutionStatus.FAILED;
-        exception = test.err.message;
-      }
-
-      const duration = test.duration;
-
-      executionResult = new JavaScriptExecutionResult(
-        status,
-        traces,
-        duration,
-        exception
-      );
-    } else {
-      executionResult = new JavaScriptExecutionResult(
-        JavaScriptExecutionStatus.FAILED,
-        traces,
-        stats.duration
-      );
-    }
-
-    // Reset instrumentation data (no hits)
-    this.resetInstrumentationData();
+    const executionResult = new JavaScriptExecutionResult(
+      test.status,
+      traces,
+      test.duration,
+      test.exception
+    );
 
     // Remove test file
     this.storageManager.deleteTemporary(
@@ -306,26 +336,5 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     );
 
     return executionResult;
-  }
-
-  resetInstrumentationData() {
-    const coverage = (<{ __coverage__: InstrumentationData }>(<unknown>global))
-      .__coverage__;
-
-    if (coverage === undefined) {
-      return;
-    }
-
-    for (const key of Object.keys(coverage)) {
-      for (const statementKey of Object.keys(coverage[key].s)) {
-        coverage[key].s[statementKey] = 0;
-      }
-      for (const functionKey of Object.keys(coverage[key].f)) {
-        coverage[key].f[functionKey] = 0;
-      }
-      for (const branchKey of Object.keys(coverage[key].b)) {
-        coverage[key].b[branchKey] = [0, 0];
-      }
-    }
   }
 }
