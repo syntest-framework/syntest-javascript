@@ -96,8 +96,8 @@ export class JavaScriptSuiteBuilder {
     return paths;
   }
 
-  async runSuite(paths: string[]) {
-    const { stats, instrumentationData } = await this.runner.run(paths);
+  async runSuite(paths: string[], amount: number) {
+    const { stats, instrumentationData } = await this.runner.run(paths, amount);
     // TODO use the results of the tests to show some statistics
 
     return { stats, instrumentationData };

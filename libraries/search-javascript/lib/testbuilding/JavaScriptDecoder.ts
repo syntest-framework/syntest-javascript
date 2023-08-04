@@ -131,7 +131,13 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
         testString,
         importableGenes
       );
-      imports.push(...importsOfTest);
+
+      for (const import_ of importsOfTest) {
+        if (!imports.includes(import_)) {
+          // filter duplicates
+          imports.push(import_);
+        }
+      }
 
       if (addLogs) {
         imports.push(`import * as fs from 'fs'`);
@@ -197,9 +203,9 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
     } else {
       const importsString =
         imports
-
           // remove duplicates
           .filter((value, index, self) => self.indexOf(value) === index)
+          .sort()
           .join("\n\t") + `\n\n`;
 
       return (

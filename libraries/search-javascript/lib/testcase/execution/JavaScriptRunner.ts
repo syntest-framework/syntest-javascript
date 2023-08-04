@@ -50,7 +50,7 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
   protected executionTimeout: number;
   protected testTimeout: number;
 
-  private process: ChildProcess;
+  private _process: ChildProcess;
 
   constructor(
     storageManager: StorageManager,
@@ -69,18 +69,21 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     this.testTimeout = testTimeout;
 
     // eslint-disable-next-line unicorn/prefer-module
-    this.process = fork(path.join(__dirname, "TestExecutor.js"));
+    this._process = fork(path.join(__dirname, "TestExecutor.js"));
   }
 
-  async run(paths: string[]): Promise<Omit<DoneMessage, "message">> {
+  async run(
+    paths: string[],
+    amount = 1
+  ): Promise<Omit<DoneMessage, "message">> {
     paths = paths.map((p) => path.resolve(p));
 
-    if (!this.process.connected || this.process.killed) {
+    if (!this._process.connected || this._process.killed) {
       // eslint-disable-next-line unicorn/prefer-module
-      this.process = fork(path.join(__dirname, "TestExecutor.js"));
+      this._process = fork(path.join(__dirname, "TestExecutor.js"));
     }
 
-    const childProcess = this.process;
+    const childProcess = this._process;
 
     return await new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
@@ -90,17 +93,24 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
         childProcess.removeAllListeners();
         childProcess.kill();
         reject("timeout");
-      }, this.executionTimeout);
+      }, this.executionTimeout * amount);
 
       childProcess.on("message", (data: Message) => {
         if (typeof data !== "object") {
-          reject(new TypeError("Invalid data received from child process"));
+          return reject(
+            new TypeError("Invalid data received from child process")
+          );
         }
+
         if (data.message === "done") {
-          // childProcess.kill()
           childProcess.removeAllListeners();
           clearTimeout(timeout);
-          resolve(data);
+
+          if (!data.instrumentationData) {
+            return reject("no instrumentation data found");
+          }
+
+          return resolve(data);
         }
       });
 
@@ -157,15 +167,17 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
       );
     } catch (error) {
       if (error === "timeout") {
+        // we put undefined as exception such that the test case doesnt end up in the final test suite
         JavaScriptRunner.LOGGER.debug(`test run took: ${Date.now() - last} ms`);
         executionResult = new JavaScriptExecutionResult(
           JavaScriptExecutionStatus.INFINITE_LOOP,
           [],
           -1,
-          ""
+          undefined
         );
       } else {
         JavaScriptRunner.LOGGER.error(error);
+        throw error;
       }
     }
 
@@ -299,5 +311,9 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     }
 
     return traces;
+  }
+
+  get process() {
+    return this._process;
   }
 }

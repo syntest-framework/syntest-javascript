@@ -96,6 +96,9 @@ export class JavaScriptLauncher extends Launcher {
 
   private coveredInPath = new Map<string, Archive<JavaScriptTestCase>>();
 
+  private decoder: JavaScriptDecoder;
+  private runner: JavaScriptRunner;
+
   constructor(
     arguments_: JavaScriptArguments,
     moduleManager: ModuleManager,
@@ -375,6 +378,27 @@ export class JavaScriptLauncher extends Launcher {
       PropertyName.PREPROCESS_TIME,
       `${timeInMs}`
     );
+
+    this.decoder = new JavaScriptDecoder(
+      this.arguments_.targetRootDirectory,
+      path.join(
+        this.arguments_.tempSyntestDirectory,
+        this.arguments_.fid,
+        this.arguments_.logDirectory
+      )
+    );
+    const executionInformationIntegrator = new ExecutionInformationIntegrator(
+      this.rootContext.getTypeModel()
+    );
+    this.runner = new JavaScriptRunner(
+      this.storageManager,
+      this.decoder,
+      executionInformationIntegrator,
+      this.arguments_.testDirectory,
+      (<JavaScriptArguments>this.arguments_).executionTimeout,
+      (<JavaScriptArguments>this.arguments_).testTimeout
+    );
+
     JavaScriptLauncher.LOGGER.info("Preprocessing done");
   }
 
@@ -401,32 +425,11 @@ export class JavaScriptLauncher extends Launcher {
   async postprocess(): Promise<void> {
     JavaScriptLauncher.LOGGER.info("Postprocessing started");
     const start = Date.now();
-    const decoder = new JavaScriptDecoder(
-      this.arguments_.targetRootDirectory,
-      path.join(
-        this.arguments_.tempSyntestDirectory,
-        this.arguments_.fid,
-        this.arguments_.logDirectory
-      )
-    );
-
-    const executionInformationIntegrator = new ExecutionInformationIntegrator(
-      this.rootContext.getTypeModel()
-    );
-
-    const runner = new JavaScriptRunner(
-      this.storageManager,
-      decoder,
-      executionInformationIntegrator,
-      this.arguments_.testDirectory,
-      (<JavaScriptArguments>this.arguments_).executionTimeout,
-      (<JavaScriptArguments>this.arguments_).testTimeout
-    );
 
     const suiteBuilder = new JavaScriptSuiteBuilder(
       this.storageManager,
-      decoder,
-      runner,
+      this.decoder,
+      this.runner,
       this.arguments_.logDirectory
     );
 
@@ -440,7 +443,7 @@ export class JavaScriptLauncher extends Launcher {
       true,
       false
     );
-    await suiteBuilder.runSuite(paths);
+    await suiteBuilder.runSuite(paths, this.archive.size);
 
     // reset states
     this.storageManager.clearTemporaryDirectory([
@@ -459,7 +462,10 @@ export class JavaScriptLauncher extends Launcher {
       false,
       true
     );
-    const { stats, instrumentationData } = await suiteBuilder.runSuite(paths);
+    const { stats, instrumentationData } = await suiteBuilder.runSuite(
+      paths,
+      this.archive.size
+    );
 
     if (stats.failures > 0) {
       this.userInterface.printError("Test case has failed!");
@@ -639,26 +645,6 @@ export class JavaScriptLauncher extends Launcher {
     const dependencyMap = new Map<string, string[]>();
     dependencyMap.set(target.name, dependencies);
 
-    const decoder = new JavaScriptDecoder(
-      this.arguments_.targetRootDirectory,
-      path.join(
-        this.arguments_.tempSyntestDirectory,
-        this.arguments_.fid,
-        this.arguments_.logDirectory
-      )
-    );
-    const executionInformationIntegrator = new ExecutionInformationIntegrator(
-      this.rootContext.getTypeModel()
-    );
-    const runner = new JavaScriptRunner(
-      this.storageManager,
-      decoder,
-      executionInformationIntegrator,
-      this.arguments_.testDirectory,
-      (<JavaScriptArguments>this.arguments_).executionTimeout,
-      (<JavaScriptArguments>this.arguments_).testTimeout
-    );
-
     JavaScriptLauncher.LOGGER.info("Extracting constants");
     const constantPoolManager = new ConstantPoolManager();
     const targetAbstractSyntaxTree = this.rootContext.getAbstractSyntaxTree(
@@ -723,7 +709,7 @@ export class JavaScriptLauncher extends Launcher {
         this.arguments_.objectiveManager
       )
     )).createObjectiveManager({
-      runner: runner,
+      runner: this.runner,
       secondaryObjectives: secondaryObjectives,
     });
 
@@ -791,7 +777,7 @@ export class JavaScriptLauncher extends Launcher {
         )).createTerminationTrigger({
           objectiveManager: objectiveManager,
           encodingSampler: sampler,
-          runner: runner,
+          runner: this.runner,
           crossover: crossover,
           populationSize: this.arguments_.populationSize,
         })
@@ -843,6 +829,7 @@ export class JavaScriptLauncher extends Launcher {
 
   async exit(): Promise<void> {
     JavaScriptLauncher.LOGGER.info("Exiting");
+    this.runner.process.kill();
     // TODO should be cleanup step in tool
     // Finish
     JavaScriptLauncher.LOGGER.info("Deleting temporary directories");

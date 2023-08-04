@@ -24,7 +24,7 @@ import {
   MetaData,
 } from "@syntest/instrumentation-javascript";
 import cloneDeep = require("lodash.clonedeep");
-import { SilentMochaReporter } from "./SilentMochaReporter";
+// import { SilentMochaReporter } from "./SilentMochaReporter";
 
 export type Message = RunMessage | DoneMessage;
 
@@ -72,7 +72,7 @@ process.on("message", async (data: Message) => {
 
 async function runMocha(paths: string[], timeout: number) {
   const argv: Mocha.MochaOptions = <Mocha.MochaOptions>(<unknown>{
-    reporter: SilentMochaReporter,
+    // reporter: SilentMochaReporter,
     // diff: false,
     // checkLeaks: false,
     // slow: 75,
