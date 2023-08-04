@@ -18,12 +18,12 @@
 
 import * as path from "node:path";
 
-import { Export } from "@syntest/analysis-javascript";
 import { Decoder } from "@syntest/search";
 
 import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
 import { Decoding } from "../testcase/statements/Statement";
 import { ActionStatement } from "../testcase/statements/action/ActionStatement";
+import { ContextBuilder } from "./ContextBuilder";
 
 export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
   private targetRootDirectory: string;
@@ -44,21 +44,25 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
       testCases = [testCases];
     }
 
+    const context = new ContextBuilder(
+      this.targetRootDirectory,
+      sourceDirectory
+    );
+
     const tests: string[] = [];
-    const imports: string[] = [];
 
     for (const testCase of testCases) {
       const roots: ActionStatement[] = testCase.roots;
 
       const importableGenes: ActionStatement[] = [];
-      let statements: Decoding[] = roots.flatMap((root) =>
+      let decodings: Decoding[] = roots.flatMap((root) =>
         root.decode(this, testCase.id, {
           addLogs,
           exception: false,
         })
       );
 
-      if (statements.length === 0) {
+      if (decodings.length === 0) {
         throw new Error("No statements in test case");
       }
 
@@ -85,14 +89,15 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
         // statements[index] = decoded.find((x) => x.reference === statements[index].reference)
 
         // delete statements after
-        statements = statements.slice(0, index + 1);
+        decodings = decodings.slice(0, index + 1);
       }
 
-      if (statements.length === 0) {
-        throw new Error("No statements in test case");
+      if (decodings.length === 0) {
+        throw new Error("No statements in test case after error reduction");
       }
 
-      for (const [index, value] of statements.entries()) {
+      for (const [index, value] of decodings.entries()) {
+        context.addDecoding(value);
         const asString = "\t\t" + value.decoded.replace("\n", "\n\t\t");
         if (testString.includes(asString)) {
           // skip repeated statements
@@ -126,30 +131,26 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
         );
       }
 
-      const importsOfTest = this.gatherImports(
-        sourceDirectory,
-        testString,
-        importableGenes
-      );
+      // const importsOfTest = this.gatherImports(
+      //   context,
+      //   sourceDirectory,
+      //   testString,
+      //   importableGenes
+      // );
 
-      for (const import_ of importsOfTest) {
-        if (!imports.includes(import_)) {
-          // filter duplicates
-          imports.push(import_);
-        }
-      }
+      // for (const import_ of importsOfTest) {
+      //   if (!imports.includes(import_)) {
+      //     // filter duplicates
+      //     imports.push(import_);
+      //   }
+      // }
 
       if (addLogs) {
-        imports.push(`import * as fs from 'fs'`);
+        context.addLogs();
       }
 
       if (testCase.assertions.size > 0) {
-        imports.push(
-          `import chai from 'chai'`,
-          `import chaiAsPromised from 'chai-as-promised'`,
-          `const expect = chai.expect;`,
-          `chai.use(chaiAsPromised);`
-        );
+        context.addAssertions();
       }
 
       const assertions: string[] = this.generateAssertions(testCase);
@@ -186,13 +187,10 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
       );
     }
 
-    if (imports.some((x) => x.includes("import") && !x.includes("require"))) {
-      const importsString =
-        imports
+    const imports = context.getImports();
 
-          // remove duplicates
-          .filter((value, index, self) => self.indexOf(value) === index)
-          .join("\n") + `\n\n`;
+    if (imports.some((x) => x.includes("import") && !x.includes("require"))) {
+      const importsString = imports.join("\n") + `\n\n`;
 
       return (
         importsString +
@@ -201,12 +199,7 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
         `\n})`
       );
     } else {
-      const importsString =
-        imports
-          // remove duplicates
-          .filter((value, index, self) => self.indexOf(value) === index)
-          .sort()
-          .join("\n\t") + `\n\n`;
+      const importsString = imports.join("\n\t") + `\n\n`;
 
       return (
         `describe('${targetName}', function() {\n\t` +
@@ -215,94 +208,6 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
         `\n})`
       );
     }
-  }
-
-  gatherImports(
-    sourceDirectory: string,
-    testStrings: string[],
-    importableGenes: ActionStatement[]
-  ): string[] {
-    const imports: string[] = [];
-    const importedDependencies: Set<string> = new Set<string>();
-
-    for (const gene of importableGenes) {
-      // TODO how to get the export of a variable?
-      // the below does not work with duplicate exports
-      const export_: Export = gene.export;
-
-      if (!export_) {
-        throw new Error(
-          "Cannot find an export corresponding to the importable gene: " +
-            gene.variableIdentifier
-        );
-      }
-
-      // no duplicates
-      if (importedDependencies.has(export_.name)) {
-        continue;
-      }
-      importedDependencies.add(export_.name);
-
-      // skip non-used imports
-      if (!testStrings.some((s) => s.includes(export_.name))) {
-        continue;
-      }
-
-      const importString: string = this.getImport(sourceDirectory, export_);
-
-      if (imports.includes(importString) || importString.length === 0) {
-        continue;
-      }
-
-      imports.push(importString);
-
-      // let count = 0;
-      // for (const dependency of this.dependencies.get(importName)) {
-      //   // no duplicates
-      //   if (importedDependencies.has(dependency.name)) {
-      //     continue
-      //   }
-      //   importedDependencies.add(dependency.name)
-      //
-      //   // skip non-used imports
-      //   if (!testStrings.find((s) => s.includes(dependency.name))) {
-      //     continue
-      //   }
-      //
-      //   const importString: string = this.getImport(dependency);
-      //
-      //   if (imports.includes(importString) || importString.length === 0) {
-      //     continue;
-      //   }
-      //
-      //   imports.push(importString);
-      //
-      //   count += 1;
-      // }
-    }
-
-    return imports;
-  }
-
-  getImport(sourceDirectory: string, dependency: Export): string {
-    const _path = dependency.filePath.replace(
-      path.resolve(this.targetRootDirectory),
-      path.join(sourceDirectory, path.basename(this.targetRootDirectory))
-    );
-
-    // if (dependency.module) {
-    //   return dependency.default
-    //     ? `import * as ${dependency.name} from "${_path}";`
-    //     : `import {${dependency.name}} from "${_path}";`;
-    // }
-    if (dependency.module) {
-      return dependency.default
-        ? `const ${dependency.name} = require("${_path}");`
-        : `const {${dependency.name}} = require("${_path}");`;
-    }
-    return dependency.default
-      ? `import ${dependency.name} from "${_path}";`
-      : `import {${dependency.name}} from "${_path}";`;
   }
 
   generateAssertions(testCase: JavaScriptTestCase): string[] {

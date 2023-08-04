@@ -115,14 +115,14 @@ export class ObjectStatement extends Statement {
   ): Decoding[] {
     const children = Object.keys(this._object)
       .filter((key) => this._object[key] !== undefined)
-      .map((key) => `\t"${key}": ${this._object[key].varName}`)
-      .join(",\n\t");
+      .map((key) => `\t\t\t"${key}": ${this._object[key].varName}`)
+      .join(",\n");
 
     const childStatements: Decoding[] = Object.values(this._object).flatMap(
       (a) => a.decode(decoder, id, options)
     );
 
-    let decoded = `const ${this.varName} = {\n${children}\n\t}`;
+    let decoded = `const ${this.varName} = {\n${children}\n\t\t}`;
 
     if (options.addLogs) {
       const logDirectory = decoder.getLogDirectory(id, this.varName);
