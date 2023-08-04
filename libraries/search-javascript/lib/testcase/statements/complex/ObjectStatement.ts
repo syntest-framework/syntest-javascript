@@ -17,6 +17,7 @@
  */
 
 import { prng } from "@syntest/prng";
+import { shouldNeverHappen } from "@syntest/search";
 
 import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
@@ -139,13 +140,14 @@ export class ObjectStatement extends Statement {
   }
 
   getChildren(): Statement[] {
-    return [...this.children];
+    return Object.keys(this._object)
+      .sort()
+      .filter((key) => this._object[key] !== undefined)
+      .map((key) => this._object[key]);
   }
 
   hasChildren(): boolean {
-    return Object.keys(this._object).some(
-      (key) => this._object[key] !== undefined
-    );
+    return this.getChildren().length > 0;
   }
 
   setChild(index: number, newChild: Statement) {
@@ -153,16 +155,17 @@ export class ObjectStatement extends Statement {
       throw new Error("Invalid new child!");
     }
 
-    if (index >= this.children.length) {
-      throw new Error("Invalid child location!");
+    if (index < 0 || index >= this.getChildren().length) {
+      throw new Error(shouldNeverHappen(`Invalid index used index: ${index}`));
     }
 
-    this.children[index] = newChild;
-  }
+    const keys = 
+      Object.keys(this._object)
+        .sort()
+        .filter((key) => this._object[key] !== undefined)
+    ;
+    const key = keys[index];
 
-  get children(): Statement[] {
-    return Object.keys(this._object)
-      .filter((key) => this._object[key] !== undefined)
-      .map((key) => this._object[key]);
+    this._object[key] = newChild;
   }
 }

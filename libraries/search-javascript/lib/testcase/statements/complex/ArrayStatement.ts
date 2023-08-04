@@ -17,6 +17,7 @@
  */
 
 import { prng } from "@syntest/prng";
+import { shouldNeverHappen } from "@syntest/search";
 
 import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
@@ -163,8 +164,8 @@ export class ArrayStatement extends Statement {
       throw new Error("Invalid new child!");
     }
 
-    if (index >= this.children.length) {
-      throw new Error("Invalid child location!");
+    if (index < 0 || index >= this.children.length) {
+      throw new Error(shouldNeverHappen(`Invalid index used index: ${index}`));
     }
 
     this.children[index] = newChild;

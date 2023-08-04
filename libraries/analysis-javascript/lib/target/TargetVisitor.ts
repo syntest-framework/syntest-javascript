@@ -547,6 +547,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
 
           this._subTargets.push(functionTarget);
         } else {
+          // a.x = () => {...}
           const export_ = this._getExport(this._getBindingId(object));
 
           const objectTarget: ObjectTarget = {
@@ -623,10 +624,10 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
             );
           }
 
-          const export_ = this._getExport(this._getNodeId(path.parentPath));
+          const export_ = this._getExport(this._getNodeId(path));
 
           const target: FunctionTarget = {
-            id: `${this._getNodeId(path.parentPath)}`,
+            id: `${this._getNodeId(path)}`,
             name: targetName,
             type: TargetType.FUNCTION,
             exported: !!export_,

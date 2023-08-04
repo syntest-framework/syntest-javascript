@@ -19,6 +19,7 @@
 // TODO
 
 import { prng } from "@syntest/prng";
+import { shouldNeverHappen } from "@syntest/search";
 
 import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
@@ -123,8 +124,8 @@ export class ArrowFunctionStatement extends Statement {
       throw new Error("Invalid new child!");
     }
 
-    if (index > 0) {
-      throw new Error("Invalid child location!");
+    if (index !== 0) {
+      throw new Error(shouldNeverHappen(`Invalid index used index: ${index}`));
     }
 
     this._returnValue = newChild;

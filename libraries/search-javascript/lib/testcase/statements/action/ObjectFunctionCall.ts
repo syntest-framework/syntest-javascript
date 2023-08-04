@@ -95,8 +95,8 @@ export class ObjectFunctionCall extends ActionStatement {
       throw new Error("Invalid new child!");
     }
 
-    if (index > this.args.length) {
-      throw new Error(shouldNeverHappen("invalid index used"));
+    if (index < 0 || index > this.args.length) {
+      throw new Error(shouldNeverHappen(`Invalid index used index: ${index}`));
     }
 
     if (index === this.args.length) {

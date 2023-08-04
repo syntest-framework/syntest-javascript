@@ -246,6 +246,8 @@ export function extractExportsFromExportNamedDeclaration(
       declaration.isFunctionDeclaration() ||
       declaration.isClassDeclaration()
     ) {
+      // export function x () =>
+      // export class x () =>
       exports.push({
         id: visitor._getNodeId(declaration),
         filePath,
@@ -255,17 +257,37 @@ export function extractExportsFromExportNamedDeclaration(
         module: false,
       });
     } else if (declaration.isVariableDeclaration()) {
+      // export const x = ?
       for (const declaration_ of declaration.get("declarations")) {
         const id = declaration_.get("id");
         const init = declaration_.get("init");
 
         if (id.isIdentifier()) {
-          exports.push(extractFromIdentifier(visitor, filePath, id, init));
+          // export const x = ?
+          if (init.isIdentifier()) {
+            exports.push(extractFromIdentifier(visitor, filePath, id, init));
+          } else if (init.isFunction() || init.isClass()) {
+            // export const x = () => {}
+            // export const y = function () => {}
+            // export const z = class {}
+            exports.push({
+              id: visitor._getNodeId(init),
+              filePath,
+              name: init.has("id")
+                ? (<NodePath<t.Identifier>>init.get("id")).node.name
+                : id.node.name,
+              renamedTo: id.node.name,
+              default: false,
+              module: false,
+            });
+          }
         } else if (id.isObjectPattern()) {
+          // TODO verify that these work
           exports.push(
             ...extractFromObjectPattern(visitor, filePath, id, init)
           );
         } else if (id.isArrayPattern()) {
+          // TODO verify that these work
           exports.push(...extractFromArrayPattern(visitor, filePath, id, init));
         } else {
           throw new Error("Unsupported declaration type");
