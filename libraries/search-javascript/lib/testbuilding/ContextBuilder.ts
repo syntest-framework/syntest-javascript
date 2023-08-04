@@ -145,7 +145,7 @@ export class ContextBuilder {
       if (import_.module) {
         return import_.default
           ? `const ${import_.renamedTo} = require("${_path}");`
-          : `const {${import_.name} as ${import_.renamedTo}} = require("${_path}");`;
+          : `const {${import_.name}: ${import_.renamedTo}} = require("${_path}");`;
       }
       return import_.default
         ? `import ${import_.renamedTo} from "${_path}";`
