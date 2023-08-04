@@ -170,7 +170,7 @@ export class ArrayStatement extends Statement {
     this.children[index] = newChild;
   }
 
-  get children(): Statement[] {
+  protected get children(): Statement[] {
     return this._children;
   }
 }

@@ -115,10 +115,18 @@ export class ArrowFunctionStatement extends Statement {
   }
 
   hasChildren(): boolean {
-    return true;
+    return this._returnValue !== undefined;
   }
 
   setChild(index: number, newChild: Statement) {
+    if (!newChild) {
+      throw new Error("Invalid new child!");
+    }
+
+    if (index > 0) {
+      throw new Error("Invalid child location!");
+    }
+
     this._returnValue = newChild;
   }
 

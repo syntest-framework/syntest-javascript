@@ -121,6 +121,13 @@ export abstract class Statement {
   abstract getChildren(): Statement[];
 
   /**
+   * Set a new child at a specified position
+   * @param index the index position of the new child
+   * @param newChild the new child
+   */
+  abstract setChild(index: number, newChild: Statement): void;
+
+  /**
    * Decodes the statement
    */
   abstract decode(

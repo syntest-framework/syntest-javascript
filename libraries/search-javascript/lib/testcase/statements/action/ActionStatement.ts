@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { Encoding, EncodingSampler } from "@syntest/search";
+import { Encoding, EncodingSampler, shouldNeverHappen } from "@syntest/search";
 
 import { Statement } from "../Statement";
 import { Export } from "@syntest/analysis-javascript";
@@ -64,6 +64,14 @@ export abstract class ActionStatement extends Statement {
   abstract override copy(): ActionStatement;
 
   setChild(index: number, newChild: Statement) {
+    if (!newChild) {
+      throw new Error("Invalid new child!");
+    }
+
+    if (index >= this.args.length) {
+      throw new Error(shouldNeverHappen("invalid index used"));
+    }
+
     this.args[index] = newChild;
   }
 
@@ -75,7 +83,7 @@ export abstract class ActionStatement extends Statement {
     return [...this._args];
   }
 
-  get args(): Statement[] {
+  protected get args(): Statement[] {
     return this._args;
   }
 

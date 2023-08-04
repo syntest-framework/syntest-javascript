@@ -17,6 +17,7 @@
  */
 
 import { prng } from "@syntest/prng";
+import { shouldNeverHappen } from "@syntest/search";
 
 import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
@@ -87,6 +88,33 @@ export class ObjectFunctionCall extends ActionStatement {
       arguments_,
       object_
     );
+  }
+
+  override setChild(index: number, newChild: Statement) {
+    if (!newChild) {
+      throw new Error("Invalid new child!");
+    }
+
+    if (index > this.args.length) {
+      throw new Error(shouldNeverHappen("invalid index used"));
+    }
+
+    if (index === this.args.length) {
+      if (!(newChild instanceof ConstantObject)) {
+        throw new TypeError(shouldNeverHappen("should be a constant object"));
+      }
+      this._object = newChild;
+    } else {
+      this.args[index] = newChild;
+    }
+  }
+
+  override hasChildren(): boolean {
+    return true;
+  }
+
+  override getChildren(): Statement[] {
+    return [...this.args, this._object];
   }
 
   copy(): ObjectFunctionCall {

@@ -101,14 +101,8 @@ export class TreeCrossover extends Crossover<JavaScriptTestCase> {
       const pair = crossoverChoice.p1;
       const donorTree = crossoverChoice.p2;
 
-      (<ActionStatement>pair.parent).setChild(
-        pair.childIndex,
-        donorTree.child.copy()
-      );
-      (<ActionStatement>donorTree.parent).setChild(
-        donorTree.childIndex,
-        pair.child.copy()
-      );
+      pair.parent.setChild(pair.childIndex, donorTree.child.copy());
+      donorTree.parent.setChild(donorTree.childIndex, pair.child.copy());
     }
 
     return [new JavaScriptTestCase(rootA), new JavaScriptTestCase(rootB)];
