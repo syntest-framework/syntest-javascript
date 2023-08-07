@@ -107,7 +107,7 @@ export function getTestCommand(
     alias: [],
     default: 5000,
     description:
-      "The timeout for one execution of one or more tests (must be larger than the test-timeout).",
+      "The timeout for one execution of one test (must be larger than the test-timeout).",
     group: executorGroup,
     hidden: false,
     type: "number",
@@ -115,7 +115,7 @@ export function getTestCommand(
 
   options.set("test-timeout", {
     alias: [],
-    default: 2000,
+    default: 1000,
     description: "The timeout for one test.",
     group: executorGroup,
     hidden: false,

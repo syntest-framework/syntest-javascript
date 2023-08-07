@@ -93,7 +93,7 @@ export class ContextBuilder {
 
     const exportedName = export_.renamedTo;
     let import_: Import = {
-      name: exportedName,
+      name: exportedName === "default" ? "defaultExport" : exportedName,
       renamed: false,
       default: export_.default,
       module: export_.module,

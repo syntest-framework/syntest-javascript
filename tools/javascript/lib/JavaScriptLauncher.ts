@@ -78,7 +78,6 @@ import {
 } from "@syntest/search";
 import { Instrumenter } from "@syntest/instrumentation-javascript";
 import { getLogger, Logger } from "@syntest/logging";
-import { TargetType } from "@syntest/analysis";
 import { MetricManager } from "@syntest/metric";
 import { StorageManager } from "@syntest/storage";
 import traverse from "@babel/traverse";
@@ -435,6 +434,10 @@ export class JavaScriptLauncher extends Launcher {
 
     const reducedArchive = suiteBuilder.reduceArchive(this.archive);
 
+    if (this.archive.size === 0) {
+      throw new Error("Zero tests were created");
+    }
+
     // TODO fix hardcoded paths
     let paths = suiteBuilder.createSuite(
       reducedArchive,
@@ -625,12 +628,6 @@ export class JavaScriptLauncher extends Launcher {
 
     const rootTargets = currentSubject
       .getActionableTargets()
-      .filter(
-        (target) =>
-          target.type === TargetType.FUNCTION ||
-          target.type === TargetType.CLASS ||
-          target.type === TargetType.OBJECT
-      )
       .filter((target) => isExported(target));
 
     if (rootTargets.length === 0) {

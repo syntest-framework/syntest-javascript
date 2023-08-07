@@ -97,7 +97,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
     for (
       let index = 0;
-      index < prng.nextInt(1, this.maxActionStatements);
+      index < 1; //prng.nextInt(1, this.maxActionStatements); (i think its better to start with a single statement)
       index++
     ) {
       this.statementPool = new StatementPool(roots);
@@ -167,7 +167,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     return this.functionCallGenerator.generate(
       depth,
       function_.id,
-      function_.id,
+      function_.typeId,
       function_.id,
       function_.name,
       this.statementPool
@@ -224,7 +224,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
       return new ConstructorCall(
         class_.id,
-        class_.id,
+        class_.typeId,
         class_.id,
         class_.name,
         TypeEnum.FUNCTION,
@@ -237,7 +237,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       return this.constructorCallGenerator.generate(
         depth,
         action.id,
-        action.id,
+        (<MethodTarget>action).typeId,
         class_.id,
         class_.name,
         this.statementPool
@@ -289,7 +289,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     return this.methodCallGenerator.generate(
       depth,
       method.id,
-      method.id,
+      method.typeId,
       class_.id,
       method.name,
       this.statementPool
@@ -325,7 +325,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     return this.setterGenerator.generate(
       depth,
       method.id,
-      method.id,
+      method.typeId,
       class_.id,
       method.name,
       this.statementPool
@@ -364,7 +364,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     return this.constantObjectGenerator.generate(
       depth,
       object_.id,
-      object_.id,
+      object_.typeId,
       object_.id,
       object_.name,
       this.statementPool
@@ -382,7 +382,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     return this.objectFunctionCallGenerator.generate(
       depth,
       randomFunction.id,
-      randomFunction.id,
+      randomFunction.typeId,
       object_.id,
       randomFunction.name,
       this.statementPool
@@ -516,7 +516,13 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
     const typeFromTypePool = this.rootContext
       .getTypePool()
-      .getRandomMatchingType(typeObject);
+      // .getRandomMatchingType(typeObject)
+      // TODO this prevents the sampling of function return types
+      // maybe we want this actually?
+      .getRandomMatchingType(
+        typeObject,
+        (type_) => type_.kind !== DiscoveredObjectKind.FUNCTION
+      );
 
     if (
       typeFromTypePool &&
@@ -529,18 +535,20 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
           const targets = this.rootContext.getSubTargets(
             typeFromTypePool.id.split(":")[0]
           );
-          const constructor_ = targets.find(
-            (target) =>
-              target.type === TargetType.METHOD &&
-              (<MethodTarget>target).methodType === "constructor" &&
-              (<MethodTarget>target).classId === typeFromTypePool.id
+          const constructor_ = <MethodTarget>(
+            targets.find(
+              (target) =>
+                target.type === TargetType.METHOD &&
+                (<MethodTarget>target).methodType === "constructor" &&
+                (<MethodTarget>target).classId === typeFromTypePool.id
+            )
           );
 
           if (constructor_) {
             return this.constructorCallGenerator.generate(
               depth,
               id, // variable id
-              constructor_.id, // constructor call id
+              constructor_.typeId, // constructor call id
               typeFromTypePool.id, // class export id
               name,
               this.statementPool

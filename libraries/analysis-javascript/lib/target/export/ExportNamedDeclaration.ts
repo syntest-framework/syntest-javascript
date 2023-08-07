@@ -21,36 +21,6 @@ import * as t from "@babel/types";
 import { Export } from "./Export";
 import { ExportVisitor } from "./ExportVisitor";
 
-function extractFromIdentifier(
-  visitor: ExportVisitor,
-  filePath: string,
-  path: NodePath<t.Identifier>,
-  initPath?: NodePath<t.Node>
-): Export {
-  if (initPath && initPath.isIdentifier()) {
-    const binding = visitor._getBindingId(initPath);
-
-    return {
-      id: binding,
-      filePath,
-      name: initPath.node.name,
-      renamedTo: path.node.name,
-      default: false,
-      module: false,
-    };
-  } else {
-    // not sure about this id
-    return {
-      id: visitor._getNodeId(path),
-      filePath,
-      name: path.node.name,
-      renamedTo: path.node.name,
-      default: false,
-      module: false,
-    };
-  }
-}
-
 function extractFromObjectPattern(
   visitor: ExportVisitor,
   filePath: string,
@@ -260,18 +230,51 @@ export function extractExportsFromExportNamedDeclaration(
       // export const x = ?
       for (const declaration_ of declaration.get("declarations")) {
         const id = declaration_.get("id");
+
         const init = declaration_.get("init");
 
         if (id.isIdentifier()) {
           // export const x = ?
+
+          if (!declaration_.has("init")) {
+            // export let x
+            exports.push({
+              id: visitor._getNodeId(declaration_),
+              filePath: filePath,
+              name: id.node.name,
+              renamedTo: id.node.name,
+              default: false,
+              module: false,
+            });
+            continue;
+          }
+
           if (init.isIdentifier()) {
-            exports.push(extractFromIdentifier(visitor, filePath, id, init));
+            // export const x = a
+            exports.push({
+              id: visitor._getBindingId(init),
+              filePath: filePath,
+              name: init.node.name,
+              renamedTo: id.node.name,
+              default: false,
+              module: false,
+            });
+          } else if (init.isLiteral()) {
+            // export const x = 1
+            exports.push({
+              id: visitor._getNodeId(declaration_),
+              filePath: filePath,
+              name: id.node.name,
+              renamedTo: id.node.name,
+              default: false,
+              module: false,
+            });
           } else if (init.isFunction() || init.isClass()) {
             // export const x = () => {}
             // export const y = function () => {}
             // export const z = class {}
             exports.push({
-              id: visitor._getNodeId(init),
+              id: visitor._getNodeId(declaration_),
               filePath,
               name: init.has("id")
                 ? (<NodePath<t.Identifier>>init.get("id")).node.name

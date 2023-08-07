@@ -76,6 +76,9 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     paths: string[],
     amount = 1
   ): Promise<Omit<DoneMessage, "message">> {
+    if (amount < 1) {
+      throw new Error(`Amount of tests cannot be smaller than 1`);
+    }
     paths = paths.map((p) => path.resolve(p));
 
     if (!this._process.connected || this._process.killed) {
@@ -88,7 +91,7 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     return await new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         JavaScriptRunner.LOGGER.warn(
-          "Execution timeout reached killing process"
+          `Execution timeout reached killing process, timeout: ${this.executionTimeout} times ${amount}`
         );
         childProcess.removeAllListeners();
         childProcess.kill();
