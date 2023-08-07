@@ -65,7 +65,7 @@ export function getTestCommand(
 
   options.set("constant-pool", {
     alias: [],
-    default: false,
+    default: true,
     description: "Enable constant pool.",
     group: samplingGroup,
     hidden: false,
