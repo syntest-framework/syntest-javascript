@@ -22,9 +22,12 @@ import { TargetType } from "@syntest/analysis";
 import { AbstractSyntaxTreeVisitor } from "@syntest/ast-visitor-javascript";
 
 import {
+  Callable,
   ClassTarget,
+  Exportable,
   FunctionTarget,
   MethodTarget,
+  NamedSubTarget,
   ObjectFunctionTarget,
   ObjectTarget,
   SubTarget,
@@ -394,6 +397,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
 
     const targetName = this._getTargetNameOfExpression(right);
     let isObject = false;
+    let isMethod = false;
     let objectId: string;
 
     let id: string = this._getBindingId(left);
@@ -405,6 +409,11 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
         TargetVisitor.LOGGER.warn(
           "We do not support dynamic computed properties: x[a] = ?"
         );
+        path.skip();
+        return;
+      } else if (!left.get("property").isIdentifier() && !left.node.computed) {
+        // we also dont support a.f() = ?
+        // or equivalent
         path.skip();
         return;
       }
@@ -447,6 +456,56 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
             this._subTargets.push(objectTarget);
           }
         }
+      } else if (object.isMemberExpression()) {
+        // ?.?.? = ?
+        const subObject = object.get("object");
+        const subProperty = object.get("property");
+        // what about module.exports.x
+        if (
+          subObject.isIdentifier() &&
+          subProperty.isIdentifier() &&
+          subProperty.node.name === "prototype"
+        ) {
+          // x.prototype.? = ?
+          objectId = this._getBindingId(subObject);
+          const objectTarget = <NamedSubTarget & Exportable>(
+            this._subTargets.find((value) => value.id === objectId)
+          );
+
+          const newTargetClass: ClassTarget = {
+            id: objectTarget.id,
+            type: TargetType.CLASS,
+            name: objectTarget.name,
+            typeId: objectTarget.id,
+            exported: objectTarget.exported,
+            renamedTo: objectTarget.renamedTo,
+            module: objectTarget.module,
+            default: objectTarget.default,
+          };
+
+          // replace original target by prototype class
+          this._subTargets[this._subTargets.indexOf(objectTarget)] =
+            newTargetClass;
+
+          const constructorTarget: MethodTarget = {
+            id: objectTarget.id,
+            type: TargetType.METHOD,
+            name: objectTarget.name,
+            typeId: objectTarget.id,
+            methodType: "constructor",
+            classId: objectTarget.id,
+            visibility: "public",
+            isStatic: false,
+            isAsync:
+              "isAsync" in objectTarget
+                ? (<Callable>objectTarget).isAsync
+                : false,
+          };
+
+          this._subTargets.push(constructorTarget);
+
+          isMethod = true;
+        }
       } else {
         path.skip();
         return;
@@ -464,7 +523,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
         targetName,
         export_,
         isObject,
-        false,
+        isMethod,
         objectId
       );
     } else if (right.isClass()) {
