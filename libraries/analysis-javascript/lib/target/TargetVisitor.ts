@@ -560,7 +560,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
     objectId: string,
     typeId: string,
     objectName: string,
-    export_: Export
+    export_?: Export
   ) {
     const target: ObjectTarget = {
       id: objectId,
@@ -628,12 +628,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
           } else if (value.isClass()) {
             this._extractFromClass(value, id, id, targetName);
           } else if (value.isObjectExpression()) {
-            this._extractFromObjectExpression(
-              value,
-              id,
-              id,
-              targetName
-            );
+            this._extractFromObjectExpression(value, id, id, targetName);
           } else {
             // TODO
           }
@@ -650,7 +645,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
     classId: string,
     typeId: string,
     className: string,
-    export_: Export | undefined
+    export_?: Export | undefined
   ): void {
     const target: ClassTarget = {
       id: classId,
@@ -720,12 +715,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
           } else if (value.isClass()) {
             this._extractFromClass(value, id, id, targetName);
           } else if (value.isObjectExpression()) {
-            this._extractFromObjectExpression(
-              value,
-              id,
-              id,
-              targetName
-            );
+            this._extractFromObjectExpression(value, id, id, targetName);
           } else {
             // TODO
           }

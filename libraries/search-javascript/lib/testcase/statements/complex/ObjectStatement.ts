@@ -159,11 +159,9 @@ export class ObjectStatement extends Statement {
       throw new Error(shouldNeverHappen(`Invalid index used index: ${index}`));
     }
 
-    const keys = 
-      Object.keys(this._object)
-        .sort()
-        .filter((key) => this._object[key] !== undefined)
-    ;
+    const keys = Object.keys(this._object)
+      .sort()
+      .filter((key) => this._object[key] !== undefined);
     const key = keys[index];
 
     this._object[key] = newChild;
