@@ -61,6 +61,10 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     constantPoolManager: ConstantPoolManager,
     constantPoolEnabled: boolean,
     constantPoolProbability: number,
+    typePoolEnabled: boolean,
+    typePoolProbability: number,
+    statementPoolEnabled: boolean,
+    statementPoolProbability: number,
     typeInferenceMode: string,
     randomTypeProbability: number,
     incorporateExecutionInformation: boolean,
@@ -69,15 +73,17 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     stringMaxLength: number,
     resampleGeneProbability: number,
     deltaMutationProbability: number,
-    exploreIllegalValues: boolean,
-    reuseStatementProbability: number,
-    useMockedObjectProbability: number
+    exploreIllegalValues: boolean
   ) {
     super(
       subject,
       constantPoolManager,
       constantPoolEnabled,
       constantPoolProbability,
+      typePoolEnabled,
+      typePoolProbability,
+      statementPoolEnabled,
+      statementPoolProbability,
       typeInferenceMode,
       randomTypeProbability,
       incorporateExecutionInformation,
@@ -86,9 +92,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       stringMaxLength,
       resampleGeneProbability,
       deltaMutationProbability,
-      exploreIllegalValues,
-      reuseStatementProbability,
-      useMockedObjectProbability
+      exploreIllegalValues
     );
   }
 
@@ -473,10 +477,16 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     }
 
     // take from pool
-    const statementFromPool = this.statementPool.getRandomStatement(chosenType);
+    if (this.statementPoolEnabled) {
+      const statementFromPool =
+        this.statementPool.getRandomStatement(chosenType);
 
-    if (statementFromPool && prng.nextBoolean(this.reuseStatementProbability)) {
-      return statementFromPool;
+      if (
+        statementFromPool &&
+        prng.nextBoolean(this.statementPoolProbability)
+      ) {
+        return statementFromPool;
+      }
     }
 
     switch (chosenType) {
@@ -514,88 +524,88 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       .getTypeModel()
       .getObjectDescription(typeId);
 
-    const typeFromTypePool = this.rootContext
-      .getTypePool()
-      // .getRandomMatchingType(typeObject)
-      // TODO this prevents the sampling of function return types
-      // maybe we want this actually?
-      .getRandomMatchingType(
-        typeObject,
-        (type_) => type_.kind !== DiscoveredObjectKind.FUNCTION
-      );
+    if (this.typePoolEnabled) {
+      // TODO maybe we should sample from the typepool for the other stuff as well (move this to sample arg for example)
+      const typeFromTypePool = this.rootContext
+        .getTypePool()
+        // .getRandomMatchingType(typeObject)
+        // TODO this prevents the sampling of function return types
+        // maybe we want this actually?
+        .getRandomMatchingType(
+          typeObject,
+          (type_) => type_.kind !== DiscoveredObjectKind.FUNCTION
+        );
 
-    if (
-      typeFromTypePool &&
-      prng.nextBoolean(1 - this.useMockedObjectProbability)
-    ) {
-      // always prefer type from type pool
-      switch (typeFromTypePool.kind) {
-        case DiscoveredObjectKind.CLASS: {
-          // find constructor of class
-          const targets = this.rootContext.getSubTargets(
-            typeFromTypePool.id.split(":")[0]
-          );
-          const constructor_ = <MethodTarget>(
-            targets.find(
-              (target) =>
-                target.type === TargetType.METHOD &&
-                (<MethodTarget>target).methodType === "constructor" &&
-                (<MethodTarget>target).classId === typeFromTypePool.id
-            )
-          );
+      if (typeFromTypePool && prng.nextBoolean(this.typePoolProbability)) {
+        // always prefer type from type pool
+        switch (typeFromTypePool.kind) {
+          case DiscoveredObjectKind.CLASS: {
+            // find constructor of class
+            const targets = this.rootContext.getSubTargets(
+              typeFromTypePool.id.split(":")[0]
+            );
+            const constructor_ = <MethodTarget>(
+              targets.find(
+                (target) =>
+                  target.type === TargetType.METHOD &&
+                  (<MethodTarget>target).methodType === "constructor" &&
+                  (<MethodTarget>target).classId === typeFromTypePool.id
+              )
+            );
 
-          if (constructor_) {
+            if (constructor_) {
+              return this.constructorCallGenerator.generate(
+                depth,
+                id, // variable id
+                constructor_.typeId, // constructor call id
+                typeFromTypePool.id, // class export id
+                name,
+                this.statementPool
+              );
+            }
+
             return this.constructorCallGenerator.generate(
               depth,
               id, // variable id
-              constructor_.typeId, // constructor call id
+              typeFromTypePool.id, // constructor call id
               typeFromTypePool.id, // class export id
               name,
               this.statementPool
             );
           }
-
-          return this.constructorCallGenerator.generate(
-            depth,
-            id, // variable id
-            typeFromTypePool.id, // constructor call id
-            typeFromTypePool.id, // class export id
-            name,
-            this.statementPool
-          );
+          case DiscoveredObjectKind.FUNCTION: {
+            return this.functionCallGenerator.generate(
+              depth,
+              id,
+              typeFromTypePool.id,
+              typeFromTypePool.id,
+              name,
+              this.statementPool
+            );
+          }
+          case DiscoveredObjectKind.INTERFACE: {
+            // TODO
+            return this.constructorCallGenerator.generate(
+              depth,
+              id,
+              typeFromTypePool.id,
+              typeFromTypePool.id,
+              name,
+              this.statementPool
+            );
+          }
+          case DiscoveredObjectKind.OBJECT: {
+            return this.constantObjectGenerator.generate(
+              depth,
+              id,
+              typeFromTypePool.id,
+              typeFromTypePool.id,
+              name,
+              this.statementPool
+            );
+          }
+          // No default
         }
-        case DiscoveredObjectKind.FUNCTION: {
-          return this.functionCallGenerator.generate(
-            depth,
-            id,
-            typeFromTypePool.id,
-            typeFromTypePool.id,
-            name,
-            this.statementPool
-          );
-        }
-        case DiscoveredObjectKind.INTERFACE: {
-          // TODO
-          return this.constructorCallGenerator.generate(
-            depth,
-            id,
-            typeFromTypePool.id,
-            typeFromTypePool.id,
-            name,
-            this.statementPool
-          );
-        }
-        case DiscoveredObjectKind.OBJECT: {
-          return this.constantObjectGenerator.generate(
-            depth,
-            id,
-            typeFromTypePool.id,
-            typeFromTypePool.id,
-            name,
-            this.statementPool
-          );
-        }
-        // No default
       }
     }
 

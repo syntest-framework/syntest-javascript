@@ -675,6 +675,11 @@ export class JavaScriptLauncher extends Launcher {
       constantPoolManager,
       (<JavaScriptArguments>this.arguments_).constantPool,
       (<JavaScriptArguments>this.arguments_).constantPoolProbability,
+      (<JavaScriptArguments>this.arguments_).typePool,
+      (<JavaScriptArguments>this.arguments_).typePoolProbability,
+      (<JavaScriptArguments>this.arguments_).statementPool,
+      (<JavaScriptArguments>this.arguments_).statementPoolProbability,
+
       (<JavaScriptArguments>this.arguments_).typeInferenceMode,
       (<JavaScriptArguments>this.arguments_).randomTypeProbability,
       (<JavaScriptArguments>this.arguments_).incorporateExecutionInformation,
@@ -683,9 +688,7 @@ export class JavaScriptLauncher extends Launcher {
       this.arguments_.stringMaxLength,
       this.arguments_.resampleGeneProbability,
       this.arguments_.deltaMutationProbability,
-      this.arguments_.exploreIllegalValues,
-      (<JavaScriptArguments>this.arguments_).reuseStatementProbability,
-      (<JavaScriptArguments>this.arguments_).useMockedObjectProbability
+      this.arguments_.exploreIllegalValues
     );
     sampler.rootContext = rootContext;
 
