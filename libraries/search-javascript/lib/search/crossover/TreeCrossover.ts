@@ -70,15 +70,15 @@ export class TreeCrossover extends Crossover<JavaScriptTestCase> {
         }
 
         if (swapA.child.variableIdentifier === swapB.child.variableIdentifier) {
-          if ((
-            swapA.child instanceof ConstructorCall ||
-            swapB.child instanceof ConstructorCall ||
-            swapA.child instanceof ConstantObject ||
-            swapB.child instanceof ConstantObject
-          ) && // if one of the two is a constructorcall or constant object both need to be
-            swapA.child.classType !== swapB.child.classType) {
-              continue;
-            }
+          if (
+            (swapA.child instanceof ConstructorCall ||
+              swapB.child instanceof ConstructorCall ||
+              swapA.child instanceof ConstantObject ||
+              swapB.child instanceof ConstantObject) && // if one of the two is a constructorcall or constant object both need to be
+            swapA.child.classType !== swapB.child.classType
+          ) {
+            continue;
+          }
           crossoverOptions.push({
             parentA: swapA,
             parentB: swapB,
@@ -99,22 +99,30 @@ export class TreeCrossover extends Crossover<JavaScriptTestCase> {
         parentB.parent.setChild(parentB.childIndex, parentA.child.copy());
       } else if (parentB.parent !== undefined) {
         if (!(parentB.child instanceof ActionStatement)) {
-          throw new TypeError("expected parentB child to be an actionstatement");
+          throw new TypeError(
+            "expected parentB child to be an actionstatement"
+          );
         }
         rootA[parentA.childIndex] = parentB.child.copy();
         parentB.parent.setChild(parentB.childIndex, parentA.child.copy());
       } else if (parentA.parent === undefined) {
         if (!(parentA.child instanceof ActionStatement)) {
-          throw new TypeError("expected parentA child to be an actionstatement");
+          throw new TypeError(
+            "expected parentA child to be an actionstatement"
+          );
         }
         if (!(parentB.child instanceof ActionStatement)) {
-          throw new TypeError("expected parentB child to be an actionstatement");
+          throw new TypeError(
+            "expected parentB child to be an actionstatement"
+          );
         }
         rootA[parentA.childIndex] = parentB.child.copy();
         rootB[parentB.childIndex] = parentA.child.copy();
       } else {
         if (!(parentA.child instanceof ActionStatement)) {
-          throw new TypeError("expected parentA child to be an actionstatement");
+          throw new TypeError(
+            "expected parentA child to be an actionstatement"
+          );
         }
         parentA.parent.setChild(parentA.childIndex, parentB.child.copy());
         rootB[parentB.childIndex] = parentA.child.copy();

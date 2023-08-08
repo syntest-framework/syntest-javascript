@@ -176,6 +176,18 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
             // e.g. x.y = class {}
             // e.g. x.y = function {}
             // e.g. x.y = () => {}
+            if (
+              assigned.property.name === "exports" &&
+              assigned.object.type === "Identifier" &&
+              assigned.object.name === "module"
+            ) {
+              // e.g. module.exports = class {}
+              // e.g. module.exports = function {}
+              // e.g. module.exports = () => {}
+              return "id" in parentNode.right
+                ? parentNode.right.id.name
+                : "anonymousFunction";
+            }
             return assigned.property.name;
           } else {
             // e.g. x.? = class {}

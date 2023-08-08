@@ -99,7 +99,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
     for (
       let index = 0;
-      index < 1; //prng.nextInt(1, this.maxActionStatements); // (i think its better to start with a single statement)
+      index < prng.nextInt(1, this.maxActionStatements); // (i think its better to start with a single statement)
       index++
     ) {
       this.statementPool = new StatementPool(roots);

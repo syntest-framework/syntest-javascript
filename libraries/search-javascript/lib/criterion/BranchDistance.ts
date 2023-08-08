@@ -66,17 +66,6 @@ export class BranchDistance extends CoreBranchDistance {
       distance = 0.999_999_999_999_999_9;
     }
 
-    const variables_ = Object.keys(variables)
-      .map((key) => `${key}=${variables[key]}`)
-      .join(", ");
-
-    console.log(
-      "branch distance",
-      condition,
-      trueOrFalse,
-      variables_,
-      distance
-    );
     return distance;
   }
 }

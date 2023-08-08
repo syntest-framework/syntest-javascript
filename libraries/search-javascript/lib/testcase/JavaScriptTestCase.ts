@@ -61,11 +61,11 @@ export class JavaScriptTestCase extends Encoding {
     const choice = prng.nextDouble();
 
     if (roots.length > 1) {
-      if (choice < 0.1) {
+      if (choice < 0.33) {
         // 33% chance to add a root on this position
         const index = prng.nextInt(0, roots.length);
         roots.splice(index, 0, sampler.sampleRoot());
-      } else if (choice < 0.2) {
+      } else if (choice < 0.66) {
         // 33% chance to delete the root
         const index = prng.nextInt(0, roots.length - 1);
         roots.splice(index, 1);
@@ -75,7 +75,7 @@ export class JavaScriptTestCase extends Encoding {
         roots.splice(index, 1, roots[index].mutate(sampler, 1));
       }
     } else {
-      if (choice < 0.2) {
+      if (choice < 0.5) {
         // 50% chance to add a root on this position
         const index = prng.nextInt(0, roots.length);
         roots.splice(index, 0, sampler.sampleRoot());
