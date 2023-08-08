@@ -94,7 +94,7 @@ export function getTestCommand(
 
   options.set("type-pool-probability", {
     alias: [],
-    default: 0.9,
+    default: 0.5,
     description:
       "Probability to sample from the type pool instead creating random values",
     group: samplingGroup,

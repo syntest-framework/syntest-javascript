@@ -529,11 +529,10 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       const typeFromTypePool = this.rootContext
         .getTypePool()
         // .getRandomMatchingType(typeObject)
-        // TODO this prevents the sampling of function return types
-        // maybe we want this actually?
+        // TODO this prevents ONLY allows sampling of matching class constructors
         .getRandomMatchingType(
           typeObject,
-          (type_) => type_.kind !== DiscoveredObjectKind.FUNCTION
+          (type_) => type_.kind === DiscoveredObjectKind.CLASS
         );
 
       if (typeFromTypePool && prng.nextBoolean(this.typePoolProbability)) {
