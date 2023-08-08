@@ -204,11 +204,13 @@ export class StringStatement extends PrimitiveStatement<string> {
 
   override decode(): Decoding[] {
     let value = this.value;
+
     value = value.replaceAll(/\\/g, "\\\\");
     value = value.replaceAll(/\n/g, "\\n");
     value = value.replaceAll(/\r/g, "\\r");
     value = value.replaceAll(/\t/g, "\\t");
-    value = value.replace(/"/g, '\\"');
+    value = value.replaceAll(/"/g, '\\"');
+
     return [
       {
         decoded: `const ${this.varName} = "${value}";`,
