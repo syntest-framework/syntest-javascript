@@ -777,7 +777,7 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
                 this._stringAlphabet.indexOf(t_index)
             );
           }
-          cost = this._normalize(cost);
+          // cost = this._normalize(cost);
         }
 
         // Step 6

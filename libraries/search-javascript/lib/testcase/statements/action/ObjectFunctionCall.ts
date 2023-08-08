@@ -58,26 +58,16 @@ export class ObjectFunctionCall extends ActionStatement {
     sampler: JavaScriptTestCaseSampler,
     depth: number
   ): ObjectFunctionCall {
-    if (prng.nextBoolean(sampler.resampleGeneProbability)) {
-      return sampler.sampleObjectFunctionCall(depth);
-    }
-
-    const probability = 1 / (this.args.length + 1); // plus one for the constructor
-
     const arguments_ = this.args.map((a: Statement) => a.copy());
+    let object_ = this._object.copy();
+    const index = prng.nextInt(0, arguments_.length);
 
-    if (arguments_.length > 0) {
+    if (index < arguments_.length) {
       // go over each arg
-      for (let index = 0; index < arguments_.length; index++) {
-        if (prng.nextBoolean(probability)) {
-          arguments_[index] = arguments_[index].mutate(sampler, depth + 1);
-        }
-      }
+      arguments_[index] = arguments_[index].mutate(sampler, depth + 1);
+    } else {
+      object_ = object_.mutate(sampler, depth + 1);
     }
-
-    const object_ = prng.nextBoolean(probability)
-      ? this._object.mutate(sampler, depth + 1)
-      : this._object.copy();
 
     return new ObjectFunctionCall(
       this.variableIdentifier,

@@ -16,8 +16,6 @@
  * limitations under the License.
  */
 
-// TODO
-
 import { prng } from "@syntest/prng";
 import { shouldNeverHappen } from "@syntest/search";
 
@@ -48,21 +46,38 @@ export class ArrowFunctionStatement extends Statement {
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
-    if (prng.nextBoolean(sampler.resampleGeneProbability)) {
-      return sampler.sampleArgument(depth, this.variableIdentifier, this.name);
+    if (prng.nextBoolean(sampler.deltaMutationProbability)) {
+      // 80%
+      return new ArrowFunctionStatement(
+        this.variableIdentifier,
+        this.typeIdentifier,
+        this.name,
+        this.type,
+        prng.uniqueId(),
+        this._parameters,
+        this.returnValue
+          ? this._returnValue.mutate(sampler, depth + 1)
+          : undefined
+      );
+    } else {
+      // 20%
+      if (prng.nextBoolean(0.5)) {
+        // 50%
+        return sampler.sampleArgument(
+          depth,
+          this.variableIdentifier,
+          this.name
+        );
+      } else {
+        // 50%
+        return sampler.sampleArrowFunction(
+          depth,
+          this.variableIdentifier,
+          this.name,
+          this.type
+        );
+      }
     }
-
-    return new ArrowFunctionStatement(
-      this.variableIdentifier,
-      this.typeIdentifier,
-      this.name,
-      this.type,
-      prng.uniqueId(),
-      this._parameters,
-      this.returnValue
-        ? this._returnValue.mutate(sampler, depth + 1)
-        : undefined
-    );
   }
 
   copy(): ArrowFunctionStatement {

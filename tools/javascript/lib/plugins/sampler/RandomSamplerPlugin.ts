@@ -54,7 +54,6 @@ export class RandomSamplerPlugin extends SamplerPlugin<JavaScriptTestCase> {
       (<JavaScriptArguments>(<unknown>this.args)).maxActionStatements,
       (<JavaScriptArguments>(<unknown>this.args)).stringAlphabet,
       (<JavaScriptArguments>(<unknown>this.args)).stringMaxLength,
-      (<JavaScriptArguments>(<unknown>this.args)).resampleGeneProbability,
       (<JavaScriptArguments>(<unknown>this.args)).deltaMutationProbability,
       (<JavaScriptArguments>(<unknown>this.args)).exploreIllegalValues
     );

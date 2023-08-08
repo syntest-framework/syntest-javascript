@@ -686,7 +686,6 @@ export class JavaScriptLauncher extends Launcher {
       this.arguments_.maxActionStatements,
       this.arguments_.stringAlphabet,
       this.arguments_.stringMaxLength,
-      this.arguments_.resampleGeneProbability,
       this.arguments_.deltaMutationProbability,
       this.arguments_.exploreIllegalValues
     );

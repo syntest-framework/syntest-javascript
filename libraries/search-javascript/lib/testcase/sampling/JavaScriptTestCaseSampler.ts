@@ -73,8 +73,11 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
   private _maxActionStatements: number;
   private _stringAlphabet: string;
   private _stringMaxLength: number;
-  private _resampleGeneProbability: number;
+
   private _deltaMutationProbability: number;
+  // private _deltaSigma: number; // todo
+  // private _adaptiveDeltaSigma: boolean; // todo
+
   private _exploreIllegalValues: boolean;
 
   private _statementPool: StatementPool | null;
@@ -104,7 +107,6 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
     maxActionStatements: number,
     stringAlphabet: string,
     stringMaxLength: number,
-    resampleGeneProbability: number,
     deltaMutationProbability: number,
     exploreIllegalValues: boolean
   ) {
@@ -125,7 +127,6 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
     this._maxActionStatements = maxActionStatements;
     this._stringAlphabet = stringAlphabet;
     this._stringMaxLength = stringMaxLength;
-    this._resampleGeneProbability = resampleGeneProbability;
     this._deltaMutationProbability = deltaMutationProbability;
     this._exploreIllegalValues = exploreIllegalValues;
   }
@@ -341,10 +342,6 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
 
   get stringMaxLength(): number {
     return this._stringMaxLength;
-  }
-
-  get resampleGeneProbability(): number {
-    return this._resampleGeneProbability;
   }
 
   get deltaMutationProbability(): number {

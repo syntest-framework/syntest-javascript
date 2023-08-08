@@ -71,7 +71,6 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     maxActionStatements: number,
     stringAlphabet: string,
     stringMaxLength: number,
-    resampleGeneProbability: number,
     deltaMutationProbability: number,
     exploreIllegalValues: boolean
   ) {
@@ -90,7 +89,6 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       maxActionStatements,
       stringAlphabet,
       stringMaxLength,
-      resampleGeneProbability,
       deltaMutationProbability,
       exploreIllegalValues
     );
@@ -101,7 +99,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
     for (
       let index = 0;
-      index < prng.nextInt(1, this.maxActionStatements); // (i think its better to start with a single statement)
+      index < 1; //prng.nextInt(1, this.maxActionStatements); // (i think its better to start with a single statement)
       index++
     ) {
       this.statementPool = new StatementPool(roots);
@@ -133,7 +131,6 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
         );
         if (methods.length > 0) {
           const method = prng.pickOne(methods);
-          console.log("sampling method", method.typeId);
 
           const type_ = this.rootContext
             .getTypeModel()
@@ -821,8 +818,8 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
   sampleNumber(id: string, name: string): NumericStatement {
     // by default we create small numbers (do we need very large numbers?)
-    const max = 10;
-    const min = -10;
+    const max = 1000;
+    const min = -1000;
 
     const value =
       this.constantPoolEnabled && prng.nextBoolean(this.constantPoolProbability)
@@ -845,8 +842,8 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
   sampleInteger(id: string, name: string): IntegerStatement {
     // by default we create small numbers (do we need very large numbers?)
-    const max = 10;
-    const min = -10;
+    const max = 1000;
+    const min = -1000;
 
     const value =
       this.constantPoolEnabled && prng.nextBoolean(this.constantPoolProbability)
