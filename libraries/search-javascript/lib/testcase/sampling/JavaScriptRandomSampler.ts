@@ -101,7 +101,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
     for (
       let index = 0;
-      index < 1; //prng.nextInt(1, this.maxActionStatements); (i think its better to start with a single statement)
+      index < prng.nextInt(1, this.maxActionStatements); // (i think its better to start with a single statement)
       index++
     ) {
       this.statementPool = new StatementPool(roots);
@@ -114,6 +114,46 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
   sampleRoot(): ActionStatement {
     const targets = (<JavaScriptSubject>this._subject).getActionableTargets();
+
+    if (this.statementPoolEnabled) {
+      const constructor_ = this.statementPool.getRandomConstructor();
+
+      if (constructor_ && prng.nextBoolean(this.statementPoolProbability)) {
+        // TODO ignoring getters and setters for now
+        const targets = this.rootContext.getSubTargets(
+          constructor_.typeIdentifier.split(":")[0]
+        );
+        const methods = <MethodTarget[]>(
+          targets.filter(
+            (target) =>
+              target.type === TargetType.METHOD &&
+              (<MethodTarget>target).methodType === "method" &&
+              (<MethodTarget>target).classId === constructor_.classIdentifier
+          )
+        );
+        if (methods.length > 0) {
+          const method = prng.pickOne(methods);
+          console.log("sampling method", method.typeId);
+
+          const type_ = this.rootContext
+            .getTypeModel()
+            .getObjectDescription(method.typeId);
+
+          const arguments_: Statement[] =
+            this.methodCallGenerator.sampleArguments(0, type_);
+
+          return new MethodCall(
+            method.id,
+            method.typeId,
+            method.name,
+            TypeEnum.FUNCTION,
+            prng.uniqueId(),
+            arguments_,
+            constructor_
+          );
+        }
+      }
+    }
 
     const action = prng.pickOne(
       targets.filter(

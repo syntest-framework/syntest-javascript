@@ -25,9 +25,13 @@ import { ConstructorCall } from "./statements/action/ConstructorCall";
 export class StatementPool {
   // type -> statement array
   private pool: Map<string, Statement[]>;
+  // this is a bit out of scope for this class but otherwise we have to walk the tree multiple times
+  // we can solve this by making a singular tree walker class with visitors
+  private constructors: ConstructorCall[];
 
   constructor(roots: ActionStatement[]) {
     this.pool = new Map();
+    this.constructors = [];
 
     this._fillGenePool(roots);
   }
@@ -40,6 +44,13 @@ export class StatementPool {
     }
 
     return prng.pickOne(statements);
+  }
+
+  public getRandomConstructor(): ConstructorCall {
+    if (this.constructors.length === 0) {
+      return undefined;
+    }
+    return prng.pickOne(this.constructors);
   }
 
   private _fillGenePool(roots: ActionStatement[]) {
@@ -58,6 +69,7 @@ export class StatementPool {
         } else if (statement.type === TypeEnum.FUNCTION) {
           // use return type
           if (statement instanceof ConstructorCall) {
+            this.constructors.push(statement);
             if (!this.pool.has(statement.classIdentifier)) {
               this.pool.set(statement.classIdentifier, []);
             }
