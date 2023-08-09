@@ -21,7 +21,6 @@ import * as path from "node:path";
 import { TestCommandOptions } from "./commands/test";
 import {
   TypeModelFactory,
-  RandomTypeModelFactory,
   InferenceTypeModelFactory,
   Target,
   AbstractSyntaxTreeFactory,
@@ -159,10 +158,7 @@ export class JavaScriptLauncher extends Launcher {
     const dependencyFactory = new DependencyFactory();
     const exportFactory = new ExportFactory();
     const typeExtractor = new TypeExtractor();
-    const typeResolver: TypeModelFactory =
-      (<JavaScriptArguments>this.arguments_).typeInferenceMode === "none"
-        ? new RandomTypeModelFactory()
-        : new InferenceTypeModelFactory();
+    const typeResolver: TypeModelFactory = new InferenceTypeModelFactory();
 
     this.rootContext = new RootContext(
       this.arguments_.targetRootDirectory,

@@ -479,27 +479,41 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   sampleArgument(depth: number, id: string, name: string): Statement {
     let chosenType: string;
 
-    if (
-      this.typeInferenceMode === "proportional" ||
-      this.typeInferenceMode === "none"
-    ) {
-      chosenType = this.rootContext
-        .getTypeModel()
-        .getRandomType(
-          this.incorporateExecutionInformation,
-          this.randomTypeProbability,
-          id
+    switch (this.typeInferenceMode) {
+      case "none": {
+        chosenType = this.rootContext
+          .getTypeModel()
+          .getRandomType(false, 1, id);
+
+        break;
+      }
+      case "proportional": {
+        chosenType = this.rootContext
+          .getTypeModel()
+          .getRandomType(
+            this.incorporateExecutionInformation,
+            this.randomTypeProbability,
+            id
+          );
+
+        break;
+      }
+      case "ranked": {
+        chosenType = this.rootContext
+          .getTypeModel()
+          .getHighestProbabilityType(
+            this.incorporateExecutionInformation,
+            this.randomTypeProbability,
+            id
+          );
+
+        break;
+      }
+      default: {
+        throw new Error(
+          "Invalid identifierDescription inference mode selected"
         );
-    } else if (this.typeInferenceMode === "ranked") {
-      chosenType = this.rootContext
-        .getTypeModel()
-        .getHighestProbabilityType(
-          this.incorporateExecutionInformation,
-          this.randomTypeProbability,
-          id
-        );
-    } else {
-      throw new Error("Invalid identifierDescription inference mode selected");
+      }
     }
 
     if (chosenType.endsWith("object")) {
