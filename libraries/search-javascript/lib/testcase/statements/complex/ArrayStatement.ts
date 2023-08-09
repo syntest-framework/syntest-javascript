@@ -41,6 +41,14 @@ export class ArrayStatement extends Statement {
     super(variableIdentifier, typeIdentifier, name, type, uniqueId);
     this._children = children;
     this._classType = "ArrayStatement";
+
+    // check for circular
+    for (const [index, statement] of this._children.entries()) {
+      if (statement && statement.uniqueId === this.uniqueId) {
+        console.log("circular detected");
+        this._children.splice(index, 1);
+      }
+    }
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
@@ -56,11 +64,7 @@ export class ArrayStatement extends Statement {
           children.splice(
             index,
             0,
-            sampler.sampleArrayArgument(
-              depth + 1,
-              this.variableIdentifier,
-              index
-            )
+            sampler.sampleArrayArgument(depth + 1, this.typeIdentifier, index)
           );
         } else if (choice < 0.66) {
           // 33% chance to remove a child on this position
@@ -72,17 +76,13 @@ export class ArrayStatement extends Statement {
           children.splice(
             index,
             1,
-            sampler.sampleArrayArgument(
-              depth + 1,
-              this.variableIdentifier,
-              index
-            )
+            sampler.sampleArrayArgument(depth + 1, this.typeIdentifier, index)
           );
         }
       } else {
         // no children found so we always add
         children.push(
-          sampler.sampleArrayArgument(depth + 1, this.variableIdentifier, 0)
+          sampler.sampleArrayArgument(depth + 1, this.typeIdentifier, 0)
         );
       }
 
@@ -121,7 +121,15 @@ export class ArrayStatement extends Statement {
       this.name,
       this.type,
       this.uniqueId,
-      this._children.map((a) => a.copy())
+      this._children
+        .filter((a) => {
+          if (a.uniqueId === this.uniqueId) {
+            console.log("circular detected");
+            return false;
+          }
+          return true;
+        })
+        .map((a) => a.copy())
     );
   }
 

@@ -43,6 +43,14 @@ export class ObjectStatement extends Statement {
     super(variableIdentifier, typeIdentifier, name, type, uniqueId);
     this._object = object;
     this._classType = "ObjectStatement";
+
+    // check for circular
+    for (const [key, statement] of Object.entries(this._object)) {
+      if (statement && statement.uniqueId === this.uniqueId) {
+        console.log("circular detected");
+        this._object[key] = undefined;
+      }
+    }
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
@@ -138,6 +146,11 @@ export class ObjectStatement extends Statement {
     const object: ObjectType = {};
 
     for (const key of Object.keys(this._object)) {
+      if (this._object[key].uniqueId === this.uniqueId) {
+        console.log("circular detected");
+        object[key] = undefined;
+        continue;
+      }
       object[key] = this._object[key].copy();
     }
 

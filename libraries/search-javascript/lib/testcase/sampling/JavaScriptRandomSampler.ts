@@ -464,16 +464,18 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
   sampleObjectArgument(
     depth: number,
-    objectId: string,
+    objectTypeId: string,
     property: string
   ): Statement {
     const objectType = <ObjectType>(
-      this.rootContext.getTypeModel().getObjectDescription(objectId)
+      this.rootContext.getTypeModel().getObjectDescription(objectTypeId)
     );
 
     const value = objectType.properties.get(property);
     if (!value) {
-      throw new Error(`Property ${property} not found in object ${objectId}`);
+      throw new Error(
+        `Property ${property} not found in object ${objectTypeId}`
+      );
     }
 
     return this.sampleArgument(depth, value, property);
