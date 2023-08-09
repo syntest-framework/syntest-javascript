@@ -451,12 +451,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       // TODO should be done in the typemodel somehow
       // maybe create types for the subproperties by doing /main/array/id::1::1[element-index]
       // maybe create types for the subproperties by doing /main/array/id::1::1.property
-      return this.sampleString(
-        "anon",
-        "anon",
-        this.stringAlphabet,
-        this.stringMaxLength
-      );
+      return this.sampleArgument(depth, "anon", "anon");
     }
 
     return this.sampleArgument(depth, prng.pickOne(childIds), String(index));
@@ -681,14 +676,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     // maybe create types for the subproperties by doing /main/array/id::1::1.property
 
     if (children.length === 0) {
-      children.push(
-        this.sampleString(
-          "anon",
-          "anon",
-          this.stringAlphabet,
-          this.stringMaxLength
-        )
-      );
+      children.push(this.sampleArrayArgument(depth + 1, id, 0));
     }
 
     // if some children are missing, fill them with fake params
