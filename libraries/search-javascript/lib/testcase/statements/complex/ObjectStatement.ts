@@ -146,6 +146,10 @@ export class ObjectStatement extends Statement {
     const object: ObjectType = {};
 
     for (const key of Object.keys(this._object)) {
+      if (this._object[key] === undefined) {
+        object[key] = undefined;
+        continue;
+      }
       if (this._object[key].uniqueId === this.uniqueId) {
         console.log("circular detected");
         object[key] = undefined;
