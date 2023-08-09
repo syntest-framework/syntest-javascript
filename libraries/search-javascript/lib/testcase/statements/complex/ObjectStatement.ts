@@ -178,9 +178,9 @@ export class ObjectStatement extends Statement {
       .map((key) => `\t\t\t"${key}": ${this._object[key].varName}`)
       .join(",\n");
 
-    const childStatements: Decoding[] = Object.values(this._object).flatMap(
-      (a) => a.decode(decoder, id, options)
-    );
+    const childStatements: Decoding[] = Object.values(this._object)
+      .filter((a) => a !== undefined)
+      .flatMap((a) => a.decode(decoder, id, options));
 
     let decoded = `const ${this.varName} = {\n${children}\n\t\t}`;
 
