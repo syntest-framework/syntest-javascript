@@ -647,8 +647,8 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
     const object_: { [key: string]: Statement } = {};
 
-    for (const [key, id] of typeObject.properties.entries()) {
-      object_[key] = this.sampleArgument(depth + 1, id, key);
+    for (const key of typeObject.properties.keys()) {
+      object_[key] = this.sampleObjectArgument(depth + 1, typeId, key);
     }
 
     return new ObjectStatement(

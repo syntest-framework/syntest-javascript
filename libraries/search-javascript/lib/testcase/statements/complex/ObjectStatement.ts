@@ -82,7 +82,7 @@ export class ObjectStatement extends Statement {
           const key = keys[index];
           object[key] = sampler.sampleObjectArgument(
             depth + 1,
-            this.variableIdentifier,
+            this.typeIdentifier,
             key
           );
         } else if (choice < 0.66) {
@@ -100,7 +100,7 @@ export class ObjectStatement extends Statement {
         const key = keys[index];
         object[key] = sampler.sampleObjectArgument(
           depth + 1,
-          this.variableIdentifier,
+          this.typeIdentifier,
           key
         );
       }
