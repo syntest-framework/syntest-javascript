@@ -270,16 +270,8 @@ export class JavaScriptLauncher extends Launcher {
       headers: ["Setting", "Value"],
       rows: [
         [
-          "Resampling Probability",
-          `${this.arguments_.resampleGeneProbability}`,
-        ],
-        [
           "Delta Mutation Probability",
           `${this.arguments_.deltaMutationProbability}`,
-        ],
-        [
-          "Sample Existing Value Probability",
-          `${this.arguments_.sampleExistingValueProbability}`,
         ],
         ["Crossover Probability", `${this.arguments_.crossoverProbability}`],
         [
@@ -291,16 +283,28 @@ export class JavaScriptLauncher extends Launcher {
         ["Max Action Statements", `${this.arguments_.maxActionStatements}`],
         ["Explore Illegal Values", `${this.arguments_.exploreIllegalValues}`],
         [
-          "Sample Output Values",
-          `${this.arguments_.sampleFunctionOutputAsArgument}`,
-        ],
-        [
           "Use Constant Pool Values",
           `${(<JavaScriptArguments>this.arguments_).constantPool}`,
         ],
         [
           "Use Constant Pool Probability",
           `${(<JavaScriptArguments>this.arguments_).constantPoolProbability}`,
+        ],
+        [
+          "Use Type Pool Values",
+          `${(<JavaScriptArguments>this.arguments_).typePool}`,
+        ],
+        [
+          "Use Type Pool Probability",
+          `${(<JavaScriptArguments>this.arguments_).typePoolProbability}`,
+        ],
+        [
+          "Use Statement Pool Values",
+          `${(<JavaScriptArguments>this.arguments_).statementPool}`,
+        ],
+        [
+          "Use Statement Pool Probability",
+          `${(<JavaScriptArguments>this.arguments_).statementPoolProbability}`,
         ],
       ],
       footers: ["", ""],

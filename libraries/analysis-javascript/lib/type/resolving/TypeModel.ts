@@ -222,6 +222,7 @@ export class TypeModel {
       TypeEnum.STRING,
       TypeEnum.UNDEFINED,
     ];
+
     if (probabilities.size === 0) {
       return prng.pickOne(genericTypes);
     }
@@ -271,18 +272,26 @@ export class TypeModel {
       id
     );
 
-    if (probabilities.size === 0 || prng.nextBoolean(randomTypeProbability)) {
+    const genericTypes = [
+      TypeEnum.ARRAY,
+      TypeEnum.BOOLEAN,
+      TypeEnum.FUNCTION,
+      TypeEnum.NULL,
+      TypeEnum.NUMERIC,
+      TypeEnum.INTEGER,
+      TypeEnum.OBJECT,
+      TypeEnum.REGEX,
+      TypeEnum.STRING,
+      TypeEnum.UNDEFINED,
+    ];
+
+    if (probabilities.size === 0) {
+      return prng.pickOne(genericTypes);
+    }
+
+    if (prng.nextBoolean(randomTypeProbability)) {
       return prng.pickOne([
-        TypeEnum.ARRAY,
-        TypeEnum.BOOLEAN,
-        TypeEnum.FUNCTION,
-        TypeEnum.NULL,
-        TypeEnum.NUMERIC,
-        TypeEnum.INTEGER,
-        TypeEnum.OBJECT,
-        TypeEnum.REGEX,
-        TypeEnum.STRING,
-        TypeEnum.UNDEFINED,
+        ...new Set([...probabilities.keys(), ...genericTypes]),
       ]);
     }
 
