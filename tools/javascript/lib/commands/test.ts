@@ -113,7 +113,7 @@ export function getTestCommand(
 
   options.set("statement-pool-probability", {
     alias: [],
-    default: 0.9,
+    default: 0.8,
     description:
       "Probability to sample from the statement pool instead creating new values",
     group: samplingGroup,

@@ -55,6 +55,11 @@ export class ContextBuilder {
   private logsPresent: boolean;
   private assertionsPresent: boolean;
 
+  // old var -> new var
+  private variableMap: Map<string, string>;
+  // var -> count
+  private variableCount: Map<string, number>;
+
   constructor(targetRootDirectory: string, sourceDirectory: string) {
     this.targetRootDirectory = targetRootDirectory;
     this.sourceDirectory = sourceDirectory;
@@ -64,16 +69,40 @@ export class ContextBuilder {
 
     this.logsPresent = false;
     this.assertionsPresent = false;
+
+    this.variableMap = new Map();
+    this.variableCount = new Map();
   }
 
   addDecoding(decoding: Decoding) {
+    // This function assumes the decodings to come in order
+
     if (decoding.reference instanceof ActionStatement) {
       const export_ = decoding.reference.export;
       if (export_) {
         const import_ = this._addImport(export_);
         const newName = import_.renamed ? import_.renamedTo : import_.name;
-        decoding.decoded.replaceAll(import_.name, newName);
+        decoding.decoded = decoding.decoded.replaceAll(import_.name, newName);
       }
+    }
+
+    const variableName = decoding.reference.varName;
+    if (this.variableMap.has(variableName)) {
+      this.variableCount.set(
+        variableName,
+        this.variableCount.get(variableName) + 1
+      );
+    } else {
+      this.variableCount.set(variableName, 0);
+    }
+
+    this.variableMap.set(
+      variableName,
+      variableName + this.variableCount.get(variableName)
+    );
+
+    for (const [oldVariable, newVariable] of this.variableMap.entries()) {
+      decoding.decoded = decoding.decoded.replaceAll(oldVariable, newVariable);
     }
   }
 

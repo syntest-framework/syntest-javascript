@@ -28,7 +28,7 @@ export abstract class Statement {
   private _typeIdentifier: string;
   private _name: string;
   private _type: string;
-  private _uniqueId: string;
+  protected _uniqueId: string;
   protected _varName: string;
 
   protected _classType: string;
@@ -125,6 +125,9 @@ export abstract class Statement {
 
   /**
    * Set a new child at a specified position
+   *
+   * WARNING: This function has side effects
+   *
    * @param index the index position of the new child
    * @param newChild the new child
    */
