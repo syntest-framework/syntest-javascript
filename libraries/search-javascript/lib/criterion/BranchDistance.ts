@@ -67,14 +67,6 @@ export class BranchDistance extends CoreBranchDistance {
     if (distance === 1) {
       // We dont want a branch distance of 1 because then it will be equal to covering the oposite branch
       distance = 0.999_999_999_999_999_9;
-
-      // in general it should not be one so we give a warning
-      const variables_ = Object.entries(variables)
-        .map(([key, value]) => `${key}='${value}'`)
-        .join(", ");
-      BranchDistance.LOGGER.warn(
-        `Calculated distance for condition '${condition}' -> ${trueOrFalse}, is one. Variables: ${variables_}`
-      );
     }
 
     if (distance === 0) {

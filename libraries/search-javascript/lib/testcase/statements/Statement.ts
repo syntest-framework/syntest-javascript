@@ -17,7 +17,6 @@
  */
 
 import { Encoding, EncodingSampler, shouldNeverHappen } from "@syntest/search";
-import { prng } from "@syntest/prng";
 
 import { JavaScriptDecoder } from "../../testbuilding/JavaScriptDecoder";
 
@@ -85,13 +84,17 @@ export abstract class Statement {
       throw new Error(shouldNeverHappen("name cannot inlude <>"));
     }
 
-    this._varName = "_" + this.generateVarName(name, type);
+    this._varName = "_" + this.generateVarName(name, type, uniqueId);
   }
 
-  protected generateVarName(name: string, type: string): string {
+  protected generateVarName(
+    name: string,
+    type: string,
+    uniqueId: string
+  ): string {
     return type.includes("<>")
-      ? name + "_" + type.split("<>")[1] + "_" + prng.uniqueId(4)
-      : name + "_" + type + "_" + prng.uniqueId(4);
+      ? name + "_" + type.split("<>")[1] + "_" + uniqueId
+      : name + "_" + type + "_" + uniqueId;
   }
 
   /**

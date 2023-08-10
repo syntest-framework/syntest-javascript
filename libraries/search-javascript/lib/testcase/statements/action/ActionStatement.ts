@@ -20,7 +20,6 @@ import { Encoding, EncodingSampler, shouldNeverHappen } from "@syntest/search";
 
 import { Statement } from "../Statement";
 import { Export } from "@syntest/analysis-javascript";
-import { prng } from "@syntest/prng";
 
 /**
  * @author Dimitri Stallenberg
@@ -42,18 +41,22 @@ export abstract class ActionStatement extends Statement {
     this._args = arguments_;
     this._export = export_;
 
-    this._varName = "_" + this.generateVarName(name, type);
+    this._varName = "_" + this.generateVarName(name, type, uniqueId);
   }
 
-  protected override generateVarName(name: string, type: string): string {
+  protected override generateVarName(
+    name: string,
+    type: string,
+    uniqueId: string
+  ): string {
     // TODO should use return type
     if (this._export) {
-      return name + "_" + this._export.name + "_" + prng.uniqueId(4);
+      return name + "_" + this._export.name + "_" + uniqueId;
     }
 
     return type.includes("<>")
-      ? name + "_" + type.split("<>")[1] + "_" + prng.uniqueId(4)
-      : name + "_" + type + "_" + prng.uniqueId(4);
+      ? name + "_" + type.split("<>")[1] + "_" + uniqueId
+      : name + "_" + type + "_" + uniqueId;
   }
 
   abstract override mutate(

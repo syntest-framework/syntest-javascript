@@ -107,7 +107,7 @@ export class NumericStatement extends PrimitiveStatement<number> {
       this.typeIdentifier,
       this.name,
       this.type,
-      prng.uniqueId(),
+      this.uniqueId,
       this.value
     );
   }

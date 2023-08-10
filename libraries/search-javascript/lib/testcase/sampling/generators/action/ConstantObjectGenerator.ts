@@ -38,7 +38,10 @@ export class ConstantObjectGenerator extends CallGenerator<ConstantObject> {
       const statementFromPool =
         statementPool.getRandomConstantObject(exportIdentifier);
 
-      if (statementFromPool) {
+      if (
+        statementFromPool &&
+        prng.nextBoolean(this.statementPoolProbability)
+      ) {
         return statementFromPool;
       }
     }
