@@ -433,11 +433,10 @@ function coverLoopBranch(path: NodePath<t.Loop>) {
     const test = (<
       NodePath<t.ForStatement | t.WhileStatement | t.DoWhileStatement>
     >path).get("test");
-
+    const testAsString = `${test.toString()}`;
     const index = this.cov.newStatement(test.node.loc);
     const testIncrement = this.increase("s", index, null);
     const variables = extractAndReplaceVariablesFromTest(path.scope, test);
-    const testAsString = `${test.toString()}`;
     const metaTracker = this.getBranchMetaTracker(
       branch,
       testAsString,
