@@ -470,7 +470,9 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
           value = Math.abs(leftValue - rightValue);
         } else if (
           typeof leftValue === "string" &&
-          typeof rightValue === "string"
+          typeof rightValue === "string" &&
+          !left.toString().startsWith("typeof ") && // typeof x === 'string' (should not be compared as strings (but as enums))
+          !right.toString().startsWith("typeof ") // 'string' === typeof x (should not be compared as strings (but as enums))
         ) {
           value = this._realCodedEditDistance(leftValue, rightValue);
         } else if (

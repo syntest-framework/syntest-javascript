@@ -52,13 +52,13 @@ export class ConstructorCallGenerator extends CallGenerator<ConstructorCall> {
 
     if (this.statementPoolEnabled) {
       const statementFromPool =
-        statementPool.getRandomStatement(exportIdentifier);
+        statementPool.getRandomConstructor(exportIdentifier);
 
       if (
         statementFromPool &&
         prng.nextBoolean(this.statementPoolProbability)
       ) {
-        return <ConstructorCall>statementFromPool;
+        return statementFromPool;
       }
     }
 

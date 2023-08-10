@@ -155,6 +155,10 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
 
       const assertions: string[] = this.generateAssertions(testCase);
 
+      if (assertions.length > 0) {
+        assertions.splice(0, 0, "\n\t\t// Assertions");
+      }
+
       const body = [];
 
       if (testString.length > 0) {
@@ -178,12 +182,15 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
         metaCommentBlock.push(`\t\t// ${metaComment}`);
       }
 
+      if (metaCommentBlock.length > 0) {
+        metaCommentBlock.splice(0, 0, "\n\t\t// Meta information");
+      }
+
       // TODO instead of using the targetName use the function call or a better description of the test
       tests.push(
-        `\tit('test for ${targetName}', async () => {\n` +
-          `${metaCommentBlock.join("\n")}\n` +
-          `${body.join("\n\n")}` +
-          `\n\t});`
+        `${metaCommentBlock.join("\n")}\n` +
+          `\n\t\t// Test\n` +
+          `${body.join("\n\n")}`
       );
     }
 
@@ -193,18 +200,34 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
       const importsString = imports.join("\n") + `\n\n`;
 
       return (
+        `// Imports\n` +
         importsString +
         `describe('${targetName}', function() {\n\t` +
-        tests.join("\n\n") +
+        tests
+          .map(
+            (test) =>
+              `\tit('test for ${targetName}', async () => {\n` +
+              test +
+              `\n\t});`
+          )
+          .join("\n\n") +
         `\n})`
       );
     } else {
-      const importsString = imports.join("\n\t") + `\n\n`;
+      const importsString = `\t\t` + imports.join("\n\t\t") + `\n`;
 
       return (
         `describe('${targetName}', function() {\n\t` +
-        importsString +
-        tests.join("\n\n") +
+        tests
+          .map(
+            (test) =>
+              `\tit('test for ${targetName}', async () => {\n` +
+              `\t\t// Imports\n` +
+              importsString +
+              test +
+              `\n\t});`
+          )
+          .join("\n\n") +
         `\n})`
       );
     }
