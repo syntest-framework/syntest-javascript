@@ -20,21 +20,22 @@ import { prng } from "@syntest/prng";
 
 import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
-import { Decoding } from "../Statement";
+import { Decoding, Statement } from "../Statement";
 
-import { ClassActionStatement } from "./ClassActionStatement";
 import { ConstructorCall } from "./ConstructorCall";
+import { ClassActionStatement } from "./ClassActionStatement";
 
 /**
  * @author Dimitri Stallenberg
  */
-export class Getter extends ClassActionStatement {
+export class MethodCall extends ClassActionStatement {
   /**
    * Constructor
    * @param identifierDescription the return type options of the function
-   * @param type the type of property
+   * @param type the return type of the function
    * @param uniqueId id of the gene
-   * @param property the name of the property
+   * @param methodName the name of the function
+   * @param args the arguments of the function
    */
   constructor(
     variableIdentifier: string,
@@ -42,6 +43,7 @@ export class Getter extends ClassActionStatement {
     name: string,
     type: string,
     uniqueId: string,
+    arguments_: Statement[],
     constructor_: ConstructorCall
   ) {
     super(
@@ -50,33 +52,46 @@ export class Getter extends ClassActionStatement {
       name,
       type,
       uniqueId,
-      [],
+      arguments_,
       constructor_
     );
-    this._classType = "Getter";
+    this._classType = "MethodCall";
   }
 
-  mutate(sampler: JavaScriptTestCaseSampler, depth: number): Getter {
-    const constructor_ = this.constructor_.mutate(sampler, depth + 1);
+  mutate(sampler: JavaScriptTestCaseSampler, depth: number): MethodCall {
+    const arguments_ = this.args.map((a: Statement) => a.copy());
+    let constructor_ = this.constructor_.copy();
+    const index = prng.nextInt(0, arguments_.length);
 
-    return new Getter(
+    if (index < arguments_.length) {
+      // go over each arg
+      arguments_[index] = arguments_[index].mutate(sampler, depth + 1);
+    } else {
+      constructor_ = constructor_.mutate(sampler, depth + 1);
+    }
+
+    return new MethodCall(
       this.variableIdentifier,
       this.typeIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
+      arguments_,
       constructor_
     );
   }
 
-  copy(): Getter {
-    return new Getter(
+  copy(): MethodCall {
+    const deepCopyArguments = this.args.map((a: Statement) => a.copy());
+
+    return new MethodCall(
       this.variableIdentifier,
       this.typeIdentifier,
       this.name,
       this.type,
       this.uniqueId,
-      this.constructor_
+      deepCopyArguments,
+      this.constructor_.copy()
     );
   }
 
@@ -85,7 +100,13 @@ export class Getter extends ClassActionStatement {
     id: string,
     options: { addLogs: boolean; exception: boolean }
   ): Decoding[] {
-    let decoded = `const ${this.varName} = await ${this.constructor_.varName}.${this.name}`;
+    const arguments_ = this.args.map((a) => a.varName).join(", ");
+
+    const argumentStatements: Decoding[] = this.args.flatMap((a) =>
+      a.decode(decoder, id, options)
+    );
+
+    let decoded = `const ${this.varName} = await ${this.constructor_.varName}.${this.name}(${arguments_})`;
 
     if (options.addLogs) {
       const logDirectory = decoder.getLogDirectory(id, this.varName);
@@ -94,6 +115,7 @@ export class Getter extends ClassActionStatement {
 
     return [
       ...this.constructor_.decode(decoder, id, options),
+      ...argumentStatements,
       {
         decoded: decoded,
         reference: this,
@@ -103,6 +125,7 @@ export class Getter extends ClassActionStatement {
 
   // TODO
   decodeErroring(): string {
-    return `await expect(${this.constructor_.varName}.${this.name}).to.be.rejectedWith(Error);`;
+    const arguments_ = this.args.map((a) => a.varName).join(", ");
+    return `await expect(${this.constructor_.varName}.${this.name}(${arguments_})).to.be.rejectedWith(Error);`;
   }
 }
