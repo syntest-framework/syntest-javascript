@@ -329,7 +329,15 @@ export class RelationVisitor extends AbstractSyntaxTreeVisitor {
   ) => void = (path) => {
     const type = RelationType.FunctionDefinition;
     // no id for arrow functions
-    this._createRelation(path, type, [path, ...path.get("params")]);
+
+    if (path.parentPath.isVariableDeclarator()) {
+      this._createRelation(path, type, [
+        path.parentPath,
+        ...path.get("params"),
+      ]);
+    } else {
+      this._createRelation(path, type, [path, ...path.get("params")]);
+    }
   };
 
   public ClassExpression: (path: NodePath<t.ClassExpression>) => void = (

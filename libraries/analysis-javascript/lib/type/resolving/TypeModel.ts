@@ -100,6 +100,19 @@ export class TypeModel {
     });
   }
 
+  setEqual(id1: string, id2: string) {
+    //TODO maybe merge
+    this._relationScoreMap.set(id2, this._relationScoreMap.get(id1));
+    this._elementTypeScoreMap.set(id2, this._elementTypeScoreMap.get(id1));
+    this._elementTypeProbabilityMap.set(
+      id2,
+      this._elementTypeProbabilityMap.get(id1)
+    );
+    this._typeExecutionScoreMap.set(id2, this._typeExecutionScoreMap.get(id1));
+    this._scoreHasChangedMap.set(id2, this._scoreHasChangedMap.get(id1));
+    this._objectTypeDescription.set(id2, this._objectTypeDescription.get(id1));
+  }
+
   private _addRelationScore(id1: string, id2: string, score: number) {
     if (!this._relationScoreMap.has(id1)) {
       throw new Error(`Element ${id1} does not exist`);
@@ -215,14 +228,15 @@ export class TypeModel {
   getRandomType(
     incorporateExecutionScore: boolean,
     randomTypeProbability: number,
-    id: string,
-    matchType?: TypeEnum
+    id: string
   ): string {
     const probabilities = this.calculateProbabilitiesForElement(
       incorporateExecutionScore,
       id
     );
 
+    // console.log(id)
+    // console.log(probabilities)
     const genericTypes = [
       TypeEnum.ARRAY,
       TypeEnum.BOOLEAN,
@@ -249,17 +263,8 @@ export class TypeModel {
       ]);
     }
 
-    let matchingTypes = [...probabilities.entries()];
-    let totalProbability = 1;
-
-    if (matchType) {
-      matchingTypes = matchingTypes.filter(([type]) =>
-        type.endsWith(matchType)
-      );
-      totalProbability = this._sum(
-        matchingTypes.map(([, probability]) => probability)
-      );
-    }
+    const matchingTypes = [...probabilities.entries()];
+    const totalProbability = 1;
 
     const choice = prng.nextDouble(0, totalProbability);
     let index = 0;
@@ -280,8 +285,7 @@ export class TypeModel {
   getHighestProbabilityType(
     incorporateExecutionScore: boolean,
     randomTypeProbability: number,
-    id: string,
-    matchType?: TypeEnum
+    id: string
   ): string {
     const probabilities = this.calculateProbabilitiesForElement(
       incorporateExecutionScore,
@@ -311,15 +315,7 @@ export class TypeModel {
       ]);
     }
 
-    let matchingTypes = probabilities;
-
-    if (matchType) {
-      matchingTypes = new Map(
-        [...matchingTypes.entries()].filter(([type]) =>
-          type.endsWith(matchType)
-        )
-      );
-    }
+    const matchingTypes = probabilities;
 
     let best: string = matchingTypes.keys().next().value;
 

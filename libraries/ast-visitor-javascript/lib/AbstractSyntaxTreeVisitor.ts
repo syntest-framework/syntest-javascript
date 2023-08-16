@@ -342,24 +342,4 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
 
   //   return this._thisScopeStackNames[this._thisScopeStackNames.length - 1];
   // }
-
-  protected _getNameFromNode(node: t.Node): string {
-    if (node.type === "Identifier") {
-      return node.name;
-    }
-
-    if ("name" in node) {
-      if (typeof node.name === "string") {
-        return node.name;
-      } else if (node.name.type === "JSXMemberExpression") {
-        return "anon";
-      } else if (node.name.type === "JSXNamespacedName") {
-        return node.name.name.name;
-      } else {
-        return node.name.name;
-      }
-    }
-
-    return "anon";
-  }
 }

@@ -171,6 +171,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
       RelationType.ObjectProperty,
 
       RelationType.Return,
+      RelationType.Call,
 
       RelationType.PropertyAccessor,
       RelationType.OptionalPropertyAccessor,
@@ -235,7 +236,6 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
           this._typeModel.addRelationScore(relationId, returnValueId);
         }
 
-        // TODO
         // couple function arguments with function parameters
         if (type && type.parameters.size > 0) {
           const smallest = Math.min(arguments_.length, type.parameters.size);
@@ -515,7 +515,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
           throw new Error(`Function definition has no involved elements`);
         }
         const functionId = relationId;
-        const [_identifierId, ...parameters] = involved;
+        const [identifierId, ...parameters] = involved;
 
         this.addFunctionParameters(
           elementMap,
@@ -525,7 +525,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         );
 
         // connect function to identifier
-        this._typeModel.addRelationScore(functionId, _identifierId);
+        this._typeModel.setEqual(functionId, identifierId);
 
         break;
       }
