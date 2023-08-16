@@ -167,8 +167,8 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
       // so the binding id is equal to the object of the member expression relation + the id of the property
       // e.g. bar.foo
       return (
-        this._getBindingId(path.parentPath.get("object")) +
-        " <-> " +
+        // this._getBindingId(path.parentPath.get("object")) +
+        // " <-> " +
         this._getNodeId(path)
       );
     }

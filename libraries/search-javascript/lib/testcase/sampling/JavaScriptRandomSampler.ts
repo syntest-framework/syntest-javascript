@@ -471,7 +471,6 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   sampleArgument(depth: number, id: string, name: string): Statement {
     let chosenType: string;
 
-    console.log(id, name);
     switch (this.typeInferenceMode) {
       case "none": {
         chosenType = this.rootContext
@@ -508,7 +507,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
         );
       }
     }
-    console.log("type", chosenType);
+
     if (chosenType.endsWith("object")) {
       return this.sampleObject(depth, id, name, chosenType);
     } else if (chosenType.endsWith("array")) {
@@ -668,16 +667,6 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   sampleArray(depth: number, id: string, name: string, type: string) {
     const typeId = type.includes("<>") ? type.split("<>")[0] : id;
 
-    const typeObject = this.rootContext
-      .getTypeModel()
-      .getObjectDescription(typeId);
-
-    console.log("------------------");
-    console.log("id", id);
-    console.log("type", typeId);
-    console.log(typeObject.elements);
-    console.log("------------------");
-
     const children: Statement[] = [];
 
     for (
@@ -712,11 +701,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
     const parameters: string[] = [];
 
-    for (const [index, parameterId] of typeObject.parameters.entries()) {
-      const element = this.rootContext.getElement(parameterId);
-
-      const name = "name" in element ? element.name : element.value;
-
+    for (const [index, name] of typeObject.parameterNames.entries()) {
       parameters[index] = name;
     }
 

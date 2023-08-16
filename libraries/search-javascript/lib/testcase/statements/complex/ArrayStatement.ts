@@ -45,7 +45,6 @@ export class ArrayStatement extends Statement {
     // check for circular
     for (const [index, statement] of this._children.entries()) {
       if (statement && statement.uniqueId === this.uniqueId) {
-        console.log("circular detected");
         this._children.splice(index, 1);
       }
     }

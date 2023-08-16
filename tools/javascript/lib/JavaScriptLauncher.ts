@@ -363,7 +363,9 @@ export class JavaScriptLauncher extends Launcher {
 
     const startTypeResolving = Date.now();
     JavaScriptLauncher.LOGGER.info("Extracting types");
-    this.rootContext.extractTypes();
+    this.rootContext.getAllElements();
+    this.rootContext.getAllRelations();
+    this.rootContext.getAllObjectTypes();
     JavaScriptLauncher.LOGGER.info("Resolving types");
     this.rootContext.resolveTypes();
     timeInMs = (Date.now() - startTypeResolving) / 1000;

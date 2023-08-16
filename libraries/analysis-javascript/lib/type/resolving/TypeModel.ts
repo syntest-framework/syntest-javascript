@@ -59,6 +59,18 @@ export class TypeModel {
     this.addId("anon"); // should be removed at some point
   }
 
+  get relationScoreMap() {
+    return this._relationScoreMap;
+  }
+
+  get elementTypeScoreMap() {
+    return this._elementTypeScoreMap;
+  }
+
+  get typeExecutionScoreMap() {
+    return this._typeExecutionScoreMap;
+  }
+
   getObjectDescription(element: string): ObjectType {
     if (!this._objectTypeDescription.has(element)) {
       throw new Error(`Element ${element} does not have an object description`);
@@ -83,6 +95,7 @@ export class TypeModel {
       properties: new Map(),
       elements: new Set(),
       parameters: new Map(),
+      parameterNames: new Map(),
       return: new Set(),
     });
   }
@@ -148,9 +161,10 @@ export class TypeModel {
     this.getObjectDescription(element).properties.set(property, id);
   }
 
-  addParameterType(element: string, index: number, id: string) {
+  addParameterType(element: string, index: number, id: string, name: string) {
     this.addTypeScore(element, TypeEnum.FUNCTION);
     this.getObjectDescription(element).parameters.set(index, id);
+    this.getObjectDescription(element).parameterNames.set(index, name);
   }
 
   addReturnType(element: string, returnId: string) {
@@ -208,8 +222,6 @@ export class TypeModel {
       incorporateExecutionScore,
       id
     );
-
-    console.log(probabilities);
 
     const genericTypes = [
       TypeEnum.ARRAY,

@@ -16,7 +16,11 @@
  * limitations under the License.
  */
 
-import { Relation, RelationType } from "../discovery/relation/Relation";
+import {
+  Relation,
+  RelationType,
+  getRelationName,
+} from "../discovery/relation/Relation";
 import { elementTypeToTypingType, TypeEnum } from "./TypeEnum";
 import { TypeModelFactory } from "./TypeModelFactory";
 
@@ -26,35 +30,33 @@ import { TypeModel } from "./TypeModel";
 export class InferenceTypeModelFactory extends TypeModelFactory {
   private _typeModel: TypeModel;
 
-  private _elementMap: Map<string, Element>;
-  private _relationsMap: Map<string, Relation>;
-
   private _idToBindingIdMap: Map<string, string>;
-
-  // private _processedIds: Set<string>;
 
   constructor() {
     super();
-    this._elementMap = new Map();
-    this._relationsMap = new Map();
-
-    this._idToBindingIdMap = new Map();
-
-    // this._processedIds = new Set();
   }
 
   resolveTypes(
-    elementMap: Map<string, Element>,
-    relationMap: Map<string, Relation>
+    elementMaps: Map<string, Map<string, Element>>,
+    relationMaps: Map<string, Map<string, Relation>>
   ) {
     this._typeModel = new TypeModel();
-    this._elementMap = elementMap;
-    this._relationsMap = relationMap;
+    this._idToBindingIdMap = new Map();
 
-    this.createLiteralTypeMaps(elementMap);
-    this.createIdentifierTypeMaps(elementMap);
-    this.createRelationTypeMaps(relationMap);
-    this.inferRelationTypes(relationMap);
+    for (const filepath of elementMaps.keys()) {
+      const elementMap = elementMaps.get(filepath);
+      const relationMap = relationMaps.get(filepath);
+
+      if (!elementMap || !relationMap) {
+        throw new Error(
+          "Filepath should exist in both the element and relation map"
+        );
+      }
+      this.createLiteralTypeMaps(elementMap);
+      this.createIdentifierTypeMaps(elementMap);
+      this.createRelationTypeMaps(elementMap, relationMap);
+      this.inferRelationTypes(elementMap, relationMap);
+    }
 
     // TODO check for array/function/string type
 
@@ -114,14 +116,17 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
     }
   }
 
-  createRelationTypeMaps(relationMap: Map<string, Relation>) {
+  createRelationTypeMaps(
+    elementMap: Map<string, Element>,
+    relationMap: Map<string, Relation>
+  ) {
     for (const relation of relationMap.values()) {
       this.createNewTypeProbability(relation.id, relation.id);
 
       for (let index = 0; index < relation.involved.length; index++) {
         const involvedId = relation.involved[index];
-        if (this._elementMap.has(involvedId)) {
-          const element = this._elementMap.get(involvedId);
+        if (elementMap.has(involvedId)) {
+          const element = elementMap.get(involvedId);
 
           if (element.type === ElementType.Identifier) {
             this.createNewTypeProbability(element.id, element.bindingId);
@@ -136,7 +141,10 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
     }
   }
 
-  inferRelationTypes(relationMap: Map<string, Relation>) {
+  inferRelationTypes(
+    elementMap: Map<string, Element>,
+    relationMap: Map<string, Relation>
+  ) {
     const solveOrder = [
       RelationType.ClassDefinition,
       RelationType.ObjectPattern,
@@ -181,19 +189,15 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
     });
 
     for (const relation of sortedRelations) {
-      this.resolveRelation(relation);
+      this.resolveRelation(elementMap, relationMap, relation);
     }
   }
 
-  getElement(id: string): Element {
-    return this._elementMap.get(id);
-  }
-
-  getRelation(id: string): Relation {
-    return this._relationsMap.get(id);
-  }
-
-  resolveRelation(relation: Relation): void {
+  resolveRelation(
+    elementMap: Map<string, Element>,
+    relationMap: Map<string, Relation>,
+    relation: Relation
+  ): void {
     const relationId = relation.id;
     const relationType: RelationType = relation.type;
     const originalInvolved: string[] = relation.involved;
@@ -252,7 +256,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
       case RelationType.ObjectProperty: {
         const [propertyId, valueId] = involved;
 
-        const propertyElement = this._elementMap.get(propertyId);
+        const propertyElement = elementMap.get(propertyId);
 
         if (propertyElement) {
           const propertyName =
@@ -276,18 +280,19 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         const [functionId, ...parameters] = involved;
 
         // TODO what if the property is not an element
-        const propertyElement = this._elementMap.get(functionId);
+        const propertyElement = elementMap.get(functionId);
         const propertyName =
           "name" in propertyElement
             ? propertyElement.name
             : propertyElement.value;
 
         this._typeModel.addPropertyType(relationId, propertyName, functionId);
-
-        // create function type
-        for (const [index, id] of parameters.entries()) {
-          this._typeModel.addParameterType(functionId, index, id);
-        }
+        this.addFunctionParameters(
+          elementMap,
+          relationMap,
+          functionId,
+          parameters
+        );
 
         break;
       }
@@ -305,7 +310,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         const valueId = involved[2];
 
         // TODO what if the property is not an element
-        const propertyElement = this.getElement(propertyId);
+        const propertyElement = elementMap.get(propertyId);
         const propertyName =
           "name" in propertyElement
             ? propertyElement.name
@@ -350,9 +355,12 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
 
         // TODO maybe not for setter / getter
         // make function for the method
-        for (const [index, id] of parameters.entries()) {
-          this._typeModel.addParameterType(functionId, index, id);
-        }
+        this.addFunctionParameters(
+          elementMap,
+          relationMap,
+          functionId,
+          parameters
+        );
 
         break;
       }
@@ -509,12 +517,15 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         const functionId = relationId;
         const [_identifierId, ...parameters] = involved;
 
-        for (const [index, id] of parameters.entries()) {
-          this._typeModel.addParameterType(functionId, index, id);
-        }
+        this.addFunctionParameters(
+          elementMap,
+          relationMap,
+          functionId,
+          parameters
+        );
 
-        // connect function to relation
-        this._typeModel.addRelationScore(functionId, relationId);
+        // connect function to identifier
+        this._typeModel.addRelationScore(functionId, _identifierId);
 
         break;
       }
@@ -536,7 +547,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         const [objectId, propertyId] = involved;
         const [, originalProperty] = originalInvolved;
 
-        const propertyElement = this.getElement(originalProperty);
+        const propertyElement = elementMap.get(originalProperty);
 
         // TODO
         // we add these scores by default because it is likely a string/object/array
@@ -934,6 +945,31 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         // TODO
         break;
       }
+    }
+  }
+
+  private addFunctionParameters(
+    elementMap: Map<string, Element>,
+    relationMap: Map<string, Relation>,
+    functionId: string,
+    parameters: string[]
+  ) {
+    // create function type
+    for (const [index, id] of parameters.entries()) {
+      let name: string;
+      const element = elementMap.get(id);
+      if (element) {
+        name = "name" in element ? element.name : element.value;
+      }
+      if (!name) {
+        const relation = relationMap.get(id);
+        if (relation) {
+          name = getRelationName(relation.type);
+        } else {
+          throw new Error(`Could not find element or relation with id ${id}`);
+        }
+      }
+      this._typeModel.addParameterType(functionId, index, id, name);
     }
   }
 }

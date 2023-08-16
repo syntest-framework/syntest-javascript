@@ -27,6 +27,8 @@ export interface ObjectType {
   // function
   // index -> id
   parameters: Map<number, string>;
+  // index -> name
+  parameterNames: Map<number, string>;
   // id
   return: Set<string>;
 }
