@@ -184,6 +184,16 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
     }
 
     if (
+      path.parentPath.isExportSpecifier() &&
+      path.parentPath.get("exported") === path
+    ) {
+      // we are the export name of a renamed export
+      // so this is the first definition of foo
+      // e.g. export {bar as foo}
+      return this._getNodeId(path);
+    }
+
+    if (
       (path.parentPath.isObjectProperty() ||
         path.parentPath.isObjectMethod()) &&
       path.parentPath.get("key") === path
@@ -240,15 +250,15 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
 
   public _getThisParent(
     path: NodePath<t.Node>
-  ): NodePath<
-    t.FunctionDeclaration | t.FunctionExpression | t.ObjectMethod | t.Class
-  > {
+  ):
+    | NodePath<
+        t.FunctionDeclaration | t.FunctionExpression | t.ObjectMethod | t.Class
+      >
+    | undefined {
     let parent = path.getFunctionParent();
 
     if (parent === undefined || parent === null) {
-      throw new Error(
-        `ThisExpression must be inside a function: ${this._getNodeId(path)}`
-      );
+      return undefined;
     }
 
     while (parent.isArrowFunctionExpression()) {
@@ -256,9 +266,7 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
       parent = parent.getFunctionParent();
 
       if (parent === undefined || parent === null) {
-        throw new Error(
-          `ThisExpression must be inside a function: ${this._getNodeId(path)}`
-        );
+        return undefined;
       }
     }
 

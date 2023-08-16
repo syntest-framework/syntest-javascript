@@ -35,6 +35,9 @@ export function extractExportsFromExportDefaultDeclaration(
   if (declaration.isIdentifier()) {
     name = declaration.node.name;
     id = visitor._getBindingId(declaration);
+  } else if (declaration.isLiteral()) {
+    name = "default";
+    id = visitor._getNodeId(declaration);
   } else if (declaration.isNewExpression()) {
     if (declaration.node.callee.type !== "Identifier") {
       // unsupported
