@@ -431,21 +431,12 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   }
 
   // arguments
-  sampleArrayArgument(
-    depth: number,
-    arrayId: string,
-    index: number
-  ): Statement {
+  sampleArrayArgument(depth: number, arrayId: string): Statement {
     const arrayType = this.rootContext
       .getTypeModel()
       .getObjectDescription(arrayId);
 
-    const element = arrayType.elements.get(index);
-    if (element) {
-      return this.sampleArgument(depth, element, String(index));
-    }
-
-    const childIds = [...arrayType.elements.values()];
+    const childIds = [...arrayType.elements];
 
     if (childIds.length === 0) {
       // TODO should be done in the typemodel somehow
@@ -454,7 +445,8 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       return this.sampleArgument(depth, "anon", "anon");
     }
 
-    return this.sampleArgument(depth, prng.pickOne(childIds), String(index));
+    const element = prng.pickOne(childIds);
+    return this.sampleArgument(depth, element, "");
   }
 
   sampleObjectArgument(
@@ -479,6 +471,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   sampleArgument(depth: number, id: string, name: string): Statement {
     let chosenType: string;
 
+    console.log(id, name);
     switch (this.typeInferenceMode) {
       case "none": {
         chosenType = this.rootContext
@@ -515,7 +508,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
         );
       }
     }
-
+    console.log("type", chosenType);
     if (chosenType.endsWith("object")) {
       return this.sampleObject(depth, id, name, chosenType);
     } else if (chosenType.endsWith("array")) {
@@ -679,30 +672,20 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       .getTypeModel()
       .getObjectDescription(typeId);
 
+    console.log("------------------");
+    console.log("id", id);
+    console.log("type", typeId);
+    console.log(typeObject.elements);
+    console.log("------------------");
+
     const children: Statement[] = [];
 
-    for (const [index] of typeObject.elements.entries()) {
-      children[index] = this.sampleArrayArgument(depth + 1, id, index);
-    }
-
-    // TODO should be done in the typemodel somehow
-    // maybe create types for the subproperties by doing /main/array/id::1::1[element-index]
-    // maybe create types for the subproperties by doing /main/array/id::1::1.property
-
-    if (children.length === 0) {
-      children.push(this.sampleArrayArgument(depth + 1, id, 0));
-    }
-
-    // if some children are missing, fill them with fake params
-    const childIds = [...typeObject.elements.values()];
-    for (let index = 0; index < children.length; index++) {
-      if (!children[index]) {
-        children[index] = this.sampleArgument(
-          depth + 1,
-          prng.pickOne(childIds),
-          String(index)
-        );
-      }
+    for (
+      let index = 0;
+      index < prng.nextInt(0, this.maxActionStatements);
+      index++
+    ) {
+      children.push(this.sampleArrayArgument(depth + 1, typeId));
     }
 
     return new ArrayStatement(

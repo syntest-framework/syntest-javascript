@@ -211,16 +211,16 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
 
         if (argumentId !== undefined) {
           this._typeModel.addRelationScore(relationId, argumentId);
-          this._typeModel.addReturn(functionId, argumentId);
+          this._typeModel.addReturnType(functionId, argumentId);
         }
 
         break;
       }
       case RelationType.Call: {
         // TODO currently not possible because of the way the relations are created
-        // const [functionId, ...arguments_] = involved;
+        const [functionId, ...arguments_] = involved;
 
-        const [functionId] = involved;
+        // const [functionId] = involved;
 
         this._typeModel.addTypeScore(functionId, TypeEnum.FUNCTION);
 
@@ -232,15 +232,16 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         }
 
         // TODO
-        // // couple function arguments with function parameters
-        // if (arguments_.length > type.parameters.size) {
-        //   throw new Error(`Function ${functionId} has ${type.parameters.size} parameters, but was called with ${arguments_.length} arguments`)
-        // }
+        // couple function arguments with function parameters
+        if (type && type.parameters.size > 0) {
+          const smallest = Math.min(arguments_.length, type.parameters.size);
 
-        // for (const [index, argumentId] of arguments_.entries()) {
-        //   const parameterId = type.parameters.get(index)
-        //   this._typeModel.addRelationScore(parameterId, argumentId)
-        // }
+          for (let index = 0; index < smallest; index++) {
+            const argumentId = arguments_[index];
+            const parameterId = type.parameters.get(index);
+            this._typeModel.addRelationScore(parameterId, argumentId);
+          }
+        }
 
         break;
       }
@@ -259,7 +260,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
               ? propertyElement.name
               : propertyElement.value;
 
-          this._typeModel.addProperty(relationId, propertyName, propertyId);
+          this._typeModel.addPropertyType(relationId, propertyName, propertyId);
         } else {
           // TODO what if the property is not an element (spread element for example)
         }
@@ -281,11 +282,11 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
             ? propertyElement.name
             : propertyElement.value;
 
-        this._typeModel.addProperty(relationId, propertyName, functionId);
+        this._typeModel.addPropertyType(relationId, propertyName, functionId);
 
         // create function type
         for (const [index, id] of parameters.entries()) {
-          this._typeModel.addParameter(functionId, index, id);
+          this._typeModel.addParameterType(functionId, index, id);
         }
 
         break;
@@ -311,7 +312,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
             : propertyElement.value;
 
         // make object for the class
-        this._typeModel.addProperty(classId, propertyName, propertyId);
+        this._typeModel.addPropertyType(classId, propertyName, propertyId);
 
         // connect property to value
         if (valueId !== undefined) {
@@ -350,7 +351,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         // TODO maybe not for setter / getter
         // make function for the method
         for (const [index, id] of parameters.entries()) {
-          this._typeModel.addParameter(functionId, index, id);
+          this._typeModel.addParameterType(functionId, index, id);
         }
 
         break;
@@ -361,8 +362,8 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
 
         this._typeModel.addTypeScore(relationId, TypeEnum.ARRAY);
         // create array type
-        for (const [index, id] of elements.entries()) {
-          this._typeModel.addElement(relationId, index, id);
+        for (const id of elements) {
+          this._typeModel.addElementType(relationId, id);
         }
 
         break;
@@ -470,8 +471,8 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         const elements = involved;
 
         // create array type
-        for (const [index, id] of elements.entries()) {
-          this._typeModel.addElement(relationId, index, id);
+        for (const id of elements) {
+          this._typeModel.addElementType(relationId, id);
         }
 
         break;
@@ -509,7 +510,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         const [_identifierId, ...parameters] = involved;
 
         for (const [index, id] of parameters.entries()) {
-          this._typeModel.addParameter(functionId, index, id);
+          this._typeModel.addParameterType(functionId, index, id);
         }
 
         // connect function to relation
@@ -552,18 +553,22 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
           // e.g. object[0]
           // add array type to object
           this._typeModel.addTypeScore(objectId, TypeEnum.ARRAY);
-          this._typeModel.addTypeScore(objectId, TypeEnum.STRING);
+          this._typeModel.addElementType(objectId, relationId);
         } else if (propertyElement.type === ElementType.StringLiteral) {
           // e.g. object["abc"]
           // add array type to object
           this._typeModel.addTypeScore(objectId, TypeEnum.OBJECT);
+          this._typeModel.addPropertyType(
+            objectId,
+            propertyElement.value,
+            propertyId
+          );
         } else {
-          const propertyName =
-            "name" in propertyElement
-              ? propertyElement.name
-              : propertyElement.value;
-
-          this._typeModel.addProperty(objectId, propertyName, propertyId);
+          // const propertyName =
+          //   "name" in propertyElement
+          //     ? propertyElement.name
+          //     : propertyElement.value;
+          // this._typeModel.addProperty(objectId, propertyName, propertyId);
         }
 
         // we don't have to connect the relationid to the propertyId since they are equal already

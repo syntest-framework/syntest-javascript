@@ -81,7 +81,7 @@ export class TypeModel {
 
     this._objectTypeDescription.set(id, {
       properties: new Map(),
-      elements: new Map(),
+      elements: new Set(),
       parameters: new Map(),
       return: new Set(),
     });
@@ -114,22 +114,21 @@ export class TypeModel {
     if (!this._elementTypeScoreMap.get(id).has(type)) {
       this._elementTypeScoreMap.get(id).set(type, 0);
     }
+    if (!this._typeExecutionScoreMap.get(id).has(type)) {
+      this._typeExecutionScoreMap.get(id).set(type, 0);
+    }
 
     const currentScore = this._elementTypeScoreMap.get(id).get(type);
 
     this._elementTypeScoreMap.get(id).set(type, currentScore + score);
     this._scoreHasChangedMap.set(id, true);
 
-    if (!this._typeExecutionScoreMap.get(id).has(type)) {
-      this._typeExecutionScoreMap.get(id).set(type, 0);
-    }
-
     if (type === TypeEnum.NUMERIC) {
       this.addTypeScore(id, TypeEnum.INTEGER, score);
     }
   }
 
-  addProperty(element: string, property: string, id: string) {
+  addPropertyType(element: string, property: string, id: string) {
     // check if the property is from a string/array/function
 
     if (functionProperties.has(property)) {
@@ -149,19 +148,19 @@ export class TypeModel {
     this.getObjectDescription(element).properties.set(property, id);
   }
 
-  addParameter(element: string, index: number, id: string) {
+  addParameterType(element: string, index: number, id: string) {
     this.addTypeScore(element, TypeEnum.FUNCTION);
     this.getObjectDescription(element).parameters.set(index, id);
   }
 
-  addReturn(element: string, returnId: string) {
+  addReturnType(element: string, returnId: string) {
     this.addTypeScore(element, TypeEnum.FUNCTION);
     this.getObjectDescription(element).return.add(returnId);
   }
 
-  addElement(element: string, index: number, id: string) {
+  addElementType(element: string, id: string) {
     this.addTypeScore(element, TypeEnum.ARRAY);
-    this.getObjectDescription(element).elements.set(index, id);
+    this.getObjectDescription(element).elements.add(id);
   }
 
   // TODO type should be TypeEnum?
@@ -210,6 +209,8 @@ export class TypeModel {
       id
     );
 
+    console.log(probabilities);
+
     const genericTypes = [
       TypeEnum.ARRAY,
       TypeEnum.BOOLEAN,
@@ -227,7 +228,10 @@ export class TypeModel {
       return prng.pickOne(genericTypes);
     }
 
-    if (prng.nextBoolean(randomTypeProbability)) {
+    if (
+      this._sum(probabilities.values()) === 0 ||
+      prng.nextBoolean(randomTypeProbability)
+    ) {
       return prng.pickOne([
         ...new Set([...probabilities.keys(), ...genericTypes]),
       ]);
@@ -387,6 +391,10 @@ export class TypeModel {
       totalScore += score;
     }
 
+    if (totalScore === 0) {
+      totalScore = 1;
+    }
+
     for (const [type, score] of typeScoreMap.entries()) {
       probabilityMap.set(type, score / totalScore);
     }
@@ -434,15 +442,6 @@ export class TypeModel {
       }
     }
 
-    // sanity check
-    // const totalProbability = this._sum(probabilityMap.values());
-
-    // if (Math.abs(totalProbability - 1) > 0.0001) {
-    //   throw new Error(
-    //     `Total probability should be 1, but is ${totalProbability}`
-    //   );
-    // }
-
     // incorporate execution scores
     const executionScoreMap = this._typeExecutionScoreMap.get(id);
 
@@ -454,10 +453,7 @@ export class TypeModel {
 
       let totalScore = 0;
       for (const type of probabilityMap.keys()) {
-        let score = executionScoreMap.has(type)
-          ? executionScoreMap.get(type)
-          : 0;
-
+        let score = executionScoreMap.get(type) ?? 0;
         score -= minValue;
         score += 1;
         totalScore += score;
@@ -469,6 +465,10 @@ export class TypeModel {
 
       if (totalScore === 0) {
         throw new Error("Total score should be positive");
+      }
+
+      if (Number.isNaN(totalScore)) {
+        throw new TypeError("Total score should be positive");
       }
 
       // incorporate execution score
@@ -485,17 +485,17 @@ export class TypeModel {
 
         probabilityMap.set(type, newProbability);
       }
+    }
 
-      // normalize to 1
-      let totalProbability = 0;
-      for (const probability of probabilityMap.values()) {
-        totalProbability += probability;
-      }
+    // normalize to 1
+    let totalProbability = 0;
+    for (const probability of probabilityMap.values()) {
+      totalProbability += probability;
+    }
 
-      if (totalProbability !== 0) {
-        for (const [type, probability] of probabilityMap.entries()) {
-          probabilityMap.set(type, probability / totalProbability);
-        }
+    if (totalProbability !== 0) {
+      for (const [type, probability] of probabilityMap.entries()) {
+        probabilityMap.set(type, probability / totalProbability);
       }
     }
 

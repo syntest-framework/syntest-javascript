@@ -64,7 +64,7 @@ export class ArrayStatement extends Statement {
           children.splice(
             index,
             0,
-            sampler.sampleArrayArgument(depth + 1, this.typeIdentifier, index)
+            sampler.sampleArrayArgument(depth + 1, this.typeIdentifier)
           );
         } else if (choice < 0.66) {
           // 33% chance to remove a child on this position
@@ -76,13 +76,13 @@ export class ArrayStatement extends Statement {
           children.splice(
             index,
             1,
-            sampler.sampleArrayArgument(depth + 1, this.typeIdentifier, index)
+            sampler.sampleArrayArgument(depth + 1, this.typeIdentifier)
           );
         }
       } else {
         // no children found so we always add
         children.push(
-          sampler.sampleArrayArgument(depth + 1, this.typeIdentifier, 0)
+          sampler.sampleArrayArgument(depth + 1, this.typeIdentifier)
         );
       }
 

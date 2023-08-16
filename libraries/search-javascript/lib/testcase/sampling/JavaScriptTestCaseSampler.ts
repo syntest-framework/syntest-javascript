@@ -240,11 +240,7 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
   // TODO
   // abstract sampleStaticMethodCall(depth: number): MethodCall;
 
-  abstract sampleArrayArgument(
-    depth: number,
-    arrayId: string,
-    index?: number
-  ): Statement;
+  abstract sampleArrayArgument(depth: number, arrayId: string): Statement;
 
   abstract sampleObjectArgument(
     depth: number,
