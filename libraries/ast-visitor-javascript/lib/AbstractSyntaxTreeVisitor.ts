@@ -246,7 +246,9 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
     let parent = path.getFunctionParent();
 
     if (parent === undefined || parent === null) {
-      throw new Error("ThisExpression must be inside a function");
+      throw new Error(
+        `ThisExpression must be inside a function: ${this._getNodeId(path)}`
+      );
     }
 
     while (parent.isArrowFunctionExpression()) {
@@ -254,7 +256,9 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
       parent = parent.getFunctionParent();
 
       if (parent === undefined || parent === null) {
-        throw new Error("ThisExpression must be inside a function");
+        throw new Error(
+          `ThisExpression must be inside a function: ${this._getNodeId(path)}`
+        );
       }
     }
 
