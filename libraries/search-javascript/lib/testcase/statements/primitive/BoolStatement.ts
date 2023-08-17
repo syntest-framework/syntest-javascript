@@ -28,41 +28,46 @@ import { Statement } from "../Statement";
  */
 export class BoolStatement extends PrimitiveStatement<boolean> {
   constructor(
-    id: string,
+    variableIdentifier: string,
+    typeIdentifier: string,
     name: string,
     type: string,
     uniqueId: string,
     value: boolean
   ) {
-    super(id, name, type, uniqueId, value);
+    super(variableIdentifier, typeIdentifier, name, type, uniqueId, value);
     this._classType = "BoolStatement";
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
-    if (prng.nextBoolean(sampler.resampleGeneProbability)) {
-      return sampler.sampleArgument(depth + 1, this.id, this.name);
+    if (prng.nextBoolean(sampler.deltaMutationProbability)) {
+      // 80%
+      return new BoolStatement(
+        this.variableIdentifier,
+        this.typeIdentifier,
+        this.name,
+        this.type,
+        prng.uniqueId(),
+        !this.value
+      );
+    } else {
+      // 20%
+      return sampler.sampleArgument(
+        depth + 1,
+        this.variableIdentifier,
+        this.name
+      );
     }
-
-    return new BoolStatement(
-      this.id,
-      this.name,
-      this.type,
-      prng.uniqueId(),
-      !this.value
-    );
   }
 
   copy(): BoolStatement {
     return new BoolStatement(
-      this.id,
+      this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       this.uniqueId,
       this.value
     );
-  }
-
-  getFlatTypes(): string[] {
-    return ["bool"];
   }
 }

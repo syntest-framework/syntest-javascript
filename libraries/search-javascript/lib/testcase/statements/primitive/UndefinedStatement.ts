@@ -25,30 +25,53 @@ import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSamp
 /**
  * @author Dimitri Stallenberg
  */
-export class UndefinedStatement extends PrimitiveStatement<boolean> {
-  constructor(id: string, name: string, type: string, uniqueId: string) {
-    // eslint-disable-next-line unicorn/no-useless-undefined
-    super(id, name, type, uniqueId, undefined);
+export class UndefinedStatement extends PrimitiveStatement<undefined> {
+  constructor(
+    variableIdentifier: string,
+    typeIdentifier: string,
+    name: string,
+    type: string,
+    uniqueId: string
+  ) {
+    super(
+      variableIdentifier,
+      typeIdentifier,
+      name,
+      type,
+      uniqueId,
+      // eslint-disable-next-line unicorn/no-useless-undefined
+      undefined
+    );
     this._classType = "UndefinedStatement";
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
-    if (prng.nextBoolean(sampler.resampleGeneProbability)) {
-      return sampler.sampleArgument(depth + 1, this.id, this.name);
+    if (prng.nextBoolean(sampler.deltaMutationProbability)) {
+      // 80%
+      return new UndefinedStatement(
+        this.variableIdentifier,
+        this.typeIdentifier,
+        this.name,
+        this.type,
+        prng.uniqueId()
+      );
+    } else {
+      // 20%
+      return sampler.sampleArgument(
+        depth + 1,
+        this.variableIdentifier,
+        this.name
+      );
     }
-    return new UndefinedStatement(
-      this.id,
-      this.name,
-      this.type,
-      prng.uniqueId()
-    );
   }
 
   copy(): UndefinedStatement {
-    return new UndefinedStatement(this.id, this.name, this.type, this.uniqueId);
-  }
-
-  getFlatTypes(): string[] {
-    return ["undefined"];
+    return new UndefinedStatement(
+      this.variableIdentifier,
+      this.typeIdentifier,
+      this.name,
+      this.type,
+      this.uniqueId
+    );
   }
 }

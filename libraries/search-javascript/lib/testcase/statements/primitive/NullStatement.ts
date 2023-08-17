@@ -26,25 +26,45 @@ import { Statement } from "../Statement";
  * @author Dimitri Stallenberg
  */
 export class NullStatement extends PrimitiveStatement<boolean> {
-  constructor(id: string, name: string, type: string, uniqueId: string) {
+  constructor(
+    variableIdentifier: string,
+    typeIdentifier: string,
+    name: string,
+    type: string,
+    uniqueId: string
+  ) {
     // eslint-disable-next-line unicorn/no-null
-    super(id, name, type, uniqueId, null);
+    super(variableIdentifier, typeIdentifier, name, type, uniqueId, null);
     this._classType = "NullStatement";
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
-    if (prng.nextBoolean(sampler.resampleGeneProbability)) {
-      return sampler.sampleArgument(depth + 1, this.id, this.name);
+    if (prng.nextBoolean(sampler.deltaMutationProbability)) {
+      // 80%
+      return new NullStatement(
+        this.variableIdentifier,
+        this.typeIdentifier,
+        this.name,
+        this.type,
+        prng.uniqueId()
+      );
+    } else {
+      // 20%
+      return sampler.sampleArgument(
+        depth + 1,
+        this.variableIdentifier,
+        this.name
+      );
     }
-
-    return new NullStatement(this.id, this.name, this.type, prng.uniqueId());
   }
 
   copy(): NullStatement {
-    return new NullStatement(this.id, this.name, this.type, this.uniqueId);
-  }
-
-  getFlatTypes(): string[] {
-    return ["null"];
+    return new NullStatement(
+      this.variableIdentifier,
+      this.typeIdentifier,
+      this.name,
+      this.type,
+      this.uniqueId
+    );
   }
 }

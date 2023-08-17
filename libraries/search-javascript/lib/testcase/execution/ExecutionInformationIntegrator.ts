@@ -21,6 +21,7 @@ import Mocha = require("mocha");
 import { JavaScriptTestCase } from "../JavaScriptTestCase";
 import { Statement } from "../statements/Statement";
 import { TypeModel } from "@syntest/analysis-javascript";
+import { Test } from "./TestExecutor";
 
 export class ExecutionInformationIntegrator {
   private _typeModel: TypeModel;
@@ -29,24 +30,24 @@ export class ExecutionInformationIntegrator {
     this._typeModel = typeModel;
   }
 
-  process(
-    testCase: JavaScriptTestCase,
-    testResult: Mocha.Test,
-    stats: Mocha.Stats
-  ) {
+  process(testCase: JavaScriptTestCase, testResult: Test, stats: Mocha.Stats) {
     if (stats.failures === 0) {
       return;
     }
 
-    const queue: Statement[] = [testCase.root];
+    const queue: Statement[] = testCase.roots;
 
     while (queue.length > 0) {
       const root = queue.pop();
       const children = root.getChildren();
 
       for (const child of children) {
-        if (testResult.err.message.includes(child.name)) {
-          this._typeModel.addExecutionScore(child.id, child.type, -1);
+        if (testResult.exception && testResult.exception.includes(child.name)) {
+          this._typeModel.addExecutionScore(
+            child.variableIdentifier,
+            child.type,
+            -1
+          );
         }
         queue.push(child);
       }

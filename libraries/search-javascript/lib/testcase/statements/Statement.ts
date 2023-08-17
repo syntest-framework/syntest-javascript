@@ -17,7 +17,6 @@
  */
 
 import { Encoding, EncodingSampler, shouldNeverHappen } from "@syntest/search";
-import { prng } from "@syntest/prng";
 
 import { JavaScriptDecoder } from "../../testbuilding/JavaScriptDecoder";
 
@@ -25,16 +24,21 @@ import { JavaScriptDecoder } from "../../testbuilding/JavaScriptDecoder";
  * @author Dimitri Stallenberg
  */
 export abstract class Statement {
-  private _id: string;
+  private _variableIdentifier: string;
+  private _typeIdentifier: string;
   private _name: string;
   private _type: string;
-  private _uniqueId: string;
-  private _varName: string;
+  protected _uniqueId: string;
+  protected _varName: string;
 
   protected _classType: string;
 
-  public get id(): string {
-    return this._id;
+  public get variableIdentifier(): string {
+    return this._variableIdentifier;
+  }
+
+  public get typeIdentifier(): string {
+    return this._typeIdentifier;
   }
 
   public get name(): string {
@@ -64,12 +68,14 @@ export abstract class Statement {
    * @param uniqueId
    */
   protected constructor(
-    id: string,
+    variableIdentifier: string,
+    typeIdentifier: string,
     name: string,
     type: string,
     uniqueId: string
   ) {
-    this._id = id;
+    this._variableIdentifier = variableIdentifier;
+    this._typeIdentifier = typeIdentifier;
     this._name = name;
     this._type = type;
     this._uniqueId = uniqueId;
@@ -78,10 +84,17 @@ export abstract class Statement {
       throw new Error(shouldNeverHappen("name cannot inlude <>"));
     }
 
-    this._varName = type.includes("<>")
-      ? name + "_" + type.split("<>")[1] + "_" + prng.uniqueId(4)
-      : name + "_" + type + "_" + prng.uniqueId(4);
-    this._varName = "_" + this.varName;
+    this._varName = "_" + this.generateVarName(name, type, uniqueId);
+  }
+
+  protected generateVarName(
+    name: string,
+    type: string,
+    uniqueId: string
+  ): string {
+    return type.includes("<>")
+      ? name + "_" + type.split("<>")[1] + "_" + uniqueId
+      : name + "_" + type + "_" + uniqueId;
   }
 
   /**
@@ -111,6 +124,16 @@ export abstract class Statement {
   abstract getChildren(): Statement[];
 
   /**
+   * Set a new child at a specified position
+   *
+   * WARNING: This function has side effects
+   *
+   * @param index the index position of the new child
+   * @param newChild the new child
+   */
+  abstract setChild(index: number, newChild: Statement): void;
+
+  /**
    * Decodes the statement
    */
   abstract decode(
@@ -118,8 +141,6 @@ export abstract class Statement {
     id: string,
     options: { addLogs: boolean; exception: boolean }
   ): Decoding[];
-
-  abstract getFlatTypes(): string[];
 }
 
 export interface Decoding {

@@ -22,6 +22,8 @@ export enum JavaScriptExecutionStatus {
   PASSED,
   FAILED,
   TIMED_OUT,
+  MEMORY_OVERFLOW,
+  INFINITE_LOOP,
 }
 
 /**
@@ -78,10 +80,18 @@ export class JavaScriptExecutionResult implements ExecutionResult {
    * @inheritDoc
    */
   public coversId(id: string): boolean {
+    if (
+      this._status === JavaScriptExecutionStatus.INFINITE_LOOP ||
+      this._status === JavaScriptExecutionStatus.MEMORY_OVERFLOW
+    ) {
+      return false;
+    }
+
     const trace = this._traces.find((trace) => trace.id === id);
 
     if (!trace) {
       if (id.startsWith("placeholder")) {
+        // TODO maybe this already fixed?
         // TODO stupit hack because the placeholder nodes we add in the cfg are not being registred by the instrumentation
         // should fix
         return false;

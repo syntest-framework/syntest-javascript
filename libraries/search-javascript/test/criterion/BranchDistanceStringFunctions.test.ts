@@ -70,7 +70,7 @@ describe("BranchDistance string functions", () => {
   });
 
   it("'abc'.endsWith('z') true", () => {
-    const condition = "'abc'.endsWith('e')";
+    const condition = "'abc'.endsWith('z')";
     const variables = {};
     const trueOrFalse = true;
 

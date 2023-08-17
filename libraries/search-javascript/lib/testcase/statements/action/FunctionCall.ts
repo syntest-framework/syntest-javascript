@@ -22,27 +22,37 @@ import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";
 
-import { RootStatement } from "./RootStatement";
+import { Export } from "@syntest/analysis-javascript";
+import { ActionStatement } from "./ActionStatement";
 
 /**
  * @author Dimitri Stallenberg
  */
-export class FunctionCall extends RootStatement {
+export class FunctionCall extends ActionStatement {
   /**
    * Constructor
-   * @param type the return identifierDescription of the function
    * @param uniqueId id of the gene
    * @param functionName the name of the function
    * @param args the arguments of the function
    */
   constructor(
-    id: string,
+    variableIdentifier: string,
+    typeIdentifier: string,
     name: string,
     type: string,
     uniqueId: string,
-    arguments_: Statement[]
+    arguments_: Statement[],
+    export_: Export
   ) {
-    super(id, name, type, uniqueId, arguments_, []);
+    super(
+      variableIdentifier,
+      typeIdentifier,
+      name,
+      type,
+      uniqueId,
+      arguments_,
+      export_
+    );
     this._classType = "FunctionCall";
   }
 
@@ -51,20 +61,18 @@ export class FunctionCall extends RootStatement {
     const arguments_ = this.args.map((a: Statement) => a.copy());
 
     if (arguments_.length > 0) {
-      // go over each arg
-      for (let index = 0; index < arguments_.length; index++) {
-        if (prng.nextBoolean(1 / arguments_.length)) {
-          arguments_[index] = arguments_[index].mutate(sampler, depth + 1);
-        }
-      }
+      const index = prng.nextInt(0, arguments_.length - 1);
+      arguments_[index] = arguments_[index].mutate(sampler, depth + 1);
     }
 
     return new FunctionCall(
-      this.id,
+      this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
-      arguments_
+      arguments_,
+      this.export
     );
   }
 
@@ -72,11 +80,13 @@ export class FunctionCall extends RootStatement {
     const deepCopyArguments = this.args.map((a: Statement) => a.copy());
 
     return new FunctionCall(
-      this.id,
+      this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       this.uniqueId,
-      deepCopyArguments
+      deepCopyArguments,
+      this.export
     );
   }
 

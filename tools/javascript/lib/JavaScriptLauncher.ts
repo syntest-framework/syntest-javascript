@@ -20,9 +20,7 @@ import * as path from "node:path";
 
 import { TestCommandOptions } from "./commands/test";
 import {
-  Export,
   TypeModelFactory,
-  RandomTypeModelFactory,
   InferenceTypeModelFactory,
   Target,
   AbstractSyntaxTreeFactory,
@@ -33,6 +31,9 @@ import {
   DependencyFactory,
   TypeExtractor,
   isExported,
+  ConstantPoolManager,
+  ConstantVisitor,
+  getAllFiles,
 } from "@syntest/analysis-javascript";
 import {
   ArgumentsObject,
@@ -76,9 +77,9 @@ import {
 } from "@syntest/search";
 import { Instrumenter } from "@syntest/instrumentation-javascript";
 import { getLogger, Logger } from "@syntest/logging";
-import { TargetType } from "@syntest/analysis";
 import { MetricManager } from "@syntest/metric";
 import { StorageManager } from "@syntest/storage";
+import traverse from "@babel/traverse";
 
 export type JavaScriptArguments = ArgumentsObject & TestCommandOptions;
 export class JavaScriptLauncher extends Launcher {
@@ -89,10 +90,12 @@ export class JavaScriptLauncher extends Launcher {
   private rootContext: RootContext;
   private archive: Archive<JavaScriptTestCase>;
 
-  private exports: Export[];
   private dependencyMap: Map<string, string[]>;
 
   private coveredInPath = new Map<string, Archive<JavaScriptTestCase>>();
+
+  private decoder: JavaScriptDecoder;
+  private runner: JavaScriptRunner;
 
   constructor(
     arguments_: JavaScriptArguments,
@@ -114,6 +117,17 @@ export class JavaScriptLauncher extends Launcher {
   async initialize(): Promise<void> {
     JavaScriptLauncher.LOGGER.info("Initialization started");
     const start = Date.now();
+
+    this.metricManager.recordProperty(
+      PropertyName.CONSTANT_POOL_ENABLED,
+      `${(<JavaScriptArguments>this.arguments_).constantPool.toString()}`
+    );
+    this.metricManager.recordProperty(
+      PropertyName.CONSTANT_POOL_PROBABILITY,
+      `${(<JavaScriptArguments>(
+        this.arguments_
+      )).constantPoolProbability.toString()}`
+    );
 
     this.storageManager.deleteTemporaryDirectories([
       [this.arguments_.testDirectory],
@@ -144,10 +158,7 @@ export class JavaScriptLauncher extends Launcher {
     const dependencyFactory = new DependencyFactory();
     const exportFactory = new ExportFactory();
     const typeExtractor = new TypeExtractor();
-    const typeResolver: TypeModelFactory =
-      (<JavaScriptArguments>this.arguments_).typeInferenceMode === "none"
-        ? new RandomTypeModelFactory()
-        : new InferenceTypeModelFactory();
+    const typeResolver: TypeModelFactory = new InferenceTypeModelFactory();
 
     this.rootContext = new RootContext(
       this.arguments_.targetRootDirectory,
@@ -182,13 +193,15 @@ export class JavaScriptLauncher extends Launcher {
 
   async preprocess(): Promise<void> {
     JavaScriptLauncher.LOGGER.info("Preprocessing started");
-    const start = Date.now();
+    const startPreProcessing = Date.now();
+
+    const startTargetSelection = Date.now();
     const targetSelector = new TargetSelector(this.rootContext);
     this.targets = targetSelector.loadTargets(
       this.arguments_.include,
       this.arguments_.exclude
     );
-    let timeInMs = (Date.now() - start) / 1000;
+    let timeInMs = (Date.now() - startTargetSelection) / 1000;
     this.metricManager.recordProperty(
       PropertyName.TARGET_LOAD_TIME,
       `${timeInMs}`
@@ -260,7 +273,6 @@ export class JavaScriptLauncher extends Launcher {
           "Delta Mutation Probability",
           `${this.arguments_.deltaMutationProbability}`,
         ],
-
         ["Crossover Probability", `${this.arguments_.crossoverProbability}`],
         [
           "Multi-point Crossover Probability",
@@ -270,6 +282,30 @@ export class JavaScriptLauncher extends Launcher {
         ["Max Depth", `${this.arguments_.maxDepth}`],
         ["Max Action Statements", `${this.arguments_.maxActionStatements}`],
         ["Explore Illegal Values", `${this.arguments_.exploreIllegalValues}`],
+        [
+          "Use Constant Pool Values",
+          `${(<JavaScriptArguments>this.arguments_).constantPool}`,
+        ],
+        [
+          "Use Constant Pool Probability",
+          `${(<JavaScriptArguments>this.arguments_).constantPoolProbability}`,
+        ],
+        [
+          "Use Type Pool Values",
+          `${(<JavaScriptArguments>this.arguments_).typePool}`,
+        ],
+        [
+          "Use Type Pool Probability",
+          `${(<JavaScriptArguments>this.arguments_).typePoolProbability}`,
+        ],
+        [
+          "Use Statement Pool Values",
+          `${(<JavaScriptArguments>this.arguments_).statementPool}`,
+        ],
+        [
+          "Use Statement Pool Probability",
+          `${(<JavaScriptArguments>this.arguments_).statementPoolProbability}`,
+        ],
       ],
       footers: ["", ""],
     };
@@ -330,26 +366,45 @@ export class JavaScriptLauncher extends Launcher {
     this.rootContext.extractTypes();
     JavaScriptLauncher.LOGGER.info("Resolving types");
     this.rootContext.resolveTypes();
-    JavaScriptLauncher.LOGGER.info("Preprocessing done");
-
     timeInMs = (Date.now() - startTypeResolving) / 1000;
     this.metricManager.recordProperty(
       PropertyName.TYPE_RESOLVE_TIME,
       `${timeInMs}`
     );
 
-    timeInMs = (Date.now() - start) / 1000;
+    timeInMs = (Date.now() - startPreProcessing) / 1000;
     this.metricManager.recordProperty(
       PropertyName.PREPROCESS_TIME,
       `${timeInMs}`
     );
+
+    this.decoder = new JavaScriptDecoder(
+      this.arguments_.targetRootDirectory,
+      path.join(
+        this.arguments_.tempSyntestDirectory,
+        this.arguments_.fid,
+        this.arguments_.logDirectory
+      )
+    );
+    const executionInformationIntegrator = new ExecutionInformationIntegrator(
+      this.rootContext.getTypeModel()
+    );
+    this.runner = new JavaScriptRunner(
+      this.storageManager,
+      this.decoder,
+      executionInformationIntegrator,
+      this.arguments_.testDirectory,
+      (<JavaScriptArguments>this.arguments_).executionTimeout,
+      (<JavaScriptArguments>this.arguments_).testTimeout
+    );
+
+    JavaScriptLauncher.LOGGER.info("Preprocessing done");
   }
 
   async process(): Promise<void> {
     JavaScriptLauncher.LOGGER.info("Processing started");
     const start = Date.now();
     this.archive = new Archive<JavaScriptTestCase>();
-    this.exports = [];
     this.dependencyMap = new Map();
 
     for (const target of this.targets) {
@@ -360,7 +415,6 @@ export class JavaScriptLauncher extends Launcher {
       this.archive.merge(archive);
 
       this.dependencyMap.set(target.name, dependencies);
-      this.exports.push(...this.rootContext.getExports(target.path));
     }
     JavaScriptLauncher.LOGGER.info("Processing done");
     const timeInMs = (Date.now() - start) / 1000;
@@ -370,35 +424,19 @@ export class JavaScriptLauncher extends Launcher {
   async postprocess(): Promise<void> {
     JavaScriptLauncher.LOGGER.info("Postprocessing started");
     const start = Date.now();
-    const decoder = new JavaScriptDecoder(
-      this.exports,
-      this.arguments_.targetRootDirectory,
-      path.join(
-        this.arguments_.tempSyntestDirectory,
-        this.arguments_.fid,
-        this.arguments_.logDirectory
-      )
-    );
-
-    const executionInformationIntegrator = new ExecutionInformationIntegrator(
-      this.rootContext.getTypeModel()
-    );
-
-    const runner = new JavaScriptRunner(
-      this.storageManager,
-      decoder,
-      executionInformationIntegrator,
-      this.arguments_.testDirectory
-    );
 
     const suiteBuilder = new JavaScriptSuiteBuilder(
       this.storageManager,
-      decoder,
-      runner,
+      this.decoder,
+      this.runner,
       this.arguments_.logDirectory
     );
 
     const reducedArchive = suiteBuilder.reduceArchive(this.archive);
+
+    if (this.archive.size === 0) {
+      throw new Error("Zero tests were created");
+    }
 
     // TODO fix hardcoded paths
     let paths = suiteBuilder.createSuite(
@@ -408,7 +446,7 @@ export class JavaScriptLauncher extends Launcher {
       true,
       false
     );
-    await suiteBuilder.runSuite(paths);
+    await suiteBuilder.runSuite(paths, this.archive.size);
 
     // reset states
     this.storageManager.clearTemporaryDirectory([
@@ -427,7 +465,10 @@ export class JavaScriptLauncher extends Launcher {
       false,
       true
     );
-    const { stats, instrumentationData } = await suiteBuilder.runSuite(paths);
+    const { stats, instrumentationData } = await suiteBuilder.runSuite(
+      paths,
+      this.archive.size
+    );
 
     if (stats.failures > 0) {
       this.userInterface.printError("Test case has failed!");
@@ -587,12 +628,6 @@ export class JavaScriptLauncher extends Launcher {
 
     const rootTargets = currentSubject
       .getActionableTargets()
-      .filter(
-        (target) =>
-          target.type === TargetType.FUNCTION ||
-          target.type === TargetType.CLASS ||
-          target.type === TargetType.OBJECT
-      )
       .filter((target) => isExported(target));
 
     if (rootTargets.length === 0) {
@@ -606,42 +641,54 @@ export class JavaScriptLauncher extends Launcher {
     const dependencies = rootContext.getDependencies(target.path);
     const dependencyMap = new Map<string, string[]>();
     dependencyMap.set(target.name, dependencies);
-    const exports = rootContext.getExports(target.path);
 
-    const decoder = new JavaScriptDecoder(
-      exports,
-      this.arguments_.targetRootDirectory,
-      path.join(
-        this.arguments_.tempSyntestDirectory,
-        this.arguments_.fid,
-        this.arguments_.logDirectory
-      )
+    JavaScriptLauncher.LOGGER.info("Extracting constants");
+    const constantPoolManager = new ConstantPoolManager();
+    const targetAbstractSyntaxTree = this.rootContext.getAbstractSyntaxTree(
+      target.path
     );
-    const executionInformationIntegrator = new ExecutionInformationIntegrator(
-      this.rootContext.getTypeModel()
+    const constantVisitor = new ConstantVisitor(
+      target.path,
+      constantPoolManager.targetConstantPool
     );
-    const runner = new JavaScriptRunner(
-      this.storageManager,
-      decoder,
-      executionInformationIntegrator,
-      this.arguments_.testDirectory
+    traverse(targetAbstractSyntaxTree, constantVisitor);
+
+    const files = getAllFiles(this.rootContext.rootPath, ".js").filter(
+      (x) =>
+        !x.includes("/test/") &&
+        !x.includes(".test.js") &&
+        !x.includes("node_modules")
     );
 
-    // TODO constant pool
+    for (const file of files) {
+      const abstractSyntaxTree = this.rootContext.getAbstractSyntaxTree(file);
+      const constantVisitor = new ConstantVisitor(
+        file,
+        constantPoolManager.contextConstantPool
+      );
+      traverse(abstractSyntaxTree, constantVisitor);
+    }
+    JavaScriptLauncher.LOGGER.info("Extracting constants done");
 
     const sampler = new JavaScriptRandomSampler(
       currentSubject,
+      constantPoolManager,
+      (<JavaScriptArguments>this.arguments_).constantPool,
+      (<JavaScriptArguments>this.arguments_).constantPoolProbability,
+      (<JavaScriptArguments>this.arguments_).typePool,
+      (<JavaScriptArguments>this.arguments_).typePoolProbability,
+      (<JavaScriptArguments>this.arguments_).statementPool,
+      (<JavaScriptArguments>this.arguments_).statementPoolProbability,
+
       (<JavaScriptArguments>this.arguments_).typeInferenceMode,
       (<JavaScriptArguments>this.arguments_).randomTypeProbability,
       (<JavaScriptArguments>this.arguments_).incorporateExecutionInformation,
       this.arguments_.maxActionStatements,
       this.arguments_.stringAlphabet,
       this.arguments_.stringMaxLength,
-      this.arguments_.resampleGeneProbability,
       this.arguments_.deltaMutationProbability,
       this.arguments_.exploreIllegalValues
     );
-
     sampler.rootContext = rootContext;
 
     const secondaryObjectives = new Set(
@@ -661,7 +708,7 @@ export class JavaScriptLauncher extends Launcher {
         this.arguments_.objectiveManager
       )
     )).createObjectiveManager({
-      runner: runner,
+      runner: this.runner,
       secondaryObjectives: secondaryObjectives,
     });
 
@@ -729,7 +776,7 @@ export class JavaScriptLauncher extends Launcher {
         )).createTerminationTrigger({
           objectiveManager: objectiveManager,
           encodingSampler: sampler,
-          runner: runner,
+          runner: this.runner,
           crossover: crossover,
           populationSize: this.arguments_.populationSize,
         })
@@ -781,6 +828,7 @@ export class JavaScriptLauncher extends Launcher {
 
   async exit(): Promise<void> {
     JavaScriptLauncher.LOGGER.info("Exiting");
+    this.runner.process.kill();
     // TODO should be cleanup step in tool
     // Finish
     JavaScriptLauncher.LOGGER.info("Deleting temporary directories");

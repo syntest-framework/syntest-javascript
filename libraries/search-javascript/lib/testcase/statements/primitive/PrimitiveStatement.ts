@@ -29,13 +29,14 @@ export abstract class PrimitiveStatement<T> extends Statement {
   private _value: T;
 
   constructor(
-    id: string,
+    variableIdentifier: string,
+    typeIdentifier: string,
     name: string,
     type: string,
     uniqueId: string,
     value: T
   ) {
-    super(id, name, type, uniqueId);
+    super(variableIdentifier, typeIdentifier, name, type, uniqueId);
     this._value = value;
   }
 
@@ -52,6 +53,10 @@ export abstract class PrimitiveStatement<T> extends Statement {
 
   getChildren(): Statement[] {
     return [];
+  }
+
+  setChild(index: number, newChild: Statement): void {
+    throw new Error("Primitive statements don't have children");
   }
 
   static getRandom() {

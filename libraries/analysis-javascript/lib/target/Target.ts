@@ -36,6 +36,7 @@ export interface SubTarget extends CoreSubTarget {
 
 export interface NamedSubTarget extends SubTarget {
   name: string;
+  typeId: string;
 }
 
 export type Exportable = {
@@ -65,7 +66,7 @@ export interface ClassTarget extends NamedSubTarget, Exportable {
 
 export interface MethodTarget extends NamedSubTarget, Callable {
   type: TargetType.METHOD;
-  className: string;
+  classId: string;
 
   visibility: VisibilityType;
 
@@ -79,7 +80,7 @@ export interface ObjectTarget extends NamedSubTarget, Exportable {
 
 export interface ObjectFunctionTarget extends NamedSubTarget, Callable {
   type: TargetType.OBJECT_FUNCTION;
-  objectName: string;
+  objectId: string;
 }
 
 export interface PathTarget extends SubTarget {

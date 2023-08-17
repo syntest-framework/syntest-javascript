@@ -16,25 +16,47 @@
  * limitations under the License.
  */
 
-import { Encoding, EncodingSampler } from "@syntest/search";
+import { Encoding, EncodingSampler, shouldNeverHappen } from "@syntest/search";
 
 import { Statement } from "../Statement";
+import { Export } from "@syntest/analysis-javascript";
 
 /**
  * @author Dimitri Stallenberg
  */
 export abstract class ActionStatement extends Statement {
   private _args: Statement[];
+  protected _export?: Export;
 
   protected constructor(
-    id: string,
+    variableIdentifier: string,
+    typeIdentifier: string,
     name: string,
     type: string,
     uniqueId: string,
-    arguments_: Statement[]
+    arguments_: Statement[],
+    export_?: Export
   ) {
-    super(id, name, type, uniqueId);
+    super(variableIdentifier, typeIdentifier, name, type, uniqueId);
     this._args = arguments_;
+    this._export = export_;
+
+    this._varName = "_" + this.generateVarName(name, type, uniqueId);
+  }
+
+  protected override generateVarName(
+    name: string,
+    type: string,
+    uniqueId: string
+  ): string {
+    // TODO should use return type
+    if (this._export) {
+      return name + "_" + this._export.name + "_" + uniqueId;
+    }
+
+    return type.includes("<>")
+      ? name + "_" + type.split("<>")[1] + "_" + uniqueId
+      : name + "_" + type + "_" + uniqueId;
   }
 
   abstract override mutate(
@@ -45,6 +67,14 @@ export abstract class ActionStatement extends Statement {
   abstract override copy(): ActionStatement;
 
   setChild(index: number, newChild: Statement) {
+    if (!newChild) {
+      throw new Error("Invalid new child!");
+    }
+
+    if (index < 0 || index >= this.args.length) {
+      throw new Error(shouldNeverHappen(`Invalid index used index: ${index}`));
+    }
+
     this.args[index] = newChild;
   }
 
@@ -56,11 +86,11 @@ export abstract class ActionStatement extends Statement {
     return [...this._args];
   }
 
-  get args(): Statement[] {
+  protected get args(): Statement[] {
     return this._args;
   }
 
-  getFlatTypes(): string[] {
-    return this.args.flatMap((a) => a.getFlatTypes());
+  get export() {
+    return this._export;
   }
 }

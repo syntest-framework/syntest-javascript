@@ -22,6 +22,7 @@ import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSamp
 
 import { PrimitiveStatement } from "./PrimitiveStatement";
 import { Statement } from "../Statement";
+import { NumericStatement } from "./NumericStatement";
 
 /**
  * Generic number class
@@ -30,31 +31,58 @@ import { Statement } from "../Statement";
  */
 export class IntegerStatement extends PrimitiveStatement<number> {
   constructor(
-    id: string,
+    variableIdentifier: string,
+    typeIdentifier: string,
     name: string,
     type: string,
     uniqueId: string,
     value: number
   ) {
-    super(id, name, type, uniqueId, Math.round(value));
+    super(
+      variableIdentifier,
+      typeIdentifier,
+      name,
+      type,
+      uniqueId,
+      Math.round(value)
+    );
     this._classType = "IntegerStatement";
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
-    if (prng.nextBoolean(sampler.resampleGeneProbability)) {
-      return sampler.sampleArgument(depth + 1, this.id, this.name);
-    }
-
     if (prng.nextBoolean(sampler.deltaMutationProbability)) {
+      // 80%
+      if (prng.nextBoolean(0.5)) {
+        // 50%
+        return new NumericStatement(
+          this.variableIdentifier,
+          this.typeIdentifier,
+          this.name,
+          this.type,
+          prng.uniqueId(),
+          this.value
+        ).deltaMutation(sampler);
+      }
       return this.deltaMutation(sampler);
+    } else {
+      // 20%
+      if (prng.nextBoolean(0.5)) {
+        // 50%
+        return sampler.sampleArgument(
+          depth + 1,
+          this.variableIdentifier,
+          this.name
+        );
+      } else {
+        // 50%
+        return sampler.sampleInteger(this.variableIdentifier, this.name);
+      }
     }
-
-    return sampler.sampleInteger(this.id, this.name);
   }
 
   deltaMutation(sampler: JavaScriptTestCaseSampler): IntegerStatement {
     // small mutation
-    const change = prng.nextGaussian(0, 20);
+    const change = prng.nextGaussian(0, 5);
 
     let newValue = Math.round(this.value + change);
 
@@ -71,7 +99,8 @@ export class IntegerStatement extends PrimitiveStatement<number> {
     }
 
     return new IntegerStatement(
-      this.id,
+      this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
       prng.uniqueId(),
@@ -81,15 +110,12 @@ export class IntegerStatement extends PrimitiveStatement<number> {
 
   copy(): IntegerStatement {
     return new IntegerStatement(
-      this.id,
+      this.variableIdentifier,
+      this.typeIdentifier,
       this.name,
       this.type,
-      prng.uniqueId(),
+      this.uniqueId,
       this.value
     );
-  }
-
-  getFlatTypes(): string[] {
-    return ["integer"];
   }
 }
