@@ -19,27 +19,6 @@ import { expect } from "chai";
 import { BranchDistance } from "../../lib/criterion/BranchDistance";
 
 describe("BranchDistance string functions", () => {
-  // at
-  // TODO
-  //   it("'abc'.at(0) === 'a' true", () => {
-  //     const condition = "'abc'.at(0) === 'a'";
-  //     const variables = {};
-  //     const trueOrFalse = true;
-
-  //     const calculator = new BranchDistance(
-  //       "0123456789abcdefghijklmnopqrstuvxyz"
-  //     );
-
-  //     expect(
-  //       calculator.calculate("", condition, variables, trueOrFalse)
-  //     ).to.equal(0);
-  //   });
-
-  // TODO
-  // charAt // same as at?
-  // charCodeAt
-  // codePointAt
-  // concat
   // endsWith
   it("'abc'.endsWith('bc') true", () => {
     const condition = "'abc'.endsWith('bc')";
@@ -80,7 +59,7 @@ describe("BranchDistance string functions", () => {
 
     expect(
       calculator.calculate("", condition, variables, trueOrFalse)
-    ).to.closeTo(0.6666, 0.001); // two changes of 1 diff?
+    ).to.closeTo(0.4888, 0.001); // two changes of 1 diff?
   });
 
   it("'abc'.endsWith('z') false", () => {
@@ -94,13 +73,159 @@ describe("BranchDistance string functions", () => {
 
     expect(
       calculator.calculate("", condition, variables, trueOrFalse)
-    ).to.equal(0); // two changes of 1 diff?
+    ).to.equal(0);
+  });
+
+  // includes
+  it("'abc'.includes('b') true", () => {
+    const condition = "'abc'.includes('b')";
+    const variables = {};
+    const trueOrFalse = true;
+
+    const calculator = new BranchDistance(
+      "0123456789abcdefghijklmnopqrstuvxyz"
+    );
+
+    expect(
+      calculator.calculate("", condition, variables, trueOrFalse)
+    ).to.equal(0);
+  });
+
+  it("'abc'.includes('b') false", () => {
+    const condition = "'abc'.includes('b')";
+    const variables = {};
+    const trueOrFalse = false;
+
+    const calculator = new BranchDistance(
+      "0123456789abcdefghijklmnopqrstuvxyz"
+    );
+
+    expect(
+      calculator.calculate("", condition, variables, trueOrFalse)
+    ).to.equal(0.5);
+  });
+
+  it("'abc'.includes('z') true", () => {
+    const condition = "'abc'.includes('z')";
+    const variables = {};
+    const trueOrFalse = true;
+
+    const calculator = new BranchDistance(
+      "0123456789abcdefghijklmnopqrstuvxyz"
+    );
+
+    expect(
+      calculator.calculate("", condition, variables, trueOrFalse)
+    ).to.closeTo(0.4897, 0.001);
+  });
+
+  it("'cab'.includes('z') true", () => {
+    const condition = "'cab'.includes('z')";
+    const variables = {};
+    const trueOrFalse = true;
+
+    const calculator = new BranchDistance(
+      "0123456789abcdefghijklmnopqrstuvxyz"
+    );
+
+    expect(
+      calculator.calculate("", condition, variables, trueOrFalse)
+    ).to.closeTo(0.4897, 0.001);
+  });
+
+  it("'bca'.includes('z') true", () => {
+    const condition = "'bca'.includes('z')";
+    const variables = {};
+    const trueOrFalse = true;
+
+    const calculator = new BranchDistance(
+      "0123456789abcdefghijklmnopqrstuvxyz"
+    );
+
+    expect(
+      calculator.calculate("", condition, variables, trueOrFalse)
+    ).to.closeTo(0.4897, 0.001);
+  });
+
+  it("'abc'.includes('z') false", () => {
+    const condition = "'abc'.includes('z')";
+    const variables = {};
+    const trueOrFalse = false;
+
+    const calculator = new BranchDistance(
+      "0123456789abcdefghijklmnopqrstuvxyz"
+    );
+
+    expect(
+      calculator.calculate("", condition, variables, trueOrFalse)
+    ).to.equal(0);
+  });
+
+  // startsWith
+  it("'abc'.startsWith('ab') true", () => {
+    const condition = "'abc'.startsWith('ab')";
+    const variables = {};
+    const trueOrFalse = true;
+
+    const calculator = new BranchDistance(
+      "0123456789abcdefghijklmnopqrstuvxyz"
+    );
+
+    expect(
+      calculator.calculate("", condition, variables, trueOrFalse)
+    ).to.equal(0);
+  });
+
+  it("'abc'.startsWith('ab') false", () => {
+    const condition = "'abc'.startsWith('ab')";
+    const variables = {};
+    const trueOrFalse = false;
+
+    const calculator = new BranchDistance(
+      "0123456789abcdefghijklmnopqrstuvxyz"
+    );
+
+    expect(
+      calculator.calculate("", condition, variables, trueOrFalse)
+    ).to.equal(0.5);
+  });
+
+  it("'abc'.startsWith('z') true", () => {
+    const condition = "'abc'.startsWith('z')";
+    const variables = {};
+    const trueOrFalse = true;
+
+    const calculator = new BranchDistance(
+      "0123456789abcdefghijklmnopqrstuvxyz"
+    );
+
+    expect(
+      calculator.calculate("", condition, variables, trueOrFalse)
+    ).to.closeTo(0.4888, 0.001); // two changes of 1 diff?
+  });
+
+  it("'abc'.startsWith('z') false", () => {
+    const condition = "'abc'.startsWith('z')";
+    const variables = {};
+    const trueOrFalse = false;
+
+    const calculator = new BranchDistance(
+      "0123456789abcdefghijklmnopqrstuvxyz"
+    );
+
+    expect(
+      calculator.calculate("", condition, variables, trueOrFalse)
+    ).to.equal(0);
   });
 
   // TODO
+  // at
+  // charAt // same as at?
+  // charCodeAt
+  // codePointAt
+  // concat
   // fromCharCode
   // fromCodePoint
-  // includes
   // indexOf
   // isWellFormed
   // lastIndexOf
@@ -117,7 +242,6 @@ describe("BranchDistance string functions", () => {
   // search
   // slice
   // split
-  // startsWith
   // substring
   // toLocaleLowerCase
   // toLocaleUpperCase
