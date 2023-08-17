@@ -168,9 +168,7 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
               );
               this._valueMap.set(
                 path.toString(),
-                this._normalize(
-                  this._realCodedEditDistance(endOfObject, argumentValue)
-                )
+                this._realCodedEditDistance(endOfObject, argumentValue)
               );
             }
           }
@@ -439,6 +437,7 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
       throw new Error("Right should not result in distance value!");
     }
     let operator = path.node.operator;
+    let isNormalized = false;
 
     if (this._inverted) {
       switch (operator) {
@@ -543,6 +542,7 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
           typeof rightValue === "string"
         ) {
           value = this._realCodedEditDistance(leftValue, rightValue);
+          isNormalized = true;
         } else if (
           typeof leftValue === "boolean" &&
           typeof rightValue === "boolean"
@@ -654,12 +654,14 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
         "|>",
       ].includes(operator)
     ) {
-      this._valueMap.set(path.toString(), this._normalize(<number>value));
+      if (!isNormalized) {
+        value = this._normalize(<number>value);
+      }
       this._isDistanceMap.set(path.toString(), true);
     } else {
-      this._valueMap.set(path.toString(), value);
       this._isDistanceMap.set(path.toString(), false);
     }
+    this._valueMap.set(path.toString(), value);
 
     path.skip();
   };

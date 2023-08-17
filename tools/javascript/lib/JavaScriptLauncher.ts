@@ -257,17 +257,10 @@ export class JavaScriptLauncher extends Launcher {
       headers: ["Setting", "Value"],
       rows: [
         [
-          "Resampling Probability",
-          `${this.arguments_.resampleGeneProbability}`,
-        ],
-        [
           "Delta Mutation Probability",
           `${this.arguments_.deltaMutationProbability}`,
         ],
-        [
-          "Sample Existing Value Probability",
-          `${this.arguments_.sampleExistingValueProbability}`,
-        ],
+
         ["Crossover Probability", `${this.arguments_.crossoverProbability}`],
         [
           "Multi-point Crossover Probability",
@@ -277,15 +270,6 @@ export class JavaScriptLauncher extends Launcher {
         ["Max Depth", `${this.arguments_.maxDepth}`],
         ["Max Action Statements", `${this.arguments_.maxActionStatements}`],
         ["Explore Illegal Values", `${this.arguments_.exploreIllegalValues}`],
-        [
-          "Sample Output Values",
-          `${this.arguments_.sampleFunctionOutputAsArgument}`,
-        ],
-        ["Use Constant Pool Values", `${this.arguments_.constantPool}`],
-        [
-          "Use Constant Pool Probability",
-          `${this.arguments_.constantPoolProbability}`,
-        ],
       ],
       footers: ["", ""],
     };
