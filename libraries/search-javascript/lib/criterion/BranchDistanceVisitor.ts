@@ -125,15 +125,18 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
       const property = callee.get("property");
 
       if (property.isIdentifier()) {
+        const objectValue = this._valueMap.get(object.toString());
+        const argument = path.get("arguments")[0];
+        argument.visit();
+        const argumentValue = <string>this._valueMap.get(argument.toString());
+
+        // TODO should check if the value is actually a string
+        if (typeof objectValue !== "string") {
+          return;
+        }
+
         switch (property.node.name) {
           case "endsWith": {
-            const argument = path.get("arguments")[0];
-            argument.visit();
-            const objectValue = <string>this._valueMap.get(object.toString());
-            const argumentValue = <string>(
-              this._valueMap.get(argument.toString())
-            );
-
             const endOfObject =
               objectValue.length > argumentValue.length
                 ? objectValue.slice(-argumentValue.length)
@@ -163,13 +166,6 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
             break;
           }
           case "startsWith": {
-            const argument = path.get("arguments")[0];
-            argument.visit();
-            const objectValue = <string>this._valueMap.get(object.toString());
-            const argumentValue = <string>(
-              this._valueMap.get(argument.toString())
-            );
-
             const startOfObject =
               objectValue.length > argumentValue.length
                 ? objectValue.slice(0, argumentValue.length)
@@ -199,13 +195,6 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
             break;
           }
           case "includes": {
-            const argument = path.get("arguments")[0];
-            argument.visit();
-            const objectValue = <string>this._valueMap.get(object.toString());
-            const argumentValue = <string>(
-              this._valueMap.get(argument.toString())
-            );
-
             this._isDistanceMap.set(path.toString(), true);
 
             if (this._inverted) {
