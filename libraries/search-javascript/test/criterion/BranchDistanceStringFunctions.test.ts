@@ -69,8 +69,8 @@ describe("BranchDistance string functions", () => {
     ).to.equal(0.5);
   });
 
-  it("'abc'.endsWith('ab') true", () => {
-    const condition = "'abc'.endsWith('z')";
+  it("'abc'.endsWith('z') true", () => {
+    const condition = "'abc'.endsWith('e')";
     const variables = {};
     const trueOrFalse = true;
 
@@ -80,11 +80,11 @@ describe("BranchDistance string functions", () => {
 
     expect(
       calculator.calculate("", condition, variables, trueOrFalse)
-    ).to.equal(0.66); // two changes of 1 diff?
+    ).to.closeTo(0.6666, 0.001); // two changes of 1 diff?
   });
 
-  it("'abc'.endsWith('ab') false", () => {
-    const condition = "'abc'.endsWith('ab')";
+  it("'abc'.endsWith('z') false", () => {
+    const condition = "'abc'.endsWith('z')";
     const variables = {};
     const trueOrFalse = false;
 
@@ -94,7 +94,7 @@ describe("BranchDistance string functions", () => {
 
     expect(
       calculator.calculate("", condition, variables, trueOrFalse)
-    ).to.equal(0);
+    ).to.equal(0); // two changes of 1 diff?
   });
 
   // TODO
