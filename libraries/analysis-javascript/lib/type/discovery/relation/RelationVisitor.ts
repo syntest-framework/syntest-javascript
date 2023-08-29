@@ -278,7 +278,8 @@ export class RelationVisitor extends AbstractSyntaxTreeVisitor {
   public FunctionExpression: (path: NodePath<t.FunctionExpression>) => void = (
     path
   ) => {
-    const involved = [path.get("id"), ...path.get("params")];
+    const id = path.has("id") ? path.get("id") : path;
+    const involved = [id, ...path.get("params")];
 
     if (path.node.generator && path.node.async) {
       this._createRelation(
@@ -301,24 +302,25 @@ export class RelationVisitor extends AbstractSyntaxTreeVisitor {
 
   public FunctionDeclaration: (path: NodePath<t.FunctionDeclaration>) => void =
     (path) => {
+      const id = path.has("id") ? path.get("id") : path;
       if (path.node.generator && path.node.async) {
         this._createRelation(path, RelationType.AsyncFunctionStarDefinition, [
-          path.get("id"),
+          id,
           ...path.get("params"),
         ]);
       } else if (path.node.generator) {
         this._createRelation(path, RelationType.FunctionStarDefinition, [
-          path.get("id"),
+          id,
           ...path.get("params"),
         ]);
       } else if (path.node.async) {
         this._createRelation(path, RelationType.AsyncFunctionDefinition, [
-          path.get("id"),
+          id,
           ...path.get("params"),
         ]);
       } else {
         this._createRelation(path, RelationType.FunctionDefinition, [
-          path.get("id"),
+          id,
           ...path.get("params"),
         ]);
       }
