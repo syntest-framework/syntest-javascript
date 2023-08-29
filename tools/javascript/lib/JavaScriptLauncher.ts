@@ -830,7 +830,9 @@ export class JavaScriptLauncher extends Launcher {
 
   async exit(): Promise<void> {
     JavaScriptLauncher.LOGGER.info("Exiting");
-    this.runner.process.kill();
+    if (this.runner && this.runner.process) {
+      this.runner.process.kill();
+    }
     // TODO should be cleanup step in tool
     // Finish
     JavaScriptLauncher.LOGGER.info("Deleting temporary directories");

@@ -22,6 +22,7 @@ import { shouldNeverHappen } from "@syntest/search";
 import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";
+import { TypeEnum } from "@syntest/analysis-javascript";
 
 /**
  * @author Dimitri Stallenberg
@@ -34,11 +35,10 @@ export class ArrayStatement extends Statement {
     variableIdentifier: string,
     typeIdentifier: string,
     name: string,
-    type: string,
     uniqueId: string,
     children: Statement[]
   ) {
-    super(variableIdentifier, typeIdentifier, name, type, uniqueId);
+    super(variableIdentifier, typeIdentifier, name, TypeEnum.ARRAY, uniqueId);
     this._children = children;
     this._classType = "ArrayStatement";
 
@@ -89,7 +89,6 @@ export class ArrayStatement extends Statement {
         this.variableIdentifier,
         this.typeIdentifier,
         this.name,
-        this.type,
         prng.uniqueId(),
         children
       );
@@ -106,8 +105,8 @@ export class ArrayStatement extends Statement {
         return sampler.sampleArray(
           depth,
           this.variableIdentifier,
-          this.name,
-          this.type
+          this.typeIdentifier,
+          this.name
         );
       }
     }
@@ -118,7 +117,6 @@ export class ArrayStatement extends Statement {
       this.variableIdentifier,
       this.typeIdentifier,
       this.name,
-      this.type,
       this.uniqueId,
       this._children
         .filter((a) => {

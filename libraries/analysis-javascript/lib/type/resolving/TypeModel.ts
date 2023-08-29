@@ -102,6 +102,36 @@ export class TypeModel {
 
   setEqual(id1: string, id2: string) {
     //TODO maybe merge
+    for (const [key, value] of this._relationScoreMap.get(id2).entries())
+      this._relationScoreMap.get(id1).has(key)
+        ? this._relationScoreMap.get(id1).set(key, value)
+        : this._relationScoreMap
+            .get(id1)
+            .set(key, this._relationScoreMap.get(id1).get(key) + value);
+    for (const [key, value] of this._elementTypeScoreMap.get(id2).entries())
+      this._elementTypeScoreMap.get(id1).has(key)
+        ? this._elementTypeScoreMap.get(id1).set(key, value)
+        : this._elementTypeScoreMap
+            .get(id1)
+            .set(key, this._elementTypeScoreMap.get(id1).get(key) + value);
+    for (const [key, value] of this._elementTypeProbabilityMap
+      .get(id2)
+      .entries())
+      this._elementTypeProbabilityMap.get(id1).has(key)
+        ? this._elementTypeProbabilityMap.get(id1).set(key, value)
+        : this._elementTypeProbabilityMap
+            .get(id1)
+            .set(
+              key,
+              this._elementTypeProbabilityMap.get(id1).get(key) + value
+            );
+    for (const [key, value] of this._typeExecutionScoreMap.get(id2).entries())
+      this._typeExecutionScoreMap.get(id1).has(key)
+        ? this._typeExecutionScoreMap.get(id1).set(key, value)
+        : this._typeExecutionScoreMap
+            .get(id1)
+            .set(key, this._typeExecutionScoreMap.get(id1).get(key) + value);
+
     this._relationScoreMap.set(id2, this._relationScoreMap.get(id1));
     this._elementTypeScoreMap.set(id2, this._elementTypeScoreMap.get(id1));
     this._elementTypeProbabilityMap.set(
@@ -110,6 +140,8 @@ export class TypeModel {
     );
     this._typeExecutionScoreMap.set(id2, this._typeExecutionScoreMap.get(id1));
     this._scoreHasChangedMap.set(id2, this._scoreHasChangedMap.get(id1));
+    // TODO maybe this should be merged too?
+    // or should we keep them separate?
     this._objectTypeDescription.set(id2, this._objectTypeDescription.get(id1));
   }
 
@@ -128,7 +160,19 @@ export class TypeModel {
     this._scoreHasChangedMap.set(id1, true);
   }
 
-  addRelationScore(id1: string, id2: string, score = 1) {
+  addWeakRelation(id1: string, id2: string) {
+    this.addRelationScore(id1, id2, 1);
+  }
+
+  addStrongRelation(id1: string, id2: string) {
+    this.addRelationScore(id1, id2, 10);
+  }
+
+  addRelationScore(id1: string, id2: string, score: number) {
+    if (id1 === id2) {
+      // no self loops
+      throw new Error(`ids should not be equal to add a relation id: ${id1}`);
+    }
     this._addRelationScore(id1, id2, score);
     this._addRelationScore(id2, id1, score);
   }
@@ -235,8 +279,19 @@ export class TypeModel {
       id
     );
 
+    // const x = new Map()
+    // for (const [type, probability] of probabilities.entries()) {
+    //   const typeEnum = type.includes('<>') ? type.split('<>')[1] : type
+
+    //   if (!x.has(typeEnum)) {
+    //     x.set(typeEnum, 0)
+    //   }
+
+    //   x.set(typeEnum, x.get(typeEnum) + probability)
+    // }
     // console.log(id)
-    // console.log(probabilities)
+    // console.log(x)
+
     const genericTypes = [
       TypeEnum.ARRAY,
       TypeEnum.BOOLEAN,
@@ -385,11 +440,21 @@ export class TypeModel {
     const usableRelations = new Set<string>();
 
     for (const [relation, score] of relationMap.entries()) {
+      if (relation === id) {
+        // ignore self references
+        continue;
+      }
       if (!relationPairsVisited.has(id)) {
         relationPairsVisited.set(id, new Set());
       }
+      if (!relationPairsVisited.has(relation)) {
+        relationPairsVisited.set(relation, new Set());
+      }
 
-      if (relationPairsVisited.get(id).has(relation)) {
+      if (
+        relationPairsVisited.get(id).has(relation) ||
+        relationPairsVisited.get(relation).has(id)
+      ) {
         // we have already visited this relation pair
         // this means that we have a cycle in the graph
         // we can safely ignore this relation
@@ -416,6 +481,7 @@ export class TypeModel {
       }
 
       relationPairsVisited.get(id).add(relation);
+      relationPairsVisited.get(relation).add(id);
 
       const probabilityOfRelation = score / totalScore;
 
@@ -428,15 +494,16 @@ export class TypeModel {
       for (const [type, probability] of probabilityMapOfRelation.entries()) {
         let finalType = type;
 
-        if (
-          type === TypeEnum.FUNCTION ||
-          type === TypeEnum.ARRAY ||
-          type === TypeEnum.OBJECT
-        ) {
+        if (!type.includes("<>")) {
           // maybe should check for includes (or the inverse by checking for primitive types)
           // this will only add only the final relation id
           // the other method will add all relation id from the element to the final relation
           finalType = `${relation}<>${type}`;
+        }
+
+        if (finalType.includes("<>") && finalType.split("<>")[0] === id) {
+          // skip this is a self loop
+          continue;
         }
 
         if (!probabilityMap.has(finalType)) {

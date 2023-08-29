@@ -19,6 +19,7 @@
 import { Encoding, EncodingSampler, shouldNeverHappen } from "@syntest/search";
 
 import { JavaScriptDecoder } from "../../testbuilding/JavaScriptDecoder";
+import { TypeEnum } from "@syntest/analysis-javascript";
 
 /**
  * @author Dimitri Stallenberg
@@ -71,7 +72,7 @@ export abstract class Statement {
     variableIdentifier: string,
     typeIdentifier: string,
     name: string,
-    type: string,
+    type: TypeEnum,
     uniqueId: string
   ) {
     this._variableIdentifier = variableIdentifier;

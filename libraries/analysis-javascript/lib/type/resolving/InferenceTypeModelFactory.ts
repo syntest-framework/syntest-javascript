@@ -170,6 +170,8 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
       RelationType.ObjectMethod,
       RelationType.ObjectProperty,
 
+      RelationType.Assignment,
+
       RelationType.Return,
       RelationType.Call,
 
@@ -215,7 +217,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         const argumentId = involved[1];
 
         if (argumentId !== undefined) {
-          this._typeModel.addRelationScore(relationId, argumentId);
+          this._typeModel.addStrongRelation(relationId, argumentId);
           this._typeModel.addReturnType(functionId, argumentId);
         }
 
@@ -233,7 +235,11 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
 
         // relation result is equal to return type of functionId
         for (const returnValueId of type.return) {
-          this._typeModel.addRelationScore(relationId, returnValueId);
+          if (relationId === returnValueId) {
+            // recursive function call so we do not add a relation
+            continue;
+          }
+          this._typeModel.addStrongRelation(relationId, returnValueId);
         }
 
         // couple function arguments with function parameters
@@ -243,7 +249,11 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
           for (let index = 0; index < smallest; index++) {
             const argumentId = arguments_[index];
             const parameterId = type.parameters.get(index);
-            this._typeModel.addRelationScore(parameterId, argumentId);
+            if (argumentId === parameterId) {
+              // recursive function call so we do not add a relation
+              continue;
+            }
+            this._typeModel.addStrongRelation(parameterId, argumentId);
           }
         }
 
@@ -270,8 +280,8 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         }
 
         // connect property to value
-        if (valueId !== undefined) {
-          this._typeModel.addRelationScore(propertyId, valueId);
+        if (valueId !== undefined && valueId !== propertyId) {
+          this._typeModel.addStrongRelation(propertyId, valueId);
         }
 
         break;
@@ -321,7 +331,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
 
         // connect property to value
         if (valueId !== undefined) {
-          this._typeModel.addRelationScore(propertyId, valueId);
+          this._typeModel.addStrongRelation(propertyId, valueId);
         }
 
         break;
@@ -388,7 +398,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         this._typeModel.addTypeScore(relationId, TypeEnum.ARRAY);
 
         // connect rest element to array
-        this._typeModel.addRelationScore(restElement, relationId);
+        this._typeModel.addStrongRelation(restElement, relationId);
         break;
       }
 
@@ -424,7 +434,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
 
         for (const id of typeOfArray.elements.values()) {
           // connect declarator to array element
-          this._typeModel.addRelationScore(declarator, id);
+          this._typeModel.addWeakRelation(declarator, id);
         }
 
         const typeOfObject =
@@ -432,7 +442,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
 
         for (const id of typeOfObject.properties.values()) {
           // connect declarator to object property
-          this._typeModel.addRelationScore(declarator, id);
+          this._typeModel.addWeakRelation(declarator, id);
         }
 
         break;
@@ -447,7 +457,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
 
         for (const id of typeOfArray.elements.values()) {
           // connect declarator to array element
-          this._typeModel.addRelationScore(declarator, id);
+          this._typeModel.addWeakRelation(declarator, id);
         }
 
         break;
@@ -456,7 +466,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         const [discriminant, ...cases] = involved;
 
         for (const case_ of cases) {
-          this._typeModel.addRelationScore(discriminant, case_);
+          this._typeModel.addWeakRelation(discriminant, case_);
         }
 
         break;
@@ -467,7 +477,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         const thisParent = involved[0];
 
         // add this type to parent
-        this._typeModel.addRelationScore(thisParent, relationId);
+        this._typeModel.addStrongRelation(thisParent, relationId);
 
         // create object type
         this._typeModel.addTypeScore(relationId, TypeEnum.OBJECT);
@@ -502,7 +512,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         this._typeModel.addTypeScore(classId, TypeEnum.OBJECT);
 
         // connect class to relation
-        this._typeModel.addRelationScore(classId, relationId);
+        this._typeModel.setEqual(classId, relationId);
 
         break;
       }
@@ -549,41 +559,55 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
 
         const propertyElement = elementMap.get(originalProperty);
 
-        // TODO
-        // we add these scores by default because it is likely a string/object/array
-        // however we should check if its one of the default properties of any of the primitives
-        // if that is the case we should not give it string object or array
-        this._typeModel.addTypeScore(objectId, TypeEnum.ARRAY);
-        this._typeModel.addTypeScore(objectId, TypeEnum.STRING);
-        this._typeModel.addTypeScore(objectId, TypeEnum.OBJECT);
-
         if (propertyElement === undefined) {
           // e.g. object[b ? 1 : 0]
           // TODO what if the property is not an element
-        } else if (propertyElement.type === ElementType.NumericalLiteral) {
-          // e.g. object[0]
-          // add array type to object
-          this._typeModel.addTypeScore(objectId, TypeEnum.ARRAY);
-          this._typeModel.addElementType(objectId, relationId);
-        } else if (propertyElement.type === ElementType.StringLiteral) {
-          // e.g. object["abc"]
-          // add array type to object
-          this._typeModel.addTypeScore(objectId, TypeEnum.OBJECT);
-          this._typeModel.addPropertyType(
-            objectId,
-            propertyElement.value,
-            propertyId
-          );
-        } else {
-          // const propertyName =
-          //   "name" in propertyElement
-          //     ? propertyElement.name
-          //     : propertyElement.value;
-          // this._typeModel.addProperty(objectId, propertyName, propertyId);
-        }
+        } else
+          switch (propertyElement.type) {
+            case ElementType.NumericalLiteral: {
+              // e.g. object[0]
+              // add array type to object
+              this._typeModel.addElementType(objectId, relationId);
+
+              break;
+            }
+            case ElementType.StringLiteral: {
+              // e.g. object["abc"]
+              // add array type to object
+              this._typeModel.addPropertyType(
+                objectId,
+                propertyElement.value,
+                propertyId
+              );
+
+              break;
+            }
+            case ElementType.Identifier: {
+              if (relation.computed) {
+                // e.g. object[abc]
+                // not allowed dynamic stuff happening
+                // or we can check wether abc is a number
+
+                // add the defaults
+                this._typeModel.addTypeScore(objectId, TypeEnum.ARRAY);
+                this._typeModel.addTypeScore(objectId, TypeEnum.STRING);
+                this._typeModel.addTypeScore(objectId, TypeEnum.OBJECT);
+              } else {
+                // e.g. object.abc
+                this._typeModel.addPropertyType(
+                  objectId,
+                  propertyElement.name,
+                  propertyId
+                );
+              }
+
+              break;
+            }
+            // No default
+          }
 
         // we don't have to connect the relationid to the propertyId since they are equal already
-        this._typeModel.addRelationScore(relationId, propertyId);
+        this._typeModel.addStrongRelation(relationId, propertyId);
         break;
       }
 
@@ -594,7 +618,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         //   type: TypeEnum.OBJECT,
         //   properties: new Map()
         // });
-        this._typeModel.addRelationScore(relationId, class_);
+        this._typeModel.addStrongRelation(relationId, class_);
         break;
       }
 
@@ -606,7 +630,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         const argumentId = involved[0];
 
         this._typeModel.addTypeScore(argumentId, TypeEnum.NUMERIC);
-        this._typeModel.addRelationScore(relationId, argumentId);
+        this._typeModel.addWeakRelation(relationId, argumentId);
         break;
       }
 
@@ -649,7 +673,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         const type_ = this._typeModel.getObjectDescription(argumentId);
 
         for (const returnType of type_.return) {
-          this._typeModel.addRelationScore(relationId, returnType);
+          this._typeModel.addWeakRelation(relationId, returnType);
         }
 
         break;
@@ -670,8 +694,8 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         this._typeModel.addTypeScore(leftId, TypeEnum.STRING);
         this._typeModel.addTypeScore(rightId, TypeEnum.STRING);
 
-        this._typeModel.addRelationScore(relationId, leftId);
-        this._typeModel.addRelationScore(relationId, rightId);
+        this._typeModel.addWeakRelation(relationId, leftId);
+        this._typeModel.addWeakRelation(relationId, rightId);
         // even though we add the relations we still add the number type directly since it is most likely
         this._typeModel.addTypeScore(relationId, TypeEnum.NUMERIC);
 
@@ -692,8 +716,8 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         this._typeModel.addTypeScore(leftId, TypeEnum.NUMERIC);
         this._typeModel.addTypeScore(rightId, TypeEnum.NUMERIC);
 
-        this._typeModel.addRelationScore(relationId, leftId);
-        this._typeModel.addRelationScore(relationId, rightId);
+        this._typeModel.addWeakRelation(relationId, leftId);
+        this._typeModel.addWeakRelation(relationId, rightId);
         // even though we add the relations we still add the number type directly since it is most likely
         // in this case we are pretty sure the result is numeric so we give 2 score
         this._typeModel.addTypeScore(relationId, TypeEnum.NUMERIC, 2);
@@ -748,7 +772,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         const [leftId, rightId] = involved;
 
         // both sides are likely the same type
-        this._typeModel.addRelationScore(leftId, rightId);
+        this._typeModel.addWeakRelation(leftId, rightId);
 
         this._typeModel.addTypeScore(relationId, TypeEnum.BOOLEAN);
 
@@ -780,8 +804,8 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         this._typeModel.addTypeScore(rightId, TypeEnum.BOOLEAN);
 
         //can be the boolean or the type of the second one depending on if the first and second are not false/null/undefined
-        this._typeModel.addRelationScore(relationId, leftId);
-        this._typeModel.addRelationScore(relationId, rightId);
+        this._typeModel.addWeakRelation(relationId, leftId);
+        this._typeModel.addWeakRelation(relationId, rightId);
         this._typeModel.addTypeScore(relationId, TypeEnum.BOOLEAN);
         // TODO can we say that the leftId and rightId are the same type?
 
@@ -796,9 +820,11 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         this._typeModel.addTypeScore(rightId, TypeEnum.BOOLEAN);
 
         // can be the type of the first or second one depending on if the first is not false/null/undefined
-        this._typeModel.addRelationScore(relationId, leftId);
-        this._typeModel.addRelationScore(relationId, rightId);
+        this._typeModel.addWeakRelation(relationId, leftId);
+        this._typeModel.addWeakRelation(relationId, rightId);
         this._typeModel.addTypeScore(relationId, TypeEnum.BOOLEAN);
+
+        this._typeModel.addWeakRelation(leftId, rightId);
 
         // TODO can we say that the leftId and rightId are the same type?
 
@@ -812,9 +838,10 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         this._typeModel.addTypeScore(leftId, TypeEnum.UNDEFINED);
 
         // returns the rightId if leftId is nullish
-        this._typeModel.addRelationScore(relationId, leftId);
-        this._typeModel.addRelationScore(relationId, rightId);
+        this._typeModel.addStrongRelation(relationId, leftId);
+        this._typeModel.addStrongRelation(relationId, rightId);
         // TODO can we say that the leftId and rightId are the same type?
+        this._typeModel.addWeakRelation(leftId, rightId);
 
         break;
       }
@@ -826,10 +853,11 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
 
         // returns the leftId if conditionId is true
         // returns the rightId if conditionId is false
-        this._typeModel.addRelationScore(relationId, leftId);
-        this._typeModel.addRelationScore(relationId, rightId);
+        this._typeModel.addStrongRelation(relationId, leftId);
+        this._typeModel.addStrongRelation(relationId, rightId);
 
-        // TODO can we say that the leftId and rightId are the same type?
+        // can we say that the leftId and rightId are the same type?
+        this._typeModel.addWeakRelation(leftId, rightId);
 
         break;
       }
@@ -843,17 +871,13 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         }
         const [leftId, rightId] = involved;
 
-        this._typeModel.addRelationScore(leftId, rightId);
-        // TODO This is not the way to do this
-        // for now it is neccessary because variable declarations such as in lodash/at.js
-        // do not have the correct ids causing the relation to have the wrong
-        this._typeModel.addRelationScore(relationId, rightId);
-        this._typeModel.addRelationScore(leftId, relationId);
-
+        this._typeModel.setEqual(leftId, relationId);
         // undefined should be the actual result
         // this._typeModel.addPrimitiveTypeScore(relationId, {
         //   type: TypeEnum.UNDEFINED,
         // });
+
+        this._typeModel.addStrongRelation(leftId, rightId);
 
         break;
       }
@@ -875,7 +899,10 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         }
         const [leftId, rightId] = involved;
 
-        this._typeModel.addRelationScore(leftId, rightId);
+        // if they are equal we dont add a relation
+        if (leftId !== rightId) {
+          this._typeModel.addStrongRelation(leftId, rightId);
+        }
         // likely numeric
         this._typeModel.addTypeScore(leftId, TypeEnum.NUMERIC);
         this._typeModel.addTypeScore(rightId, TypeEnum.NUMERIC);
@@ -892,7 +919,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         }
         const [leftId, rightId] = involved;
 
-        this._typeModel.addRelationScore(leftId, rightId);
+        this._typeModel.addWeakRelation(leftId, rightId);
         // likely numeric or string
         this._typeModel.addTypeScore(leftId, TypeEnum.NUMERIC);
         this._typeModel.addTypeScore(leftId, TypeEnum.STRING);
@@ -914,7 +941,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         }
         const [leftId, rightId] = involved;
 
-        this._typeModel.addRelationScore(leftId, rightId);
+        this._typeModel.addWeakRelation(leftId, rightId);
         // likely boolean
         this._typeModel.addTypeScore(leftId, TypeEnum.BOOLEAN);
         this._typeModel.addTypeScore(rightId, TypeEnum.BOOLEAN);
