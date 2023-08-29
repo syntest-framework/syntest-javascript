@@ -171,7 +171,8 @@ export class TypeModel {
   addRelationScore(id1: string, id2: string, score: number) {
     if (id1 === id2) {
       // no self loops
-      throw new Error(`ids should not be equal to add a relation id: ${id1}`);
+      return;
+      // throw new Error(`ids should not be equal to add a relation id: ${id1}`);
     }
     this._addRelationScore(id1, id2, score);
     this._addRelationScore(id2, id1, score);
