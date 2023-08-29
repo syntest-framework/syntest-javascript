@@ -234,25 +234,34 @@ export class TypeModel {
     this.getObjectDescription(element).elements.add(id);
   }
 
-  // TODO type should be TypeEnum?
-  addExecutionScore(id: string, type: string, score: number) {
+  // TODO should also add scores to  the relations when relevant
+  addExecutionScore(
+    id: string,
+    typeId: string,
+    typeEnum: TypeEnum,
+    score = -1
+  ) {
     if (!this._typeExecutionScoreMap.has(id)) {
       throw new Error(`Element ${id} does not exist`);
+    }
+
+    let type: string = typeEnum;
+
+    if (id !== typeId) {
+      type = `${typeId}<>${typeEnum}`;
     }
 
     if (!this._typeExecutionScoreMap.get(id).has(type)) {
       this._typeExecutionScoreMap.get(id).set(type, 0);
     }
 
-    const currentScore = this._typeExecutionScoreMap.get(id).get(type);
-
-    this._typeExecutionScoreMap.get(id).set(type, currentScore + score);
-
-    this._scoreHasChangedMap.set(id, true);
-
     if (!this._elementTypeScoreMap.get(id).has(type)) {
       this._elementTypeScoreMap.get(id).set(type, 0);
     }
+
+    const currentScore = this._typeExecutionScoreMap.get(id).get(type);
+    this._typeExecutionScoreMap.get(id).set(type, currentScore + score);
+    this._scoreHasChangedMap.set(id, true);
   }
 
   private _sum(iterable: Iterable<number>) {

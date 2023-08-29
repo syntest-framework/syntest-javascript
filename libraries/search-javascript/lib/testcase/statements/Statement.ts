@@ -28,7 +28,7 @@ export abstract class Statement {
   private _variableIdentifier: string;
   private _typeIdentifier: string;
   private _name: string;
-  private _type: string;
+  private _type: TypeEnum;
   protected _uniqueId: string;
   protected _varName: string;
 
@@ -46,7 +46,7 @@ export abstract class Statement {
     return this._name;
   }
 
-  get type(): string {
+  get type(): TypeEnum {
     return this._type;
   }
 
