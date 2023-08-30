@@ -162,7 +162,7 @@ export class TypeModel {
   }
 
   addStrongRelation(id1: string, id2: string) {
-    this.addRelationScore(id1, id2, 10);
+    this.addRelationScore(id1, id2, 5);
   }
 
   addRelationScore(id1: string, id2: string, score: number) {
@@ -173,6 +173,10 @@ export class TypeModel {
     }
     this._addRelationScore(id1, id2, score);
     this._addRelationScore(id2, id1, score);
+  }
+
+  addStrongTypeScore(id: string, type: TypeEnum) {
+    this.addTypeScore(id, type, 5);
   }
 
   addTypeScore(id: string, type: TypeEnum, score = 1) {
@@ -281,6 +285,9 @@ export class TypeModel {
     randomTypeProbability: number,
     id: string
   ): string {
+    if (id.includes("express/lib/response.js:539:59:::539:67:::13879:13887")) {
+      console.log();
+    }
     const probabilities = this.calculateProbabilitiesForElement(
       incorporateExecutionScore,
       id
@@ -575,7 +582,7 @@ export class TypeModel {
       totalProbability += probability;
     }
 
-    if (totalProbability !== 0) {
+    if (totalProbability !== 0 && totalProbability !== 1) {
       for (const [type, probability] of probabilityMap.entries()) {
         probabilityMap.set(type, probability / totalProbability);
       }

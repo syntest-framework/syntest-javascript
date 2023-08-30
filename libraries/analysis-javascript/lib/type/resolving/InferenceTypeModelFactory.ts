@@ -663,6 +663,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
       }
       case RelationType.LogicalNotUnary: {
         // TODO can we say something about the argument?
+        //likely also boolean?
         this._typeModel.addTypeScore(relationId, TypeEnum.BOOLEAN);
         break;
       }
