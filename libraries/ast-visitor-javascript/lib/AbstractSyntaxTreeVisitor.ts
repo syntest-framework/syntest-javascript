@@ -91,6 +91,9 @@ const reservedKeywords = new Set([
   "with",
   "yield",
 ]);
+
+export const MemberSeparator = " <-> ";
+
 export class AbstractSyntaxTreeVisitor implements TraverseOptions {
   protected static LOGGER: Logger;
 
@@ -159,6 +162,11 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
       throw new Error("Cannot get binding for labeled statement");
     }
 
+    // if (path.isThisExpression()) {
+    //   // this expression refers to "thisParent"
+    //   return this._getBindingId(this._getThisParent(path))
+    // }
+
     if (
       path.parentPath.isMemberExpression() &&
       path.parentPath.get("property") === path
@@ -166,10 +174,18 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
       // we are the property of a member expression
       // so the binding id is equal to the object of the member expression relation + the id of the property
       // e.g. bar.foo
+      if (
+        !path.isIdentifier() &&
+        !path.isStringLiteral() &&
+        !path.isNumericLiteral()
+      ) {
+        return this._getNodeId(path);
+      }
       return (
-        // this._getBindingId(path.parentPath.get("object")) +
-        // " <-> " +
-        this._getNodeId(path)
+        this._getBindingId(path.parentPath.get("object")) +
+        MemberSeparator +
+        (path.isIdentifier() ? path.node.name : path.node.value)
+        // this._getNodeId(path) // bad
       );
     }
 

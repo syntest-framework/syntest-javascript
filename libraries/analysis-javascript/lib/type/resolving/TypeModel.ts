@@ -104,33 +104,30 @@ export class TypeModel {
     //TODO maybe merge
     for (const [key, value] of this._relationScoreMap.get(id2).entries())
       this._relationScoreMap.get(id1).has(key)
-        ? this._relationScoreMap.get(id1).set(key, value)
-        : this._relationScoreMap
+        ? this._relationScoreMap
             .get(id1)
-            .set(key, this._relationScoreMap.get(id1).get(key) + value);
+            .set(key, this._relationScoreMap.get(id1).get(key) + value)
+        : this._relationScoreMap.get(id1).set(key, value);
     for (const [key, value] of this._elementTypeScoreMap.get(id2).entries())
       this._elementTypeScoreMap.get(id1).has(key)
-        ? this._elementTypeScoreMap.get(id1).set(key, value)
-        : this._elementTypeScoreMap
+        ? this._elementTypeScoreMap
             .get(id1)
-            .set(key, this._elementTypeScoreMap.get(id1).get(key) + value);
+            .set(key, this._elementTypeScoreMap.get(id1).get(key) + value)
+        : this._elementTypeScoreMap.get(id1).set(key, value);
     for (const [key, value] of this._elementTypeProbabilityMap
       .get(id2)
       .entries())
       this._elementTypeProbabilityMap.get(id1).has(key)
-        ? this._elementTypeProbabilityMap.get(id1).set(key, value)
-        : this._elementTypeProbabilityMap
+        ? this._elementTypeProbabilityMap
             .get(id1)
-            .set(
-              key,
-              this._elementTypeProbabilityMap.get(id1).get(key) + value
-            );
+            .set(key, this._elementTypeProbabilityMap.get(id1).get(key) + value)
+        : this._elementTypeProbabilityMap.get(id1).set(key, value);
     for (const [key, value] of this._typeExecutionScoreMap.get(id2).entries())
       this._typeExecutionScoreMap.get(id1).has(key)
-        ? this._typeExecutionScoreMap.get(id1).set(key, value)
-        : this._typeExecutionScoreMap
+        ? this._typeExecutionScoreMap
             .get(id1)
-            .set(key, this._typeExecutionScoreMap.get(id1).get(key) + value);
+            .set(key, this._typeExecutionScoreMap.get(id1).get(key) + value)
+        : this._typeExecutionScoreMap.get(id1).set(key, value);
 
     this._relationScoreMap.set(id2, this._relationScoreMap.get(id1));
     this._elementTypeScoreMap.set(id2, this._elementTypeScoreMap.get(id1));
@@ -289,18 +286,18 @@ export class TypeModel {
       id
     );
 
-    // const x = new Map()
-    // for (const [type, probability] of probabilities.entries()) {
-    //   const typeEnum = type.includes('<>') ? type.split('<>')[1] : type
+    const x = new Map();
+    for (const [type, probability] of probabilities.entries()) {
+      const typeEnum = type.includes("<>") ? type.split("<>")[1] : type;
 
-    //   if (!x.has(typeEnum)) {
-    //     x.set(typeEnum, 0)
-    //   }
+      if (!x.has(typeEnum)) {
+        x.set(typeEnum, 0);
+      }
 
-    //   x.set(typeEnum, x.get(typeEnum) + probability)
-    // }
-    // console.log(id)
-    // console.log(x)
+      x.set(typeEnum, x.get(typeEnum) + probability);
+    }
+    console.log(id);
+    console.log(x);
 
     const genericTypes = [
       TypeEnum.ARRAY,

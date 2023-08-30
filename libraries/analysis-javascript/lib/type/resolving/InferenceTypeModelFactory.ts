@@ -98,9 +98,9 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         continue;
       }
 
-      this.createNewTypeProbability(element.id, element.id);
+      this.createNewTypeProbability(element.id, element.bindingId);
       this._typeModel.addTypeScore(
-        element.id,
+        element.bindingId,
         elementTypeToTypingType(element.type)
       );
     }
@@ -513,6 +513,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
 
         // connect class to relation
         this._typeModel.setEqual(classId, relationId);
+        // this._typeModel.addStrongRelation(relationId, classId);
 
         break;
       }
@@ -608,6 +609,7 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
 
         // we don't have to connect the relationid to the propertyId since they are equal already
         this._typeModel.addStrongRelation(relationId, propertyId);
+        // this._typeModel.setEqual(relationId, propertyId)
         break;
       }
 
@@ -871,13 +873,18 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
         }
         const [leftId, rightId] = involved;
 
-        this._typeModel.setEqual(leftId, relationId);
+        if (leftId !== rightId) {
+          this._typeModel.addStrongRelation(leftId, rightId);
+        }
         // undefined should be the actual result
         // this._typeModel.addPrimitiveTypeScore(relationId, {
         //   type: TypeEnum.UNDEFINED,
         // });
 
-        this._typeModel.addStrongRelation(leftId, rightId);
+        // this._typeModel.setEqual(leftId, relationId);
+        // this._typeModel.addStrongRelation(relationId, leftId);
+
+        this._typeModel.addTypeScore(relationId, TypeEnum.UNDEFINED);
 
         break;
       }
