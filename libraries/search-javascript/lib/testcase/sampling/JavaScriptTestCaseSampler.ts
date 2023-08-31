@@ -75,6 +75,7 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
   private _stringMaxLength: number;
 
   private _deltaMutationProbability: number;
+  private _numericTypeChangeProbability: number;
   // private _deltaSigma: number; // todo
   // private _adaptiveDeltaSigma: boolean; // todo
 
@@ -108,6 +109,7 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
     stringAlphabet: string,
     stringMaxLength: number,
     deltaMutationProbability: number,
+    numericTypeChangeProbability: number,
     exploreIllegalValues: boolean
   ) {
     super(subject);
@@ -128,6 +130,7 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
     this._stringAlphabet = stringAlphabet;
     this._stringMaxLength = stringMaxLength;
     this._deltaMutationProbability = deltaMutationProbability;
+    this._numericTypeChangeProbability = numericTypeChangeProbability;
     this._exploreIllegalValues = exploreIllegalValues;
   }
 
@@ -346,6 +349,10 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
 
   get deltaMutationProbability(): number {
     return this._deltaMutationProbability;
+  }
+
+  get numericTypeChangeProbability(): number {
+    return this._numericTypeChangeProbability;
   }
 
   get exploreIllegalValues(): boolean {

@@ -121,6 +121,16 @@ export function getTestCommand(
     type: "number",
   });
 
+  options.set("numeric-type-change-probability", {
+    alias: [],
+    default: 0.5,
+    description:
+      "Probability to change the type of a numeric statement to an integer and reverse.",
+    group: samplingGroup,
+    hidden: false,
+    type: "number",
+  });
+
   options.set("execution-timeout", {
     alias: [],
     default: 2000,
@@ -169,6 +179,7 @@ export type TestCommandOptions = {
   typePoolProbability: number;
   statementPool: boolean;
   statementPoolProbability: number;
+  numericTypeChangeProbability: number;
   executionTimeout: number;
   testTimeout: number;
 };

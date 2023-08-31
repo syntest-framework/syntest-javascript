@@ -45,7 +45,7 @@ export class NumericStatement extends PrimitiveStatement<number> {
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
     if (prng.nextBoolean(sampler.deltaMutationProbability)) {
       // 80%
-      if (prng.nextBoolean(0.5)) {
+      if (prng.nextBoolean(sampler.numericTypeChangeProbability)) {
         // 50%
         return new IntegerStatement(
           this.variableIdentifier,
@@ -55,20 +55,22 @@ export class NumericStatement extends PrimitiveStatement<number> {
           prng.uniqueId(),
           this.value
         ).deltaMutation(sampler);
+      } else {
+        // 50%
+        return this.deltaMutation(sampler);
       }
-      return this.deltaMutation(sampler);
     } else {
       // 20%
-      if (prng.nextBoolean(0.5)) {
+      if (prng.nextBoolean(sampler.numericTypeChangeProbability)) {
+        // 50%
+        return sampler.sampleNumber(this.variableIdentifier, this.name);
+      } else {
         // 50%
         return sampler.sampleArgument(
           depth + 1,
           this.variableIdentifier,
           this.name
         );
-      } else {
-        // 50%
-        return sampler.sampleNumber(this.variableIdentifier, this.name);
       }
     }
   }
