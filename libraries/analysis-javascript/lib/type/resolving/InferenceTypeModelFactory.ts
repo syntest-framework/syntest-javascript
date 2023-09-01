@@ -562,7 +562,10 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
 
         if (propertyElement === undefined) {
           // e.g. object[b ? 1 : 0]
-          // TODO what if the property is not an element
+          // the property is not an element
+          this._typeModel.addTypeScore(objectId, TypeEnum.STRING);
+          this._typeModel.addTypeScore(objectId, TypeEnum.ARRAY);
+          this._typeModel.addTypeScore(objectId, TypeEnum.OBJECT, 2);
         } else
           switch (propertyElement.type) {
             case ElementType.NumericalLiteral: {
@@ -590,9 +593,9 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
                 // or we can check wether abc is a number
 
                 // add the defaults
-                this._typeModel.addTypeScore(objectId, TypeEnum.ARRAY);
                 this._typeModel.addTypeScore(objectId, TypeEnum.STRING);
-                this._typeModel.addTypeScore(objectId, TypeEnum.OBJECT);
+                this._typeModel.addTypeScore(objectId, TypeEnum.ARRAY);
+                this._typeModel.addTypeScore(objectId, TypeEnum.OBJECT, 2);
               } else {
                 // e.g. object.abc
                 this._typeModel.addPropertyType(

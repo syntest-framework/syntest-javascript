@@ -162,7 +162,7 @@ export class TypeModel {
   }
 
   addStrongRelation(id1: string, id2: string) {
-    this.addRelationScore(id1, id2, 5);
+    this.addRelationScore(id1, id2, 3);
   }
 
   addRelationScore(id1: string, id2: string, score: number) {
