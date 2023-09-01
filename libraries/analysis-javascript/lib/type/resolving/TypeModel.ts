@@ -285,26 +285,23 @@ export class TypeModel {
     randomTypeProbability: number,
     id: string
   ): string {
-    if (id.includes("express/lib/response.js:539:59:::539:67:::13879:13887")) {
-      console.log();
-    }
     const probabilities = this.calculateProbabilitiesForElement(
       incorporateExecutionScore,
       id
     );
 
-    const x = new Map();
-    for (const [type, probability] of probabilities.entries()) {
-      const typeEnum = type.includes("<>") ? type.split("<>")[1] : type;
+    // const x = new Map();
+    // for (const [type, probability] of probabilities.entries()) {
+    //   const typeEnum = type.includes("<>") ? type.split("<>")[1] : type;
 
-      if (!x.has(typeEnum)) {
-        x.set(typeEnum, 0);
-      }
+    //   if (!x.has(typeEnum)) {
+    //     x.set(typeEnum, 0);
+    //   }
 
-      x.set(typeEnum, x.get(typeEnum) + probability);
-    }
-    console.log(id);
-    console.log(x);
+    //   x.set(typeEnum, x.get(typeEnum) + probability);
+    // }
+    // console.log(id);
+    // console.log(x);
 
     const genericTypes = [
       TypeEnum.ARRAY,
