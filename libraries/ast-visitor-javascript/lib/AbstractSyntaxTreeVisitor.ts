@@ -162,11 +162,6 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
       throw new Error("Cannot get binding for labeled statement");
     }
 
-    // if (path.isThisExpression()) {
-    //   // this expression refers to "thisParent"
-    //   return this._getBindingId(this._getThisParent(path))
-    // }
-
     if (
       path.parentPath.isMemberExpression() &&
       path.parentPath.get("property") === path
@@ -350,12 +345,4 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
 
     return this._thisScopeStack[this._thisScopeStack.length - 1];
   }
-
-  // protected _getCurrentThisScopeName() {
-  //   if (this._thisScopeStackNames.length === 0) {
-  //     throw new Error("Invalid scope stack!");
-  //   }
-
-  //   return this._thisScopeStackNames[this._thisScopeStackNames.length - 1];
-  // }
 }

@@ -19,9 +19,6 @@ import { ObjectVisitor } from "./object/ObjectVisitor";
 import traverse from "@babel/traverse";
 import { ElementVisitor } from "./element/ElementVisitor";
 import { RelationVisitor } from "./relation/RelationVisitor";
-// import { Element } from "./element/Element";
-// import { Relation } from "./relation/Relation";
-// import { DiscoveredObjectType } from "./object/DiscoveredType";
 import * as t from "@babel/types";
 
 export class TypeExtractor {

@@ -317,25 +317,4 @@ export class RootContext extends CoreRootContext<t.Node> {
 
     return this._typePool;
   }
-
-  // getElement(id: string): Element {
-  //   if (!this._elementMap || !this._elementMap.has(id)) {
-  //     this.extractTypes();
-  //   }
-  //   return this._elementMap.get(id);
-  // }
-
-  // getRelation(id: string): Relation {
-  //   if (!this._relationMap || !this._relationMap.has(id)) {
-  //     this.extractTypes();
-  //   }
-  //   return this._relationMap.get(id);
-  // }
-
-  // getObject(id: string): DiscoveredObjectType {
-  //   if (!this._objectMap || !this._objectMap.has(id)) {
-  //     this.extractTypes();
-  //   }
-  //   return this._objectMap.get(id);
-  // }
 }
