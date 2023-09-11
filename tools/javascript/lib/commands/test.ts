@@ -140,6 +140,15 @@ export function getTestCommand(
     type: "number",
   });
 
+  options.set("syntax-forgiving", {
+    alias: [],
+    default: true,
+    description: "Whether we allow 'odd' syntax or throw an error.",
+    group: "Debugging",
+    hidden: false,
+    type: "boolean",
+  });
+
   return new Command(
     moduleManager,
     tool,
@@ -171,4 +180,6 @@ export type TestCommandOptions = {
   statementPoolProbability: number;
   executionTimeout: number;
   testTimeout: number;
+
+  syntaxForgiving: boolean;
 };

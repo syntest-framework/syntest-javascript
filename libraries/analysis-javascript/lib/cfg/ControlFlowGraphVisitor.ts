@@ -127,8 +127,8 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     };
   }
 
-  constructor(filePath: string) {
-    super(filePath);
+  constructor(filePath: string, syntaxForgiving: boolean) {
+    super(filePath, syntaxForgiving);
     ControlFlowGraphVisitor.LOGGER = getLogger("ControlFlowGraphVisitor");
 
     this._nodesList = [];

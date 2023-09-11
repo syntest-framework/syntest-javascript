@@ -44,8 +44,8 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
 
   private _subTargets: SubTarget[];
 
-  constructor(filePath: string, exports: Export[]) {
-    super(filePath);
+  constructor(filePath: string, syntaxForgiving: boolean, exports: Export[]) {
+    super(filePath, syntaxForgiving);
     TargetVisitor.LOGGER = getLogger("TargetVisitor");
     this._exports = exports;
     this._subTargets = [];
@@ -234,14 +234,14 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
           );
         }
       }
-      case "ReturnStatement": {
-        // e.g. return class {}
-        // e.g. return function () {}
-        // e.g. return () => {}
-        return "id" in path.node && path.node.id && "name" in path.node.id
-          ? path.node.id.name
-          : "anonymous";
-      }
+      case "ReturnStatement":
+      // e.g. return class {}
+      // e.g. return function () {}
+      // e.g. return () => {}
+      case "NewExpression":
+      // e.g. new Class(class {}) // dont think this one is possible but unsure
+      // e.g. new Class(function () {})
+      // e.g. new Class(() => {})
       case "CallExpression": {
         // e.g. function(class {}) // dont think this one is possible but unsure
         // e.g. function(function () {})
