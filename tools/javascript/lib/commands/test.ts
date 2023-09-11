@@ -149,6 +149,15 @@ export function getTestCommand(
     type: "boolean",
   });
 
+  options.set("silence-test-output", {
+    alias: [],
+    default: true,
+    description: "Whether we show the test output in the logs.",
+    group: "Debugging",
+    hidden: false,
+    type: "boolean",
+  });
+
   return new Command(
     moduleManager,
     tool,
@@ -182,4 +191,5 @@ export type TestCommandOptions = {
   testTimeout: number;
 
   syntaxForgiving: boolean;
+  silenceTestOutput: boolean;
 };

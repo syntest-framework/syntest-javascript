@@ -30,8 +30,8 @@ export class ObjectVisitor extends AbstractSyntaxTreeVisitor {
     return this._objectTypeMap;
   }
 
-  constructor(filePath: string) {
-    super(filePath);
+  constructor(filePath: string, syntaxForgiving: boolean) {
+    super(filePath, syntaxForgiving);
     this._objectTypeMap = new Map();
     this._objectStack = [];
   }

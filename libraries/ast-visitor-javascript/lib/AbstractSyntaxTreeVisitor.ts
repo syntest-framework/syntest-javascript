@@ -164,8 +164,14 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
        * }
        */
       // not supported
-      AbstractSyntaxTreeVisitor.LOGGER.info(`Unsupported labeled statement`);
-      throw new Error("Cannot get binding for labeled statement");
+      if (this.syntaxForgiving) {
+        AbstractSyntaxTreeVisitor.LOGGER.warn(
+          `Unsupported labeled statement found at ${this._getNodeId(path)}`
+        );
+        return this._getNodeId(path);
+      } else {
+        throw new Error("Cannot get binding for labeled statement");
+      }
     }
 
     if (
@@ -248,6 +254,11 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
       return `global::${path.node.name}`;
     } else if (binding === undefined) {
       if (this.syntaxForgiving) {
+        AbstractSyntaxTreeVisitor.LOGGER.warn(
+          `Cannot find binding for ${path.node.name} at ${this._getNodeId(
+            path
+          )}`
+        );
         return this._getNodeId(path);
       } else {
         throw new Error(
@@ -273,8 +284,20 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
     let parent = path.getFunctionParent();
 
     if (parent === undefined || parent === null) {
-      return <NodePath<t.Program>>path.findParent((p) => p.isProgram());
-      // throw new Error(`ThisExpression without parent function found at ${this._getNodeId(path)}`);
+      if (this.syntaxForgiving) {
+        AbstractSyntaxTreeVisitor.LOGGER.warn(
+          `ThisExpression without parent function found at ${this._getNodeId(
+            path
+          )}`
+        );
+        return <NodePath<t.Program>>path.findParent((p) => p.isProgram());
+      } else {
+        throw new Error(
+          `ThisExpression without parent function found at ${this._getNodeId(
+            path
+          )}`
+        );
+      }
     }
 
     while (parent.isArrowFunctionExpression()) {
@@ -282,8 +305,20 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
       parent = parent.getFunctionParent();
 
       if (parent === undefined || parent === null) {
-        return <NodePath<t.Program>>path.findParent((p) => p.isProgram());
-        // throw new Error(`ThisExpression without parent function found at ${this._getNodeId(path)}`);
+        if (this.syntaxForgiving) {
+          AbstractSyntaxTreeVisitor.LOGGER.warn(
+            `ThisExpression without parent function found at ${this._getNodeId(
+              path
+            )}`
+          );
+          return <NodePath<t.Program>>path.findParent((p) => p.isProgram());
+        } else {
+          throw new Error(
+            `ThisExpression without parent function found at ${this._getNodeId(
+              path
+            )}`
+          );
+        }
       }
     }
 

@@ -238,6 +238,10 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
       // e.g. return class {}
       // e.g. return function () {}
       // e.g. return () => {}
+      case "ArrowFunctionExpression":
+      // e.g. () => class {}
+      // e.g. () => function () {}
+      // e.g. () => () => {}
       case "NewExpression":
       // e.g. new Class(class {}) // dont think this one is possible but unsure
       // e.g. new Class(function () {})
@@ -255,18 +259,12 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
         // e.g. c ? function () {} : b
         // e.g. c ? () => {} : b
         return this._getTargetNameOfExpression(path.parentPath);
-        // return "id" in path.node && path.node.id
-        //     ? path.node.id.name
-        //     : "anonymous";
       }
       case "LogicalExpression": {
         // e.g. c || class {}
         // e.g. c || function () {}
         // e.g. c || () => {}
         return this._getTargetNameOfExpression(path.parentPath);
-        // return "id" in path.node && path.node.id
-        //     ? path.node.id.name
-        //     : "anonymous";
       }
       default: {
         // e.g. class {}
@@ -274,9 +272,9 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
         // e.g. () => {}
         // Should not be possible
         throw new Error(
-          `unknown class expression ${parentNode.type} in ${this._getNodeId(
-            path
-          )}`
+          `Unknown parent expression ${parentNode.type} for ${
+            path.node.type
+          } in ${this._getNodeId(path)}`
         );
       }
     }
