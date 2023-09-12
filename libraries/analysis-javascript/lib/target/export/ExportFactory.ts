@@ -21,13 +21,14 @@ import * as t from "@babel/types";
 
 import { ExportVisitor } from "./ExportVisitor";
 import { Export } from "./Export";
+import { Factory } from "../../Factory";
 
 /**
  * ExportFactory for Javascript.
  *
  * @author Dimitri Stallenberg
  */
-export class ExportFactory {
+export class ExportFactory extends Factory {
   /**
    * Generate exports for specified target.
    *
@@ -35,7 +36,7 @@ export class ExportFactory {
    * @param AST The AST of the target
    */
   extract(filePath: string, AST: t.Node): Export[] {
-    const exportVisitor = new ExportVisitor(filePath);
+    const exportVisitor = new ExportVisitor(filePath, this.syntaxForgiving);
 
     traverse(AST, exportVisitor);
 

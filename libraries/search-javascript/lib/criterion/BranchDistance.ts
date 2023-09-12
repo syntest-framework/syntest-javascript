@@ -27,10 +27,12 @@ import { Logger, getLogger } from "@syntest/logging";
 
 export class BranchDistance extends CoreBranchDistance {
   protected static LOGGER: Logger;
+  protected syntaxForgiving: boolean;
   protected stringAlphabet: string;
 
-  constructor(stringAlphabet: string) {
+  constructor(syntaxForgiving: boolean, stringAlphabet: string) {
     super();
+    this.syntaxForgiving = syntaxForgiving;
     BranchDistance.LOGGER = getLogger("BranchDistance");
     this.stringAlphabet = stringAlphabet;
   }
@@ -48,6 +50,7 @@ export class BranchDistance extends CoreBranchDistance {
 
     const ast = transformSync(condition, options).ast;
     const visitor = new BranchDistanceVisitor(
+      this.syntaxForgiving,
       this.stringAlphabet,
       variables,
       !trueOrFalse
@@ -57,7 +60,12 @@ export class BranchDistance extends CoreBranchDistance {
     let distance = visitor._getDistance(condition);
 
     if (distance > 1 || distance < 0) {
-      throw new Error("Invalid distance!");
+      const variables_ = Object.entries(variables)
+        .map(([key, value]) => `${key}=${value}`)
+        .join(", ");
+      throw new Error(
+        `Invalid distance: ${distance} for ${condition} -> ${trueOrFalse}. Variables: ${variables_}`
+      );
     }
 
     if (Number.isNaN(distance)) {
