@@ -183,6 +183,14 @@ export class JavaScriptLauncher extends Launcher {
       );
     }
 
+    for (const target of targetFiles) {
+      if (this.arguments_.analysisExclude.includes(target)) {
+        throw new Error(
+          `Target files cannot be excluded from analysis. Target file: ${target}`
+        );
+      }
+    }
+
     const analysisFiles = fileSelector.loadFilePaths(
       [...targetFiles, ...this.arguments_.analysisInclude],
       this.arguments_.analysisExclude
