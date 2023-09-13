@@ -547,7 +547,6 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
         this._createEdge(
           this._nodes.get(continueNode),
           labelNode,
-          EdgeType.BACK_EDGE,
           EdgeType.BACK_EDGE
         )
       );
@@ -601,12 +600,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
 
     // the back edge
     this._edges.push(
-      this._createEdge(
-        consequent,
-        firstBodyNode,
-        EdgeType.NORMAL,
-        EdgeType.BACK_EDGE
-      )
+      this._createEdge(consequent, firstBodyNode, EdgeType.BACK_EDGE)
     );
 
     // false
@@ -630,7 +624,6 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
         this._createEdge(
           this._nodes.get(continueNode),
           loopNode,
-          EdgeType.BACK_EDGE,
           EdgeType.BACK_EDGE
         )
       );
@@ -698,7 +691,6 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
         this._createEdge(
           this._nodes.get(continueNode),
           loopNode,
-          EdgeType.BACK_EDGE,
           EdgeType.BACK_EDGE
         )
       );
@@ -797,7 +789,6 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
         this._createEdge(
           this._nodes.get(continueNode),
           testNode,
-          EdgeType.BACK_EDGE,
           EdgeType.BACK_EDGE
         )
       );
@@ -881,7 +872,6 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
         this._createEdge(
           this._nodes.get(continueNode),
           testNode,
-          EdgeType.BACK_EDGE,
           EdgeType.BACK_EDGE
         )
       );
@@ -965,7 +955,6 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
         this._createEdge(
           this._nodes.get(continueNode),
           testNode,
-          EdgeType.BACK_EDGE,
           EdgeType.BACK_EDGE
         )
       );
