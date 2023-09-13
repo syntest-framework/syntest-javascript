@@ -594,18 +594,21 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     }
 
     // loop
-    const loopNode = this._createNode(path.get("test")); // or path.get("test") ??
-    // TODO test
-
+    const loopNode = this._createNode(path.get("test"));
     this._connectToParents(loopNode);
 
     // consequent
+    this._currentParents = [loopNode.id];
+    this._edgeType = EdgeType.CONDITIONAL_TRUE;
+    const consequent = this._createPlaceholderNode(path.get("test")); // bit of a hack to use the test
+    this._connectToParents(consequent);
+
     // the back edge
     this._edges.push(
       this._createEdge(
-        loopNode,
+        consequent,
         firstBodyNode,
-        EdgeType.CONDITIONAL_TRUE,
+        EdgeType.NORMAL,
         EdgeType.BACK_EDGE
       )
     );
@@ -991,6 +994,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     const testNode = this._createNode(path.get("discriminant"));
     this._connectToParents(testNode);
     this._currentParents = [testNode.id];
+    let fallThrough: string[] = [];
 
     for (const caseNode of path.get("cases")) {
       if (caseNode.has("test")) {
@@ -1003,7 +1007,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
         this._edgeType = EdgeType.CONDITIONAL_TRUE;
         const consequentNode = this._createNode(caseNode);
         this._connectToParents(consequentNode);
-        this._currentParents = [consequentNode.id];
+        this._currentParents = [consequentNode.id, ...fallThrough];
 
         if (caseNode.get("consequent").length > 0) {
           for (const consequentNode of caseNode.get("consequent")) {
@@ -1012,13 +1016,15 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
         }
 
         const trueParents = this._currentParents; // if there is a break these should be empty
+        fallThrough = [...trueParents]; // fall through
+
         // alternate
         // placeholder
         this._edgeType = EdgeType.CONDITIONAL_FALSE;
         this._currentParents = [caseTestNode.id];
         const alternateNode = this._createPlaceholderNode(caseNode);
         this._connectToParents(alternateNode);
-        this._currentParents = [alternateNode.id, ...trueParents]; // normal + fall through case
+        this._currentParents = [alternateNode.id]; // normal
       } else {
         // default
         if (caseNode.get("consequent").length === 0) {
@@ -1034,9 +1040,17 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
         }
       }
     }
+    // exit
+    const switchExit = this._createPlaceholderNode(path, true);
 
-    // connect all break nodes to switch exit
-    this._currentParents.push(...this._regularBreakNodesStack.pop());
+    this._currentParents.push(
+      // connect fall through nodes to switch exit
+      ...fallThrough,
+      // connect all break nodes to switch exit
+      ...this._regularBreakNodesStack.pop()
+    );
+    this._connectToParents(switchExit);
+    this._currentParents = [switchExit.id];
 
     path.skip();
   };
