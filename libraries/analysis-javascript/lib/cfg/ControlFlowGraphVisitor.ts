@@ -300,29 +300,6 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     return node;
   }
 
-  // private _isSpecial(path: NodePath): boolean {
-  //   return (
-  //     path.isFunction() ||
-  //     path.isClass() ||
-  //     path.isConditional() ||
-  //     path.isLoop() ||
-  //     path.isBlock() ||
-  //     // terminating statements
-  //     path.isBreakStatement() ||
-  //     path.isContinueStatement() ||
-  //     path.isReturnStatement() ||
-  //     path.isThrowStatement() ||
-  //     // exports
-  //     path.isExportAllDeclaration() ||
-  //     path.isExportDeclaration() ||
-  //     path.isExportDefaultDeclaration() ||
-  //     path.isExportDefaultSpecifier() ||
-  //     path.isExportNamedDeclaration() ||
-  //     path.isExportNamespaceSpecifier() ||
-  //     path.isExportSpecifier()
-  //   );
-  // }
-
   private _createEdge(
     source: Node,
     target: Node,
