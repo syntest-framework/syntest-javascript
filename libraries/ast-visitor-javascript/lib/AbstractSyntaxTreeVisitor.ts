@@ -138,16 +138,6 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
     }
 
     if (
-      path.parentPath.isExportSpecifier() &&
-      path.parentPath.get("exported") === path
-    ) {
-      // we are the export name of a renamed export
-      // so this is the first definition of foo
-      // e.g. export {bar as foo}
-      return this._getNodeId(path);
-    }
-
-    if (
       (path.parentPath.isObjectProperty() ||
         path.parentPath.isObjectMethod()) &&
       path.parentPath.get("key") === path
@@ -168,6 +158,16 @@ export class AbstractSyntaxTreeVisitor implements TraverseOptions {
       // we import and rename
       // so this is the first definition of foo
       // e.g. import { foo as bar } from "./bar"
+      return this._getNodeId(path);
+    }
+
+    if (
+      path.parentPath.isExportSpecifier() &&
+      path.parentPath.get("exported") === path
+    ) {
+      // we are the export name of a renamed export
+      // so this is the first definition of foo
+      // e.g. export {bar as foo}
       return this._getNodeId(path);
     }
 
