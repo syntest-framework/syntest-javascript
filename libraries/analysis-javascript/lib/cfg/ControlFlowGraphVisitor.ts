@@ -519,10 +519,6 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
 
     const labelNode = this._createNode(path);
     this._connectToParents(labelNode);
-    this._currentParents = [labelNode.id];
-
-    this._regularBreakNodesStack.push(new Set());
-    this._regularContinueNodesStack.push(new Set());
 
     // body
     this._currentParents = [labelNode.id];
