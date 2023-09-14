@@ -28,11 +28,10 @@ import {
   Node,
   NodeType,
 } from "@syntest/cfg";
-import { getLogger } from "@syntest/logging";
+import { Logger, getLogger } from "@syntest/logging";
 
 export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected static override LOGGER: any;
+  protected static override LOGGER: Logger;
 
   private _nodesList: Node[];
   private _nodes: Map<string, Node>;
