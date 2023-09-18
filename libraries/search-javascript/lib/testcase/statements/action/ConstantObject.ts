@@ -18,7 +18,6 @@
 
 import { prng } from "@syntest/prng";
 
-import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding } from "../Statement";
 
@@ -46,7 +45,6 @@ export class ConstantObject extends ActionStatement {
       [],
       export_
     );
-    this._classType = "ConstantObject";
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): ConstantObject {
@@ -74,9 +72,10 @@ export class ConstantObject extends ActionStatement {
   }
 
   decode(context: ContextBuilder): Decoding[] {
-    const decoded = `const ${context.getOrCreateVariableName(this)} = ${
-      this.name
-    }`;
+    const import_ = context.getOrCreateImportName(this.export);
+    const decoded = `const ${context.getOrCreateVariableName(
+      this
+    )} = ${import_}`;
 
     return [
       {

@@ -19,7 +19,6 @@
 import { prng } from "@syntest/prng";
 import { shouldNeverHappen } from "@syntest/search";
 
-import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";
 
@@ -58,7 +57,6 @@ export class ObjectFunctionCall extends ActionStatement {
       uniqueId,
       arguments_
     );
-    this._classType = "ObjectFunctionCall";
     this._object = object_;
   }
 
@@ -128,13 +126,15 @@ export class ObjectFunctionCall extends ActionStatement {
   }
 
   decode(context: ContextBuilder, exception: boolean): Decoding[] {
+    const objectDecoding = this._object.decode(context);
+
+    const argumentsDecoding: Decoding[] = this.args.flatMap((a) =>
+      a.decode(context, exception)
+    );
+
     const arguments_ = this.args
       .map((a) => context.getOrCreateVariableName(a))
       .join(", ");
-
-    const argumentStatements: Decoding[] = this.args.flatMap((a) =>
-      a.decode(context, exception)
-    );
 
     let decoded = `const ${context.getOrCreateVariableName(
       this
@@ -149,8 +149,8 @@ export class ObjectFunctionCall extends ActionStatement {
     }
 
     return [
-      ...this._object.decode(context),
-      ...argumentStatements,
+      ...objectDecoding,
+      ...argumentsDecoding,
       {
         decoded: decoded,
         reference: this,

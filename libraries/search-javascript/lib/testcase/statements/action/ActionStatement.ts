@@ -32,12 +32,12 @@ export abstract class ActionStatement extends Statement {
     variableIdentifier: string,
     typeIdentifier: string,
     name: string,
-    type: TypeEnum,
+    ownType: TypeEnum,
     uniqueId: string,
     arguments_: Statement[],
     export_?: Export
   ) {
-    super(variableIdentifier, typeIdentifier, name, type, uniqueId);
+    super(variableIdentifier, typeIdentifier, name, ownType, uniqueId);
     this._args = arguments_;
     this._export = export_;
   }

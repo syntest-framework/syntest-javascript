@@ -19,7 +19,6 @@
 import { prng } from "@syntest/prng";
 import { shouldNeverHappen } from "@syntest/search";
 
-import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";
 import { TypeEnum } from "@syntest/analysis-javascript";
@@ -43,7 +42,6 @@ export class ObjectStatement extends Statement {
   ) {
     super(variableIdentifier, typeIdentifier, name, TypeEnum.OBJECT, uniqueId);
     this._object = object;
-    this._classType = "ObjectStatement";
 
     // check for circular
     for (const [key, statement] of Object.entries(this._object)) {
@@ -167,23 +165,21 @@ export class ObjectStatement extends Statement {
   }
 
   decode(context: ContextBuilder, exception: boolean): Decoding[] {
-    const children = Object.keys(this._object)
-      .filter((key) => this._object[key] !== undefined)
-      .map(
-        (key) =>
-          `\t\t\t"${key}": ${context.getOrCreateVariableName(
-            this._object[key]
-          )}`
-      )
-      .join(",\n");
-
     const childStatements: Decoding[] = Object.values(this._object)
       .filter((a) => a !== undefined)
       .flatMap((a) => a.decode(context, exception));
 
+    const children = Object.keys(this._object)
+      .filter((key) => this._object[key] !== undefined)
+      .map(
+        (key) =>
+          `\n\t"${key}": ${context.getOrCreateVariableName(this._object[key])}`
+      )
+      .join(",");
+
     const decoded = `const ${context.getOrCreateVariableName(
       this
-    )} = {\n${children}\n\t\t}`;
+    )} = {${children}${children.length > 0 ? "\n\t\t" : ""}}`;
 
     return [
       ...childStatements,

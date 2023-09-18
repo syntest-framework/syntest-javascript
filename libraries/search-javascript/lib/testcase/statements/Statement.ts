@@ -16,9 +16,8 @@
  * limitations under the License.
  */
 
-import { Encoding, EncodingSampler, shouldNeverHappen } from "@syntest/search";
+import { Encoding, EncodingSampler } from "@syntest/search";
 
-import { JavaScriptDecoder } from "../../testbuilding/JavaScriptDecoder";
 import { TypeEnum } from "@syntest/analysis-javascript";
 import { ContextBuilder } from "../../testbuilding/ContextBuilder";
 
@@ -29,10 +28,8 @@ export abstract class Statement {
   private _variableIdentifier: string;
   private _typeIdentifier: string;
   private _name: string;
-  private _type: TypeEnum;
+  private _ownType: TypeEnum;
   protected _uniqueId: string;
-
-  protected _classType: string;
 
   public get variableIdentifier(): string {
     return this._variableIdentifier;
@@ -46,40 +43,32 @@ export abstract class Statement {
     return this._name;
   }
 
-  get type(): TypeEnum {
-    return this._type;
+  get ownType(): TypeEnum {
+    return this._ownType;
   }
 
   public get uniqueId(): string {
     return this._uniqueId;
   }
 
-  get classType(): string {
-    return this._classType;
-  }
-
   /**
    * Constructor
    * @param identifierDescription
-   * @param type
+   * @param ownType
    * @param uniqueId
    */
   protected constructor(
     variableIdentifier: string,
     typeIdentifier: string,
     name: string,
-    type: TypeEnum,
+    ownType: TypeEnum,
     uniqueId: string
   ) {
     this._variableIdentifier = variableIdentifier;
     this._typeIdentifier = typeIdentifier;
     this._name = name;
-    this._type = type;
+    this._ownType = ownType;
     this._uniqueId = uniqueId;
-
-    if (name.includes("<>")) {
-      throw new Error(shouldNeverHappen("name cannot inlude <>"));
-    }
   }
 
   /**
@@ -120,6 +109,7 @@ export abstract class Statement {
 
   /**
    * Decodes the statement
+   * Note: when implementing this function please always decode the children of the statement before making getOrCreateVariableName on the context object.
    */
   abstract decode(context: ContextBuilder, exception: boolean): Decoding[];
 }
@@ -127,5 +117,4 @@ export abstract class Statement {
 export interface Decoding {
   decoded: string;
   reference: Statement;
-  objectVariable?: string;
 }

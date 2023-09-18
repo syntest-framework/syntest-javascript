@@ -423,14 +423,7 @@ export class JavaScriptLauncher extends Launcher {
       `${timeInMs}`
     );
 
-    this.decoder = new JavaScriptDecoder(
-      this.arguments_.targetRootDirectory,
-      path.join(
-        this.arguments_.tempSyntestDirectory,
-        this.arguments_.fid,
-        this.arguments_.logDirectory
-      )
-    );
+    this.decoder = new JavaScriptDecoder(this.arguments_.targetRootDirectory);
     const executionInformationIntegrator = new ExecutionInformationIntegrator(
       this.rootContext.getTypeModel()
     );
@@ -474,8 +467,7 @@ export class JavaScriptLauncher extends Launcher {
     const suiteBuilder = new JavaScriptSuiteBuilder(
       this.storageManager,
       this.decoder,
-      this.runner,
-      this.arguments_.logDirectory
+      this.runner
     );
 
     const reducedArchive = suiteBuilder.reduceArchive(this.archive);
@@ -485,35 +477,25 @@ export class JavaScriptLauncher extends Launcher {
     }
 
     // TODO fix hardcoded paths
-    let paths = suiteBuilder.createSuite(
+    await suiteBuilder.runSuite(
       reducedArchive,
       "../instrumented",
       this.arguments_.testDirectory,
       true,
       false
     );
-    await suiteBuilder.runSuite(paths, this.archive.size);
 
     // reset states
     this.storageManager.clearTemporaryDirectory([
       this.arguments_.testDirectory,
     ]);
 
-    // run with assertions and report results
-    for (const key of reducedArchive.keys()) {
-      suiteBuilder.gatherAssertions(reducedArchive.get(key));
-    }
-
-    paths = suiteBuilder.createSuite(
+    const { stats, instrumentationData } = await suiteBuilder.runSuite(
       reducedArchive,
       "../instrumented",
       this.arguments_.testDirectory,
       false,
       true
-    );
-    const { stats, instrumentationData } = await suiteBuilder.runSuite(
-      paths,
-      this.archive.size
     );
 
     if (stats.failures > 0) {
@@ -643,7 +625,7 @@ export class JavaScriptLauncher extends Launcher {
     this.userInterface.printTable("Coverage", table);
 
     // create final suite
-    suiteBuilder.createSuite(
+    await suiteBuilder.runSuite(
       reducedArchive,
       originalSourceDirectory,
       this.arguments_.testDirectory,
@@ -855,12 +837,12 @@ export class JavaScriptLauncher extends Launcher {
     // TODO should be cleanup step in tool
     // Finish
     JavaScriptLauncher.LOGGER.info("Deleting temporary directories");
-    this.storageManager.deleteTemporaryDirectories([
-      [this.arguments_.testDirectory],
-      [this.arguments_.logDirectory],
-      [this.arguments_.instrumentedDirectory],
-    ]);
+    // this.storageManager.deleteTemporaryDirectories([
+    //   [this.arguments_.testDirectory],
+    //   [this.arguments_.logDirectory],
+    //   [this.arguments_.instrumentedDirectory],
+    // ]);
 
-    this.storageManager.deleteMainTemporary();
+    // this.storageManager.deleteMainTemporary();
   }
 }

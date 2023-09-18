@@ -19,7 +19,6 @@
 import { prng } from "@syntest/prng";
 import { shouldNeverHappen } from "@syntest/search";
 
-import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";
 import { TypeEnum } from "@syntest/analysis-javascript";
@@ -49,7 +48,6 @@ export class ArrowFunctionStatement extends Statement {
     );
     this._parameters = parameters;
     this._returnValue = returnValue;
-    this._classType = "ArrowFunctionStatement";
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
@@ -103,25 +101,27 @@ export class ArrowFunctionStatement extends Statement {
         {
           decoded: `const ${context.getOrCreateVariableName(
             this
-          )} = (${this._parameters.join(", ")}) => { };`,
+          )} = (${this._parameters.join(", ")}) => {};`,
           reference: this,
         },
       ];
     }
+
     const returnStatement: Decoding[] = this._returnValue.decode(
       context,
       exception
     );
+
+    const decoded = `const ${context.getOrCreateVariableName(
+      this
+    )} = (${this._parameters.join(
+      ", "
+    )}) => { return ${context.getOrCreateVariableName(this.returnValue)} };`;
+
     return [
       ...returnStatement,
       {
-        decoded: `const ${context.getOrCreateVariableName(
-          this
-        )} = (${this._parameters.join(
-          ", "
-        )}) => { return ${context.getOrCreateVariableName(
-          this.returnValue
-        )} };`,
+        decoded: decoded,
         reference: this,
       },
     ];

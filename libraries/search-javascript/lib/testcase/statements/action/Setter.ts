@@ -18,7 +18,6 @@
 
 import { prng } from "@syntest/prng";
 
-import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";
 
@@ -58,7 +57,6 @@ export class Setter extends ClassActionStatement {
       [argument],
       constructor_
     );
-    this._classType = "Setter";
   }
 
   mutate(
@@ -98,13 +96,14 @@ export class Setter extends ClassActionStatement {
   }
 
   decode(context: ContextBuilder, exception: boolean): Decoding[] {
+    const constructorDecoding = this.constructor_.decode(context, exception);
+    const argumentDecoding: Decoding[] = this.args.flatMap((a) =>
+      a.decode(context, exception)
+    );
+
     const argument = this.args
       .map((a) => context.getOrCreateVariableName(a))
       .join(", ");
-
-    const argumentStatement: Decoding[] = this.args.flatMap((a) =>
-      a.decode(context, exception)
-    );
 
     let decoded = `${context.getOrCreateVariableName(this.constructor_)}.${
       this.name
@@ -117,8 +116,8 @@ export class Setter extends ClassActionStatement {
     }
 
     return [
-      ...this.constructor_.decode(context, exception),
-      ...argumentStatement,
+      ...constructorDecoding,
+      ...argumentDecoding,
       {
         decoded: decoded,
         reference: this,

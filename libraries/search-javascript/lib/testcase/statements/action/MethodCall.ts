@@ -18,7 +18,6 @@
 
 import { prng } from "@syntest/prng";
 
-import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";
 
@@ -55,7 +54,6 @@ export class MethodCall extends ClassActionStatement {
       arguments_,
       constructor_
     );
-    this._classType = "MethodCall";
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): MethodCall {
@@ -94,13 +92,14 @@ export class MethodCall extends ClassActionStatement {
   }
 
   decode(context: ContextBuilder, exception: boolean): Decoding[] {
+    const constructorDecoding = this.constructor_.decode(context, exception);
+    const argumentsDecoding: Decoding[] = this.args.flatMap((a) =>
+      a.decode(context, exception)
+    );
+
     const arguments_ = this.args
       .map((a) => context.getOrCreateVariableName(a))
       .join(", ");
-
-    const argumentStatements: Decoding[] = this.args.flatMap((a) =>
-      a.decode(context, exception)
-    );
 
     let decoded = `const ${context.getOrCreateVariableName(
       this
@@ -115,8 +114,8 @@ export class MethodCall extends ClassActionStatement {
     }
 
     return [
-      ...this.constructor_.decode(context, exception),
-      ...argumentStatements,
+      ...constructorDecoding,
+      ...argumentsDecoding,
       {
         decoded: decoded,
         reference: this,

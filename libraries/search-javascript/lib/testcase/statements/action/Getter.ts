@@ -18,7 +18,6 @@
 
 import { prng } from "@syntest/prng";
 
-import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding } from "../Statement";
 
@@ -54,7 +53,6 @@ export class Getter extends ClassActionStatement {
       [],
       constructor_
     );
-    this._classType = "Getter";
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): Getter {
@@ -80,6 +78,8 @@ export class Getter extends ClassActionStatement {
   }
 
   decode(context: ContextBuilder, exception: boolean): Decoding[] {
+    const constructorDecoding = this.constructor_.decode(context, exception);
+
     let decoded = `const ${context.getOrCreateVariableName(
       this
     )} = await ${context.getOrCreateVariableName(this.constructor_)}.${
@@ -93,7 +93,7 @@ export class Getter extends ClassActionStatement {
     }
 
     return [
-      ...this.constructor_.decode(context, exception),
+      ...constructorDecoding,
       {
         decoded: decoded,
         reference: this,

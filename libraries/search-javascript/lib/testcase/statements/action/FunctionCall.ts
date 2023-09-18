@@ -18,7 +18,6 @@
 
 import { prng } from "@syntest/prng";
 
-import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";
 
@@ -53,7 +52,6 @@ export class FunctionCall extends ActionStatement {
       arguments_,
       export_
     );
-    this._classType = "FunctionCall";
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): FunctionCall {
@@ -89,24 +87,25 @@ export class FunctionCall extends ActionStatement {
   }
 
   decode(context: ContextBuilder, exception: boolean): Decoding[] {
+    const argumentDecoding: Decoding[] = this.args.flatMap((a) =>
+      a.decode(context, exception)
+    );
+
     const arguments_ = this.args
       .map((a) => context.getOrCreateVariableName(a))
       .join(", ");
 
-    const argumentStatements: Decoding[] = this.args.flatMap((a) =>
-      a.decode(context, exception)
-    );
-
-    let decoded = `const ${context.getOrCreateVariableName(this)} = await ${
-      this.export.name
-    }(${arguments_})`;
+    const import_ = context.getOrCreateImportName(this.export);
+    let decoded = `const ${context.getOrCreateVariableName(
+      this
+    )} = await ${import_}(${arguments_})`;
 
     if (exception) {
       decoded = `await expect(${this.name}(${arguments_})).to.be.rejectedWith(Error);`;
     }
 
     return [
-      ...argumentStatements,
+      ...argumentDecoding,
       {
         decoded: decoded,
         reference: this,

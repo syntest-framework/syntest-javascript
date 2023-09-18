@@ -19,7 +19,6 @@
 import { prng } from "@syntest/prng";
 import { shouldNeverHappen } from "@syntest/search";
 
-import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";
 import { TypeEnum } from "@syntest/analysis-javascript";
@@ -28,32 +27,30 @@ import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
 /**
  * @author Dimitri Stallenberg
  */
-// TODO array subtype
 export class ArrayStatement extends Statement {
-  private _children: Statement[];
+  private _elements: Statement[];
 
   constructor(
     variableIdentifier: string,
     typeIdentifier: string,
     name: string,
     uniqueId: string,
-    children: Statement[]
+    elements: Statement[]
   ) {
     super(variableIdentifier, typeIdentifier, name, TypeEnum.ARRAY, uniqueId);
-    this._children = children;
-    this._classType = "ArrayStatement";
+    this._elements = elements;
 
     // check for circular
-    for (const [index, statement] of this._children.entries()) {
+    for (const [index, statement] of this._elements.entries()) {
       if (statement && statement.uniqueId === this.uniqueId) {
-        this._children.splice(index, 1);
+        this._elements.splice(index, 1);
       }
     }
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
     if (prng.nextBoolean(sampler.deltaMutationProbability)) {
-      const children = this._children.map((a: Statement) => a.copy());
+      const children = this._elements.map((a: Statement) => a.copy());
 
       const choice = prng.nextDouble();
 
@@ -119,7 +116,7 @@ export class ArrayStatement extends Statement {
       this.typeIdentifier,
       this.name,
       this.uniqueId,
-      this._children
+      this._elements
         .filter((a) => {
           if (a.uniqueId === this.uniqueId) {
             console.log("circular detected");
@@ -132,20 +129,20 @@ export class ArrayStatement extends Statement {
   }
 
   decode(context: ContextBuilder, exception: boolean): Decoding[] {
-    const children = this._children
-      .map((a) => context.getOrCreateVariableName(a))
-      .join(", ");
-
-    const childStatements: Decoding[] = this._children.flatMap((a) =>
+    const elementStatements: Decoding[] = this._elements.flatMap((a) =>
       a.decode(context, exception)
     );
 
+    const elements = this._elements
+      .map((a) => context.getOrCreateVariableName(a))
+      .join(", ");
+
     const decoded = `const ${context.getOrCreateVariableName(
       this
-    )} = [${children}]`;
+    )} = [${elements}]`;
 
     return [
-      ...childStatements,
+      ...elementStatements,
       {
         decoded: decoded,
         reference: this,
@@ -158,7 +155,7 @@ export class ArrayStatement extends Statement {
   }
 
   hasChildren(): boolean {
-    return this._children.length > 0;
+    return this._elements.length > 0;
   }
 
   setChild(index: number, newChild: Statement) {
@@ -174,6 +171,6 @@ export class ArrayStatement extends Statement {
   }
 
   protected get children(): Statement[] {
-    return this._children;
+    return this._elements;
   }
 }
