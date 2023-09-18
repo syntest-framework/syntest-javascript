@@ -26,6 +26,7 @@ import { Decoding, Statement } from "../Statement";
 import { ActionStatement } from "./ActionStatement";
 import { ConstantObject } from "./ConstantObject";
 import { TypeEnum } from "@syntest/analysis-javascript";
+import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
 
 /**
  * @author Dimitri Stallenberg
@@ -126,37 +127,34 @@ export class ObjectFunctionCall extends ActionStatement {
     );
   }
 
-  decode(
-    decoder: JavaScriptDecoder,
-    id: string,
-    options: { addLogs: boolean; exception: boolean }
-  ): Decoding[] {
-    const arguments_ = this.args.map((a) => a.varName).join(", ");
+  decode(context: ContextBuilder, exception: boolean): Decoding[] {
+    const arguments_ = this.args
+      .map((a) => context.getOrCreateVariableName(a))
+      .join(", ");
 
     const argumentStatements: Decoding[] = this.args.flatMap((a) =>
-      a.decode(decoder, id, options)
+      a.decode(context, exception)
     );
 
-    let decoded = `const ${this.varName} = await ${this._object.varName}.${this.name}(${arguments_})`;
+    let decoded = `const ${context.getOrCreateVariableName(
+      this
+    )} = await ${context.getOrCreateVariableName(this._object)}.${
+      this.name
+    }(${arguments_})`;
 
-    if (options.addLogs) {
-      const logDirectory = decoder.getLogDirectory(id, this.varName);
-      decoded += `\nawait fs.writeFileSync('${logDirectory}', '' + ${this.varName} + ';sep;' + JSON.stringify(${this.varName}))`;
+    if (exception) {
+      decoded = `await expect(${context.getOrCreateVariableName(
+        this._object
+      )}.${this.name}(${arguments_})).to.be.rejectedWith(Error);`;
     }
 
     return [
-      ...this._object.decode(decoder, id, options),
+      ...this._object.decode(context),
       ...argumentStatements,
       {
         decoded: decoded,
         reference: this,
       },
     ];
-  }
-
-  // TODO
-  decodeErroring(): string {
-    const arguments_ = this.args.map((a) => a.varName).join(", ");
-    return `await expect(${this._object.varName}.${this.name}(${arguments_})).to.be.rejectedWith(Error);`;
   }
 }

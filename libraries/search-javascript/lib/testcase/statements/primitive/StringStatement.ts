@@ -23,6 +23,7 @@ import { Decoding, Statement } from "../Statement";
 
 import { PrimitiveStatement } from "./PrimitiveStatement";
 import { TypeEnum } from "@syntest/analysis-javascript";
+import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
 
 /**
  * @author Dimitri Stallenberg
@@ -211,7 +212,7 @@ export class StringStatement extends PrimitiveStatement<string> {
     );
   }
 
-  override decode(): Decoding[] {
+  override decode(context: ContextBuilder): Decoding[] {
     let value = this.value;
 
     value = value.replaceAll(/\\/g, "\\\\");
@@ -222,7 +223,7 @@ export class StringStatement extends PrimitiveStatement<string> {
 
     return [
       {
-        decoded: `const ${this.varName} = "${value}";`,
+        decoded: `const ${context.getOrCreateVariableName(this)} = "${value}";`,
         reference: this,
       },
     ];

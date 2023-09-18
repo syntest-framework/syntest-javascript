@@ -24,6 +24,7 @@ import { Decoding, Statement } from "../Statement";
 
 import { Export, TypeEnum } from "@syntest/analysis-javascript";
 import { ActionStatement } from "./ActionStatement";
+import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
 
 /**
  * @author Dimitri Stallenberg
@@ -87,22 +88,21 @@ export class FunctionCall extends ActionStatement {
     );
   }
 
-  decode(
-    decoder: JavaScriptDecoder,
-    id: string,
-    options: { addLogs: boolean; exception: boolean }
-  ): Decoding[] {
-    const arguments_ = this.args.map((a) => a.varName).join(", ");
+  decode(context: ContextBuilder, exception: boolean): Decoding[] {
+    const arguments_ = this.args
+      .map((a) => context.getOrCreateVariableName(a))
+      .join(", ");
 
     const argumentStatements: Decoding[] = this.args.flatMap((a) =>
-      a.decode(decoder, id, options)
+      a.decode(context, exception)
     );
 
-    let decoded = `const ${this.varName} = await ${this.name}(${arguments_})`;
+    let decoded = `const ${context.getOrCreateVariableName(this)} = await ${
+      this.export.name
+    }(${arguments_})`;
 
-    if (options.addLogs) {
-      const logDirectory = decoder.getLogDirectory(id, this.varName);
-      decoded += `\nawait fs.writeFileSync('${logDirectory}', '' + ${this.varName} + ';sep;' + JSON.stringify(${this.varName}))`;
+    if (exception) {
+      decoded = `await expect(${this.name}(${arguments_})).to.be.rejectedWith(Error);`;
     }
 
     return [
@@ -112,10 +112,5 @@ export class FunctionCall extends ActionStatement {
         reference: this,
       },
     ];
-  }
-
-  decodeErroring(): string {
-    const arguments_ = this.args.map((a) => a.varName).join(", ");
-    return `await expect(${this.name}(${arguments_})).to.be.rejectedWith(Error);`;
   }
 }

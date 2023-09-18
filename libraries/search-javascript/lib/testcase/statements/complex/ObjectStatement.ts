@@ -23,6 +23,7 @@ import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";
 import { TypeEnum } from "@syntest/analysis-javascript";
+import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
 
 /**
  * @author Dimitri Stallenberg
@@ -161,30 +162,28 @@ export class ObjectStatement extends Statement {
       this.typeIdentifier,
       this.name,
       this.uniqueId,
-      this._object
+      object
     );
   }
 
-  decode(
-    decoder: JavaScriptDecoder,
-    id: string,
-    options: { addLogs: boolean; exception: boolean }
-  ): Decoding[] {
+  decode(context: ContextBuilder, exception: boolean): Decoding[] {
     const children = Object.keys(this._object)
       .filter((key) => this._object[key] !== undefined)
-      .map((key) => `\t\t\t"${key}": ${this._object[key].varName}`)
+      .map(
+        (key) =>
+          `\t\t\t"${key}": ${context.getOrCreateVariableName(
+            this._object[key]
+          )}`
+      )
       .join(",\n");
 
     const childStatements: Decoding[] = Object.values(this._object)
       .filter((a) => a !== undefined)
-      .flatMap((a) => a.decode(decoder, id, options));
+      .flatMap((a) => a.decode(context, exception));
 
-    let decoded = `const ${this.varName} = {\n${children}\n\t\t}`;
-
-    if (options.addLogs) {
-      const logDirectory = decoder.getLogDirectory(id, this.varName);
-      decoded += `\nawait fs.writeFileSync('${logDirectory}', '' + ${this.varName} + ';sep;' + JSON.stringify(${this.varName}))`;
-    }
+    const decoded = `const ${context.getOrCreateVariableName(
+      this
+    )} = {\n${children}\n\t\t}`;
 
     return [
       ...childStatements,

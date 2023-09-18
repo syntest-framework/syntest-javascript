@@ -54,7 +54,6 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
     for (const testCase of testCases) {
       const roots: ActionStatement[] = testCase.roots;
 
-      const importableGenes: ActionStatement[] = [];
       let decodings: Decoding[] = roots.flatMap((root) =>
         root.decode(this, testCase.id, {
           addLogs,
@@ -104,13 +103,6 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
           continue;
         }
 
-        if (
-          value.reference instanceof ActionStatement &&
-          value.reference.export
-        ) {
-          importableGenes.push(value.reference);
-        }
-
         if (addLogs) {
           // add log per statement
           testString.push("\t\t" + `count = ${index};`);
@@ -130,20 +122,6 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
           "}"
         );
       }
-
-      // const importsOfTest = this.gatherImports(
-      //   context,
-      //   sourceDirectory,
-      //   testString,
-      //   importableGenes
-      // );
-
-      // for (const import_ of importsOfTest) {
-      //   if (!imports.includes(import_)) {
-      //     // filter duplicates
-      //     imports.push(import_);
-      //   }
-      // }
 
       if (addLogs) {
         context.addLogs();

@@ -25,6 +25,7 @@ import { Decoding } from "../Statement";
 import { ClassActionStatement } from "./ClassActionStatement";
 import { ConstructorCall } from "./ConstructorCall";
 import { TypeEnum } from "@syntest/analysis-javascript";
+import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
 
 /**
  * @author Dimitri Stallenberg
@@ -78,29 +79,25 @@ export class Getter extends ClassActionStatement {
     );
   }
 
-  decode(
-    decoder: JavaScriptDecoder,
-    id: string,
-    options: { addLogs: boolean; exception: boolean }
-  ): Decoding[] {
-    let decoded = `const ${this.varName} = await ${this.constructor_.varName}.${this.name}`;
+  decode(context: ContextBuilder, exception: boolean): Decoding[] {
+    let decoded = `const ${context.getOrCreateVariableName(
+      this
+    )} = await ${context.getOrCreateVariableName(this.constructor_)}.${
+      this.name
+    }`;
 
-    if (options.addLogs) {
-      const logDirectory = decoder.getLogDirectory(id, this.varName);
-      decoded += `\nawait fs.writeFileSync('${logDirectory}', '' + ${this.varName} + ';sep;' + JSON.stringify(${this.varName}))`;
+    if (exception) {
+      decoded = `await expect(${context.getOrCreateVariableName(
+        this.constructor_
+      )}.${this.name}).to.be.rejectedWith(Error);`;
     }
 
     return [
-      ...this.constructor_.decode(decoder, id, options),
+      ...this.constructor_.decode(context, exception),
       {
         decoded: decoded,
         reference: this,
       },
     ];
-  }
-
-  // TODO
-  decodeErroring(): string {
-    return `await expect(${this.constructor_.varName}.${this.name}).to.be.rejectedWith(Error);`;
   }
 }

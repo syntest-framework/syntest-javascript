@@ -17,7 +17,7 @@
  */
 
 import { ActionStatement } from "../testcase/statements/action/ActionStatement";
-import { Decoding } from "../testcase/statements/Statement";
+import { Decoding, Statement } from "../testcase/statements/Statement";
 import * as path from "node:path";
 import { Export } from "@syntest/analysis-javascript";
 
@@ -60,6 +60,9 @@ export class ContextBuilder {
   // var -> count
   private variableCount: Map<string, number>;
 
+  private statementVariableNameMap: Map<Statement, string>;
+  private variableNameCount: Map<string, number>;
+
   constructor(targetRootDirectory: string, sourceDirectory: string) {
     this.targetRootDirectory = targetRootDirectory;
     this.sourceDirectory = sourceDirectory;
@@ -72,7 +75,61 @@ export class ContextBuilder {
 
     this.variableMap = new Map();
     this.variableCount = new Map();
+
+    this.statementVariableNameMap = new Map();
+    this.variableNameCount = new Map();
   }
+
+  getOrCreateVariableName(statement: Statement): string {
+    // TODO camelcase
+
+    if (this.statementVariableNameMap.has(statement)) {
+      return this.statementVariableNameMap.get(statement);
+    }
+
+    let variableName = statement.name;
+
+    if (this.variableNameCount.has(variableName)) {
+      const count = this.variableNameCount.get(variableName);
+      this.variableNameCount.set(variableName, count + 1);
+      variableName += count;
+    } else {
+      this.variableNameCount.set(variableName, 1);
+    }
+
+    this.statementVariableNameMap.set(statement, variableName);
+    return variableName;
+  }
+
+  // if (options.addLogs) {
+  //   const logDirectory = decoder.getLogDirectory(id, this.varName);
+  //   decoded += `\nawait fs.writeFileSync('${logDirectory}', '' + ${this.varName} + ';sep;' + JSON.stringify(${this.varName}))`;
+  // }
+
+  // protected generateVarName(
+  //   name: string,
+  //   type: string,
+  //   uniqueId: string
+  // ): string {
+  //   return type.includes("<>")
+  //     ? name + "_" + type.split("<>")[1] + "_" + uniqueId
+  //     : name + "_" + type + "_" + uniqueId;
+  // }
+
+  // protected override generateVarName(
+  //   name: string,
+  //   type: string,
+  //   uniqueId: string
+  // ): string {
+  //   // TODO should use return type
+  //   if (this._export) {
+  //     return name + "_" + this._export.name + "_" + uniqueId;
+  //   }
+
+  //   return type.includes("<>")
+  //     ? name + "_" + type.split("<>")[1] + "_" + uniqueId
+  //     : name + "_" + type + "_" + uniqueId;
+  // }
 
   addDecoding(decoding: Decoding) {
     // This function assumes the decodings to come in order

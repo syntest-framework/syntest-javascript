@@ -27,6 +27,7 @@ import { MethodCall } from "./MethodCall";
 import { ClassActionStatement } from "./ClassActionStatement";
 import { ConstructorCall } from "./ConstructorCall";
 import { TypeEnum } from "@syntest/analysis-javascript";
+import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
 
 /**
  * @author Dimitri Stallenberg
@@ -96,37 +97,32 @@ export class Setter extends ClassActionStatement {
     );
   }
 
-  decode(
-    decoder: JavaScriptDecoder,
-    id: string,
-    options: { addLogs: boolean; exception: boolean }
-  ): Decoding[] {
-    const argument = this.args.map((a) => a.varName).join(", ");
+  decode(context: ContextBuilder, exception: boolean): Decoding[] {
+    const argument = this.args
+      .map((a) => context.getOrCreateVariableName(a))
+      .join(", ");
 
     const argumentStatement: Decoding[] = this.args.flatMap((a) =>
-      a.decode(decoder, id, options)
+      a.decode(context, exception)
     );
 
-    let decoded = `${this.constructor_.varName}.${this.name} = ${argument}`;
+    let decoded = `${context.getOrCreateVariableName(this.constructor_)}.${
+      this.name
+    } = ${argument}`;
 
-    if (options.addLogs) {
-      const logDirectory = decoder.getLogDirectory(id, this.varName);
-      decoded += `\nawait fs.writeFileSync('${logDirectory}', '' + ${this.varName} + ';sep;' + JSON.stringify(${this.varName}))`;
+    if (exception) {
+      decoded = `await expect(${context.getOrCreateVariableName(
+        this.constructor_
+      )}.${this.name} = ${argument}).to.be.rejectedWith(Error);`;
     }
 
     return [
-      ...this.constructor_.decode(decoder, id, options),
+      ...this.constructor_.decode(context, exception),
       ...argumentStatement,
       {
         decoded: decoded,
         reference: this,
       },
     ];
-  }
-
-  // TODO
-  decodeErroring(): string {
-    const argument = this.args.map((a) => a.varName).join(", ");
-    return `await expect(${this.constructor_.varName}.${this.name} = ${argument}).to.be.rejectedWith(Error);`;
   }
 }

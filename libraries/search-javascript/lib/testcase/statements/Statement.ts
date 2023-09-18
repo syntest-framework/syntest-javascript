@@ -20,6 +20,7 @@ import { Encoding, EncodingSampler, shouldNeverHappen } from "@syntest/search";
 
 import { JavaScriptDecoder } from "../../testbuilding/JavaScriptDecoder";
 import { TypeEnum } from "@syntest/analysis-javascript";
+import { ContextBuilder } from "../../testbuilding/ContextBuilder";
 
 /**
  * @author Dimitri Stallenberg
@@ -30,7 +31,6 @@ export abstract class Statement {
   private _name: string;
   private _type: TypeEnum;
   protected _uniqueId: string;
-  protected _varName: string;
 
   protected _classType: string;
 
@@ -52,10 +52,6 @@ export abstract class Statement {
 
   public get uniqueId(): string {
     return this._uniqueId;
-  }
-
-  public get varName(): string {
-    return this._varName;
   }
 
   get classType(): string {
@@ -84,18 +80,6 @@ export abstract class Statement {
     if (name.includes("<>")) {
       throw new Error(shouldNeverHappen("name cannot inlude <>"));
     }
-
-    this._varName = "_" + this.generateVarName(name, type, uniqueId);
-  }
-
-  protected generateVarName(
-    name: string,
-    type: string,
-    uniqueId: string
-  ): string {
-    return type.includes("<>")
-      ? name + "_" + type.split("<>")[1] + "_" + uniqueId
-      : name + "_" + type + "_" + uniqueId;
   }
 
   /**
@@ -137,11 +121,7 @@ export abstract class Statement {
   /**
    * Decodes the statement
    */
-  abstract decode(
-    decoder: JavaScriptDecoder,
-    id: string,
-    options: { addLogs: boolean; exception: boolean }
-  ): Decoding[];
+  abstract decode(context: ContextBuilder, exception: boolean): Decoding[];
 }
 
 export interface Decoding {

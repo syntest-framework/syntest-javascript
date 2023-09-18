@@ -23,6 +23,7 @@ import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";
 import { TypeEnum } from "@syntest/analysis-javascript";
+import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
 
 /**
  * @author Dimitri Stallenberg
@@ -96,32 +97,31 @@ export class ArrowFunctionStatement extends Statement {
     );
   }
 
-  decode(
-    decoder: JavaScriptDecoder,
-    id: string,
-    options: { addLogs: boolean; exception: boolean }
-  ): Decoding[] {
+  decode(context: ContextBuilder, exception: boolean): Decoding[] {
     if (this._returnValue === undefined) {
       return [
         {
-          decoded: `const ${this.varName} = (${this._parameters.join(
-            ", "
-          )}) => { };`,
+          decoded: `const ${context.getOrCreateVariableName(
+            this
+          )} = (${this._parameters.join(", ")}) => { };`,
           reference: this,
         },
       ];
     }
     const returnStatement: Decoding[] = this._returnValue.decode(
-      decoder,
-      id,
-      options
+      context,
+      exception
     );
     return [
       ...returnStatement,
       {
-        decoded: `const ${this.varName} = (${this._parameters.join(
+        decoded: `const ${context.getOrCreateVariableName(
+          this
+        )} = (${this._parameters.join(
           ", "
-        )}) => { return ${this.returnValue.varName} };`,
+        )}) => { return ${context.getOrCreateVariableName(
+          this.returnValue
+        )} };`,
         reference: this,
       },
     ];

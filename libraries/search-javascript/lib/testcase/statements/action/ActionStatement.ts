@@ -40,23 +40,6 @@ export abstract class ActionStatement extends Statement {
     super(variableIdentifier, typeIdentifier, name, type, uniqueId);
     this._args = arguments_;
     this._export = export_;
-
-    this._varName = "_" + this.generateVarName(name, type, uniqueId);
-  }
-
-  protected override generateVarName(
-    name: string,
-    type: string,
-    uniqueId: string
-  ): string {
-    // TODO should use return type
-    if (this._export) {
-      return name + "_" + this._export.name + "_" + uniqueId;
-    }
-
-    return type.includes("<>")
-      ? name + "_" + type.split("<>")[1] + "_" + uniqueId
-      : name + "_" + type + "_" + uniqueId;
   }
 
   abstract override mutate(

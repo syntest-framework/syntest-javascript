@@ -23,6 +23,7 @@ import { JavaScriptDecoder } from "../../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";
 import { TypeEnum } from "@syntest/analysis-javascript";
+import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
 
 /**
  * @author Dimitri Stallenberg
@@ -130,23 +131,18 @@ export class ArrayStatement extends Statement {
     );
   }
 
-  decode(
-    decoder: JavaScriptDecoder,
-    id: string,
-    options: { addLogs: boolean; exception: boolean }
-  ): Decoding[] {
-    const children = this._children.map((a) => a.varName).join(", ");
+  decode(context: ContextBuilder, exception: boolean): Decoding[] {
+    const children = this._children
+      .map((a) => context.getOrCreateVariableName(a))
+      .join(", ");
 
     const childStatements: Decoding[] = this._children.flatMap((a) =>
-      a.decode(decoder, id, options)
+      a.decode(context, exception)
     );
 
-    let decoded = `const ${this.varName} = [${children}]`;
-
-    if (options.addLogs) {
-      const logDirectory = decoder.getLogDirectory(id, this.varName);
-      decoded += `\nawait fs.writeFileSync('${logDirectory}', '' + ${this.varName} + ';sep;' + JSON.stringify(${this.varName}))`;
-    }
+    const decoded = `const ${context.getOrCreateVariableName(
+      this
+    )} = [${children}]`;
 
     return [
       ...childStatements,
