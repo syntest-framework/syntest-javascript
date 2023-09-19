@@ -27,7 +27,7 @@ import { ClassActionStatement } from "./ClassActionStatement";
 import { ConstructorCall } from "./ConstructorCall";
 
 /**
- * @author Dimitri Stallenberg
+ * MethodCall
  */
 export class MethodCall extends ClassActionStatement {
   /**

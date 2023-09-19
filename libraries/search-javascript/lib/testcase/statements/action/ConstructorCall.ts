@@ -24,10 +24,9 @@ import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSamp
 import { Decoding, Statement } from "../Statement";
 
 import { ActionStatement } from "./ActionStatement";
-import { MethodCall } from "./MethodCall";
 
 /**
- * @author Dimitri Stallenberg
+ * ConstructorCall
  */
 export class ConstructorCall extends ActionStatement {
   private _classIdentifier: string;
@@ -41,7 +40,6 @@ export class ConstructorCall extends ActionStatement {
    * @param type the return identifierDescription of the constructor
    * @param uniqueId optional argument
    * @param args the arguments of the constructor
-   * @param calls the child calls on the object
    */
   constructor(
     variableIdentifier: string,
@@ -62,14 +60,6 @@ export class ConstructorCall extends ActionStatement {
       export_
     );
     this._classIdentifier = classIdentifier;
-
-    for (const argument of arguments_) {
-      if (argument instanceof MethodCall) {
-        throw new TypeError(
-          "Constructor args cannot be of identifierDescription MethodCall"
-        );
-      }
-    }
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): ConstructorCall {
