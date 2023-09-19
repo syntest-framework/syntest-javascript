@@ -205,24 +205,18 @@ export class ContextBuilder {
 
   // TODO we could gather all the imports of a certain path together into one import
   private _getImportString(_path: string, import_: Import): string {
+    if (import_.module) {
+      throw new Error("Only non module imports can use import statements");
+    }
+
     if (import_.renamed) {
-      if (import_.module) {
-        return import_.default
-          ? `const ${import_.renamedTo} = require("${_path}");`
-          : `const {${import_.name}: ${import_.renamedTo}} = require("${_path}")`;
-      }
       return import_.default
         ? `import ${import_.renamedTo} from "${_path}";`
-        : `import {${import_.name} as ${import_.renamedTo}} from "${_path}"`;
+        : `import {${import_.name} as ${import_.renamedTo}} from "${_path}";`;
     } else {
-      if (import_.module) {
-        return import_.default
-          ? `const ${import_.name} = require("${_path}")`
-          : `const {${import_.name}} = require("${_path}")`;
-      }
       return import_.default
-        ? `import ${import_.name} from "${_path}"`
-        : `import {${import_.name}} from "${_path}"`;
+        ? `import ${import_.name} from "${_path}";`
+        : `import {${import_.name}} from "${_path}";`;
     }
   }
 

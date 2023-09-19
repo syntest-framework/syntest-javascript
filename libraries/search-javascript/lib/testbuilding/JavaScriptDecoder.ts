@@ -191,7 +191,7 @@ function setError(id, error, count) {
 
     if (requires.length > 0) {
       beforeEachLines = [
-        ...requires.map((m) => `\tlet ${m.left}`),
+        ...requires.map((m) => `\tlet ${m.left};`),
         `\tbeforeEach(() => {`,
         "\t\t// This is a hack to force the require cache to be emptied",
         "\t\t// Without this we would be using the same required object for each test",
@@ -200,10 +200,10 @@ function setError(id, error, count) {
             `\t\tdelete require.cache[${m.right.replace(
               "require",
               "require.resolve"
-            )}]`
+            )}];`
         ),
         ...requires.map((m) => `\t\t${m.left} = ${m.right}`),
-        `\t})`,
+        `\t});`,
         "",
       ];
     }
