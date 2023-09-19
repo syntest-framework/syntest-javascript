@@ -77,20 +77,14 @@ export class Getter extends ClassActionStatement {
     );
   }
 
-  decode(context: ContextBuilder, exception: boolean): Decoding[] {
-    const constructorDecoding = this.constructor_.decode(context, exception);
+  decode(context: ContextBuilder): Decoding[] {
+    const constructorDecoding = this.constructor_.decode(context);
 
-    let decoded = `const ${context.getOrCreateVariableName(
+    const decoded = `const ${context.getOrCreateVariableName(
       this
     )} = await ${context.getOrCreateVariableName(this.constructor_)}.${
       this.name
     }`;
-
-    if (exception) {
-      decoded = `await expect(${context.getOrCreateVariableName(
-        this.constructor_
-      )}.${this.name}).to.be.rejectedWith(Error);`;
-    }
 
     return [
       ...constructorDecoding,

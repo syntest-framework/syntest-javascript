@@ -111,7 +111,7 @@ export abstract class Statement {
    * Decodes the statement
    * Note: when implementing this function please always decode the children of the statement before making getOrCreateVariableName on the context object.
    */
-  abstract decode(context: ContextBuilder, exception: boolean): Decoding[];
+  abstract decode(context: ContextBuilder): Decoding[];
 }
 
 export interface Decoding {

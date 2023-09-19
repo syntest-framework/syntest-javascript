@@ -89,9 +89,7 @@ function setError(id, error, count) {
       context.nextTestCase();
       const roots: ActionStatement[] = testCase.roots;
 
-      let decodings: Decoding[] = roots.flatMap((root) =>
-        root.decode(context, false)
-      );
+      let decodings: Decoding[] = roots.flatMap((root) => root.decode(context));
 
       if (decodings.length === 0) {
         throw new Error("No statements in test case");

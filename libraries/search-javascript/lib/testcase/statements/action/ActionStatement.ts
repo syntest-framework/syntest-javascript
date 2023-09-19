@@ -22,7 +22,7 @@ import { Statement } from "../Statement";
 import { Export, TypeEnum } from "@syntest/analysis-javascript";
 
 /**
- * @author Dimitri Stallenberg
+ * ActionStatement
  */
 export abstract class ActionStatement extends Statement {
   private _args: Statement[];

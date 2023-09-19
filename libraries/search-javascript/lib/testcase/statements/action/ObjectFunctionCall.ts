@@ -125,28 +125,22 @@ export class ObjectFunctionCall extends ActionStatement {
     );
   }
 
-  decode(context: ContextBuilder, exception: boolean): Decoding[] {
+  decode(context: ContextBuilder): Decoding[] {
     const objectDecoding = this._object.decode(context);
 
     const argumentsDecoding: Decoding[] = this.args.flatMap((a) =>
-      a.decode(context, exception)
+      a.decode(context)
     );
 
     const arguments_ = this.args
       .map((a) => context.getOrCreateVariableName(a))
       .join(", ");
 
-    let decoded = `const ${context.getOrCreateVariableName(
+    const decoded = `const ${context.getOrCreateVariableName(
       this
     )} = await ${context.getOrCreateVariableName(this._object)}.${
       this.name
     }(${arguments_})`;
-
-    if (exception) {
-      decoded = `await expect(${context.getOrCreateVariableName(
-        this._object
-      )}.${this.name}(${arguments_})).to.be.rejectedWith(Error);`;
-    }
 
     return [
       ...objectDecoding,

@@ -95,25 +95,19 @@ export class Setter extends ClassActionStatement {
     );
   }
 
-  decode(context: ContextBuilder, exception: boolean): Decoding[] {
-    const constructorDecoding = this.constructor_.decode(context, exception);
+  decode(context: ContextBuilder): Decoding[] {
+    const constructorDecoding = this.constructor_.decode(context);
     const argumentDecoding: Decoding[] = this.args.flatMap((a) =>
-      a.decode(context, exception)
+      a.decode(context)
     );
 
     const argument = this.args
       .map((a) => context.getOrCreateVariableName(a))
       .join(", ");
 
-    let decoded = `${context.getOrCreateVariableName(this.constructor_)}.${
+    const decoded = `${context.getOrCreateVariableName(this.constructor_)}.${
       this.name
     } = ${argument}`;
-
-    if (exception) {
-      decoded = `await expect(${context.getOrCreateVariableName(
-        this.constructor_
-      )}.${this.name} = ${argument}).to.be.rejectedWith(Error);`;
-    }
 
     return [
       ...constructorDecoding,

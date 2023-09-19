@@ -95,7 +95,7 @@ export class ArrowFunctionStatement extends Statement {
     );
   }
 
-  decode(context: ContextBuilder, exception: boolean): Decoding[] {
+  decode(context: ContextBuilder): Decoding[] {
     if (this._returnValue === undefined) {
       return [
         {
@@ -107,10 +107,7 @@ export class ArrowFunctionStatement extends Statement {
       ];
     }
 
-    const returnStatement: Decoding[] = this._returnValue.decode(
-      context,
-      exception
-    );
+    const returnStatement: Decoding[] = this._returnValue.decode(context);
 
     const decoded = `const ${context.getOrCreateVariableName(
       this

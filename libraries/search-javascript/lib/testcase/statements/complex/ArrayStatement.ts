@@ -128,9 +128,9 @@ export class ArrayStatement extends Statement {
     );
   }
 
-  decode(context: ContextBuilder, exception: boolean): Decoding[] {
+  decode(context: ContextBuilder): Decoding[] {
     const elementStatements: Decoding[] = this._elements.flatMap((a) =>
-      a.decode(context, exception)
+      a.decode(context)
     );
 
     const elements = this._elements

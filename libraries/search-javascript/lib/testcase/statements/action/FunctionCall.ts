@@ -86,9 +86,9 @@ export class FunctionCall extends ActionStatement {
     );
   }
 
-  decode(context: ContextBuilder, exception: boolean): Decoding[] {
+  decode(context: ContextBuilder): Decoding[] {
     const argumentDecoding: Decoding[] = this.args.flatMap((a) =>
-      a.decode(context, exception)
+      a.decode(context)
     );
 
     const arguments_ = this.args
@@ -96,13 +96,9 @@ export class FunctionCall extends ActionStatement {
       .join(", ");
 
     const import_ = context.getOrCreateImportName(this.export);
-    let decoded = `const ${context.getOrCreateVariableName(
+    const decoded = `const ${context.getOrCreateVariableName(
       this
     )} = await ${import_}(${arguments_})`;
-
-    if (exception) {
-      decoded = `await expect(${this.name}(${arguments_})).to.be.rejectedWith(Error);`;
-    }
 
     return [
       ...argumentDecoding,

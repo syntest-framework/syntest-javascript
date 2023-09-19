@@ -91,27 +91,21 @@ export class MethodCall extends ClassActionStatement {
     );
   }
 
-  decode(context: ContextBuilder, exception: boolean): Decoding[] {
-    const constructorDecoding = this.constructor_.decode(context, exception);
+  decode(context: ContextBuilder): Decoding[] {
+    const constructorDecoding = this.constructor_.decode(context);
     const argumentsDecoding: Decoding[] = this.args.flatMap((a) =>
-      a.decode(context, exception)
+      a.decode(context)
     );
 
     const arguments_ = this.args
       .map((a) => context.getOrCreateVariableName(a))
       .join(", ");
 
-    let decoded = `const ${context.getOrCreateVariableName(
+    const decoded = `const ${context.getOrCreateVariableName(
       this
     )} = await ${context.getOrCreateVariableName(this.constructor_)}.${
       this.name
     }(${arguments_})`;
-
-    if (exception) {
-      decoded = `await expect(${context.getOrCreateVariableName(
-        this.constructor_
-      )}.${this.name}(${arguments_})).to.be.rejectedWith(Error);`;
-    }
 
     return [
       ...constructorDecoding,

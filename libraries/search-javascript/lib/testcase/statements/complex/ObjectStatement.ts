@@ -164,10 +164,10 @@ export class ObjectStatement extends Statement {
     );
   }
 
-  decode(context: ContextBuilder, exception: boolean): Decoding[] {
+  decode(context: ContextBuilder): Decoding[] {
     const childStatements: Decoding[] = Object.values(this._object)
       .filter((a) => a !== undefined)
-      .flatMap((a) => a.decode(context, exception));
+      .flatMap((a) => a.decode(context));
 
     const children = Object.keys(this._object)
       .filter((key) => this._object[key] !== undefined)
