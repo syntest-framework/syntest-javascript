@@ -45,6 +45,7 @@ type RenamedImport = {
 
 type Require = {
   left: string;
+  leftVars: string;
   right: string;
 };
 
@@ -90,7 +91,7 @@ export class ContextBuilder {
     let variableName = statement.name;
 
     variableName =
-      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_".includes(
         variableName[0]
       )
         ? variableName[0].toLowerCase() + variableName.slice(1)
@@ -237,11 +238,12 @@ export class ContextBuilder {
 
     const require: Require = {
       left: "",
+      leftVars: "",
       right: `require("${_path}")`,
     };
 
     if (import_.renamed) {
-      require.left = import_.default
+      require.leftVars = require.left = import_.default
         ? import_.renamedTo
         : `{${import_.name}: ${import_.renamedTo}}`;
     } else {
