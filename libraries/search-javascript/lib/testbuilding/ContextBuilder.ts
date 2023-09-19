@@ -42,6 +42,11 @@ type RenamedImport = {
   default: boolean;
 };
 
+type Require = {
+  left: string;
+  right: string;
+};
+
 // TODO gather assertions here too per test case
 export class ContextBuilder {
   private targetRootDirectory: string;
@@ -128,31 +133,6 @@ export class ContextBuilder {
 
     return import_.renamed ? import_.renamedTo : import_.name;
   }
-
-  // protected generateVarName(
-  //   name: string,
-  //   type: string,
-  //   uniqueId: string
-  // ): string {
-  //   return type.includes("<>")
-  //     ? name + "_" + type.split("<>")[1] + "_" + uniqueId
-  //     : name + "_" + type + "_" + uniqueId;
-  // }
-
-  // protected override generateVarName(
-  //   name: string,
-  //   type: string,
-  //   uniqueId: string
-  // ): string {
-  //   // TODO should use return type
-  //   if (this._export) {
-  //     return name + "_" + this._export.name + "_" + uniqueId;
-  //   }
-
-  //   return type.includes("<>")
-  //     ? name + "_" + type.split("<>")[1] + "_" + uniqueId
-  //     : name + "_" + type + "_" + uniqueId;
-  // }
 
   private _addImport(export_: Export): Import {
     const path_ = export_.filePath.replace(
@@ -246,15 +226,36 @@ export class ContextBuilder {
     }
   }
 
+  private _getRequireString(_path: string, import_: Import): Require {
+    if (!import_.module) {
+      throw new Error("Only module imports can use require statements");
+    }
+
+    const require: Require = {
+      left: "",
+      right: `require("${_path}")`,
+    };
+
+    if (import_.renamed) {
+      require.left = import_.default
+        ? import_.renamedTo
+        : `{${import_.name}: ${import_.renamedTo}}`;
+    } else {
+      require.left = import_.default ? import_.name : `{${import_.name}}`;
+    }
+
+    return require;
+  }
+
   getImports(assertionsPresent: boolean) {
-    let requires: string[] = [];
+    let requires: Require[] = [];
     let imports: string[] = [];
 
     for (const [path_, imports_] of this.imports.entries()) {
       // TODO remove unused imports
       for (const import_ of imports_) {
         if (import_.module) {
-          requires.push(this._getImportString(path_, import_));
+          requires.push(this._getRequireString(path_, import_));
         } else {
           imports.push(this._getImportString(path_, import_));
         }

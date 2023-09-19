@@ -187,24 +187,22 @@ function setError(id, error, count) {
 
     const { imports, requires } = context.getImports(assertionsPresent);
 
-    const modified = requires.map((x) => x.split(" = "));
-
     let beforeEachLines: string[] = [];
 
     if (requires.length > 0) {
       beforeEachLines = [
-        ...modified.map((m) => `\t${m[0].replace("const", "let")}`),
+        ...requires.map((m) => `\tlet ${m.left}`),
         `\tbeforeEach(() => {`,
         "\t\t// This is a hack to force the require cache to be emptied",
-        "\t\t// Without this we would be using the same required object each time",
-        ...modified.map(
+        "\t\t// Without this we would be using the same required object for each test",
+        ...requires.map(
           (m) =>
-            `\t\tdelete require.cache[${m[1].replace(
+            `\t\tdelete require.cache[${m.right.replace(
               "require",
               "require.resolve"
             )}]`
         ),
-        ...modified.map((m) => `\t\t${m[0].replace("const ", "")} = ${m[1]}`),
+        ...requires.map((m) => `\t\t${m.left} = ${m.right}`),
         `\t})`,
         "",
       ];
