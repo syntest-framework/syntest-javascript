@@ -56,7 +56,8 @@ export class ElementVisitor extends AbstractSyntaxTreeVisitor {
 
     // Here we check if the id is already registered (we do not allow this normally)
     if (this._elementMap.has(id)) {
-      //
+      // Export specifiers can actually have the same exported and local object
+      // e.g. export { x }
       if (
         path.parentPath.isExportSpecifier() &&
         path.parentPath.get("exported") === path
@@ -64,16 +65,20 @@ export class ElementVisitor extends AbstractSyntaxTreeVisitor {
         return;
       }
 
+      // Import specifiers can actually have the same imported and local object
+      // e.g. import { x } from '...'
       if (
-        path.parentPath.isObjectProperty() &&
-        path.parentPath.get("value") === path
+        path.parentPath.isImportSpecifier() &&
+        path.parentPath.get("imported") === path
       ) {
         return;
       }
 
+      // Object properties can actually have the same value and key object
+      // e.g. const obj = { x }
       if (
-        path.parentPath.isImportSpecifier() &&
-        path.parentPath.get("imported") === path
+        path.parentPath.isObjectProperty() &&
+        path.parentPath.get("value") === path
       ) {
         return;
       }
