@@ -129,11 +129,6 @@ export class ContextBuilder {
     return import_.renamed ? import_.renamedTo : import_.name;
   }
 
-  // if (options.addLogs) {
-  //   const logDirectory = decoder.getLogDirectory(id, this.varName);
-  //   decoded += `\nawait fs.writeFileSync('${logDirectory}', '' + ${this.varName} + ';sep;' + JSON.stringify(${this.varName}))`;
-  // }
-
   // protected generateVarName(
   //   name: string,
   //   type: string,
@@ -234,32 +229,43 @@ export class ContextBuilder {
       if (import_.module) {
         return import_.default
           ? `const ${import_.renamedTo} = require("${_path}");`
-          : `const {${import_.name}: ${import_.renamedTo}} = require("${_path}");`;
+          : `const {${import_.name}: ${import_.renamedTo}} = require("${_path}")`;
       }
       return import_.default
         ? `import ${import_.renamedTo} from "${_path}";`
-        : `import {${import_.name} as ${import_.renamedTo}} from "${_path}";`;
+        : `import {${import_.name} as ${import_.renamedTo}} from "${_path}"`;
     } else {
       if (import_.module) {
         return import_.default
-          ? `const ${import_.name} = require("${_path}");`
-          : `const {${import_.name}} = require("${_path}");`;
+          ? `const ${import_.name} = require("${_path}")`
+          : `const {${import_.name}} = require("${_path}")`;
       }
       return import_.default
-        ? `import ${import_.name} from "${_path}";`
-        : `import {${import_.name}} from "${_path}";`;
+        ? `import ${import_.name} from "${_path}"`
+        : `import {${import_.name}} from "${_path}"`;
     }
   }
 
-  getImports(assertionsPresent: boolean): string[] {
+  getImports(assertionsPresent: boolean) {
+    let requires: string[] = [];
     let imports: string[] = [];
 
     for (const [path_, imports_] of this.imports.entries()) {
       // TODO remove unused imports
       for (const import_ of imports_) {
-        imports.push(this._getImportString(path_, import_));
+        if (import_.module) {
+          requires.push(this._getImportString(path_, import_));
+        } else {
+          imports.push(this._getImportString(path_, import_));
+        }
       }
     }
+
+    requires = requires // remove duplicates
+      // there should not be any in theory but lets do it anyway
+      .filter((value, index, self) => self.indexOf(value) === index)
+      // sort
+      .sort();
 
     imports = imports // remove duplicates
       // there should not be any in theory but lets do it anyway
@@ -277,6 +283,9 @@ export class ContextBuilder {
     }
 
     // TODO other post processing?
-    return imports;
+    return {
+      imports,
+      requires,
+    };
   }
 }

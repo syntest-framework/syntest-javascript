@@ -61,6 +61,21 @@ export class ElementVisitor extends AbstractSyntaxTreeVisitor {
       ) {
         return;
       }
+
+      if (
+        path.parentPath.isObjectProperty() &&
+        path.parentPath.get("value") === path
+      ) {
+        return;
+      }
+
+      if (
+        path.parentPath.isImportSpecifier() &&
+        path.parentPath.get("imported") === path
+      ) {
+        return;
+      }
+
       throw new Error(`Overriding element with id: ${id}`);
     }
 

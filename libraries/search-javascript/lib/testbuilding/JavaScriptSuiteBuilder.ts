@@ -93,7 +93,7 @@ export class JavaScriptSuiteBuilder {
 
     const { stats, instrumentationData, assertionData } = await this.runner.run(
       paths,
-      archive.size
+      archive.size * 2
     );
     if (assertionData) {
       // put assertion data on testCases

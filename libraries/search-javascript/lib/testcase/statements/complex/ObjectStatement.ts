@@ -173,7 +173,9 @@ export class ObjectStatement extends Statement {
       .filter((key) => this._object[key] !== undefined)
       .map(
         (key) =>
-          `\n\t"${key}": ${context.getOrCreateVariableName(this._object[key])}`
+          `\n\t\t\t"${key}": ${context.getOrCreateVariableName(
+            this._object[key]
+          )}`
       )
       .join(",");
 

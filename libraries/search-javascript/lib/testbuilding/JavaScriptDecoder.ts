@@ -22,6 +22,8 @@ import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
 import { Decoding } from "../testcase/statements/Statement";
 import { ActionStatement } from "../testcase/statements/action/ActionStatement";
 import { ContextBuilder } from "./ContextBuilder";
+import { FunctionCall } from "../testcase/statements/action/FunctionCall";
+import { ClassActionStatement } from "../testcase/statements/action/ClassActionStatement";
 
 export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
   private targetRootDirectory: string;
@@ -111,6 +113,8 @@ function setError(id, error, count) {
         testLines.push("let count = 0;", "try {");
       }
 
+      let errorDecoding: Decoding;
+
       if (testCase.assertionData && testCase.assertionData.error) {
         const index = testCase.assertionData.error.count;
 
@@ -118,7 +122,8 @@ function setError(id, error, count) {
         //  the .to.throw stuff does not work somehow
 
         // delete statements after
-        decodings = decodings.slice(0, index + 1);
+        errorDecoding = decodings[index];
+        decodings = decodings.slice(0, index);
       }
 
       if (decodings.length === 0) {
@@ -137,10 +142,16 @@ function setError(id, error, count) {
         if (gatherAssertionData) {
           // add log per statement
           const variableName = context.getOrCreateVariableName(value.reference);
-          testLines.push(
-            `count = ${index + 1};`,
-            `addAssertion('${testCase.id}', '${variableName}', ${variableName})`
-          );
+          testLines.push(`count = ${index + 1};`);
+
+          if (
+            value.reference instanceof FunctionCall ||
+            value.reference instanceof ClassActionStatement
+          ) {
+            testLines.push(
+              `addAssertion('${testCase.id}', '${variableName}', ${variableName})`
+            );
+          }
         }
       }
 
@@ -159,23 +170,12 @@ function setError(id, error, count) {
 
       const assertions: string[] = this.generateAssertions(testCase);
 
-      if (testLines.length > 0) {
-        let errorStatement: string;
-        if (testCase.assertionData && testCase.assertionData.error) {
-          errorStatement = testLines.pop();
-        }
-
-        // TODO we can now assert the error!
-        // TODO we now have the stack trace
-        if (errorStatement) {
-          assertions.push(
-            "try {",
-            `\t${errorStatement}`,
-            "} catch (e) {",
-            `\texpect(e).to.be.an('error')`,
-            "}"
-          );
-        }
+      if (errorDecoding) {
+        assertions.push(
+          `await expect((async () => {`,
+          `\t${errorDecoding.decoded.split(" = ")[1]}`,
+          `})()).to.be.rejectedWith(\`${testCase.assertionData.error.error.message}\`)`
+        );
       }
 
       if (assertions.length > 0) {
@@ -185,13 +185,37 @@ function setError(id, error, count) {
       tests.push([...metaCommentBlock, ...testLines, ...assertions]);
     }
 
-    const imports = context.getImports(assertionsPresent);
+    const { imports, requires } = context.getImports(assertionsPresent);
+
+    const modified = requires.map((x) => x.split(" = "));
+
+    let beforeEachLines: string[] = [];
+
+    if (requires.length > 0) {
+      beforeEachLines = [
+        ...modified.map((m) => `\t${m[0].replace("const", "let")}`),
+        `\tbeforeEach(() => {`,
+        "\t\t// This is a hack to force the require cache to be emptied",
+        "\t\t// Without this we would be using the same required object each time",
+        ...modified.map(
+          (m) =>
+            `\t\tdelete require.cache[${m[1].replace(
+              "require",
+              "require.resolve"
+            )}]`
+        ),
+        ...modified.map((m) => `\t\t${m[0].replace("const ", "")} = ${m[1]}`),
+        `\t})`,
+        "",
+      ];
+    }
 
     const lines = [
       "// Imports",
       ...imports,
       gatherAssertionData ? function_ : "",
       `describe('${targetName}', function() {`,
+      ...beforeEachLines,
       ...tests.flatMap((testLines: string[], index) => [
         `\tit('${targetName}', async () => {`,
         ...testLines.map((line) => `\t\t${line}`),
