@@ -97,7 +97,7 @@ export class ContextBuilder {
         : (ContextBuilder.LOGGER.warn(
             `Found variable name starting with a non-alphabetic character, variable: '${variableName}'`
           ),
-          "_" + variableName);
+          "var" + variableName);
 
     variableName =
       reservedKeywords.has(variableName) || globalVariables.has(variableName)
