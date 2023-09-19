@@ -980,7 +980,7 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
    * @param x
    * @returns
    */
-  private _normalize(x: number): number {
+  public _normalize(x: number): number {
     if (Number.isNaN(x)) {
       return 0.999;
     }
