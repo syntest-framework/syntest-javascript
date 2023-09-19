@@ -837,12 +837,12 @@ export class JavaScriptLauncher extends Launcher {
     // TODO should be cleanup step in tool
     // Finish
     JavaScriptLauncher.LOGGER.info("Deleting temporary directories");
-    // this.storageManager.deleteTemporaryDirectories([
-    //   [this.arguments_.testDirectory],
-    //   [this.arguments_.logDirectory],
-    //   [this.arguments_.instrumentedDirectory],
-    // ]);
+    this.storageManager.deleteTemporaryDirectories([
+      [this.arguments_.testDirectory],
+      [this.arguments_.logDirectory],
+      [this.arguments_.instrumentedDirectory],
+    ]);
 
-    // this.storageManager.deleteMainTemporary();
+    this.storageManager.deleteMainTemporary();
   }
 }
