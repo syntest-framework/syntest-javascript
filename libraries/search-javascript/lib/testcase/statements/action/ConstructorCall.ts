@@ -16,15 +16,15 @@
  * limitations under the License.
  */
 
+import { Export, TypeEnum } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/prng";
 
+import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
-import { MethodCall } from "./MethodCall";
 import { Decoding, Statement } from "../Statement";
 
-import { Export, TypeEnum } from "@syntest/analysis-javascript";
 import { ActionStatement } from "./ActionStatement";
-import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
+import { MethodCall } from "./MethodCall";
 
 /**
  * @author Dimitri Stallenberg
