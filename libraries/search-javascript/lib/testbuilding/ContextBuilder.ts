@@ -24,6 +24,7 @@ import { FunctionCall } from "../testcase/statements/action/FunctionCall";
 import { ObjectFunctionCall } from "../testcase/statements/action/ObjectFunctionCall";
 import { reservedKeywords } from "@syntest/ast-visitor-javascript";
 import { globalVariables } from "@syntest/ast-visitor-javascript";
+import { Logger, getLogger } from "@syntest/logging";
 
 type Import = RegularImport | RenamedImport;
 
@@ -49,6 +50,7 @@ type Require = {
 
 // TODO gather assertions here too per test case
 export class ContextBuilder {
+  protected static LOGGER: Logger;
   private targetRootDirectory: string;
   private sourceDirectory: string;
 
@@ -64,6 +66,7 @@ export class ContextBuilder {
   private statementVariableNameMap: Map<Statement, string>;
 
   constructor(targetRootDirectory: string, sourceDirectory: string) {
+    ContextBuilder.LOGGER = getLogger("ContextBuilder");
     this.targetRootDirectory = targetRootDirectory;
     this.sourceDirectory = sourceDirectory;
 
@@ -86,12 +89,19 @@ export class ContextBuilder {
 
     let variableName = statement.name;
 
-    variableName = "abcdefghijklmnopqrstuvwxyz".includes(variableName[0])
-      ? variableName[0].toLowerCase() + variableName.slice(1)
-      : "_" + variableName;
+    variableName =
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(
+        variableName[0]
+      )
+        ? variableName[0].toLowerCase() + variableName.slice(1)
+        : (ContextBuilder.LOGGER.warn(
+            `Found variable name starting with a non-alphabetic character, variable: '${variableName}'`
+          ),
+          "_" + variableName);
+
     variableName =
       reservedKeywords.has(variableName) || globalVariables.has(variableName)
-        ? "_" + variableName
+        ? "local" + variableName[0].toUpperCase() + variableName.slice(1)
         : variableName;
 
     if (

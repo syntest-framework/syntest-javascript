@@ -54,7 +54,9 @@ export class ElementVisitor extends AbstractSyntaxTreeVisitor {
     const id = this._getNodeId(path);
     const bindingId = this._getBindingId(path);
 
+    // Here we check if the id is already registered (we do not allow this normally)
     if (this._elementMap.has(id)) {
+      //
       if (
         path.parentPath.isExportSpecifier() &&
         path.parentPath.get("exported") === path

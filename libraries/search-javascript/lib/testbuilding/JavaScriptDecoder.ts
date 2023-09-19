@@ -24,6 +24,8 @@ import { ActionStatement } from "../testcase/statements/action/ActionStatement";
 import { ContextBuilder } from "./ContextBuilder";
 import { FunctionCall } from "../testcase/statements/action/FunctionCall";
 import { ClassActionStatement } from "../testcase/statements/action/ClassActionStatement";
+import { assertionFunction } from "./assertionFunctionTemplate";
+import { ObjectFunctionCall } from "../testcase/statements/action/ObjectFunctionCall";
 
 export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
   private targetRootDirectory: string;
@@ -49,38 +51,6 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
 
     const tests: string[][] = [];
 
-    const function_ = `
-function _addAssertion(id) {
-  if (!global.__assertion__) {
-    global.__assertion__ = {}
-  }
-
-  if (!global.__assertion__[id]) {
-    global.__assertion__[id] = { assertions: {}, error: undefined }
-  }
-}
-function addAssertion(id, variableName, value) {
-  _addAssertion(id);
-
-  global.__assertion__[id].assertions[variableName] = {
-    value: '' + value,
-    stringified: '' + JSON.stringify(value)
-  }
-}
-function setError(id, error, count) {
-  _addAssertion(id);
-
-  global.__assertion__[id].error = {
-    error: {
-      name: error.name,
-      message:error.message,
-      stack: error.stack,
-    },
-    count: count
-  }
-}
-    `;
-
     let assertionsPresent = false;
     for (const testCase of testCases) {
       if (testCase.assertionData) {
@@ -95,29 +65,9 @@ function setError(id, error, count) {
         throw new Error("No statements in test case");
       }
 
-      const metaCommentBlock = [];
-
-      for (const metaComment of testCase.metaComments) {
-        metaCommentBlock.push(`// ${metaComment}`);
-      }
-
-      if (metaCommentBlock.length > 0) {
-        metaCommentBlock.splice(0, 0, "// Meta information");
-        metaCommentBlock.push("");
-      }
-
-      const testLines: string[] = [];
-      if (gatherAssertionData) {
-        testLines.push("let count = 0;", "try {");
-      }
-
       let errorDecoding: Decoding;
-
       if (testCase.assertionData && testCase.assertionData.error) {
         const index = testCase.assertionData.error.count;
-
-        // TODO does not work
-        //  the .to.throw stuff does not work somehow
 
         // delete statements after
         errorDecoding = decodings[index];
@@ -128,57 +78,19 @@ function setError(id, error, count) {
         throw new Error("No statements in test case after error reduction");
       }
 
-      for (const [index, value] of decodings.entries()) {
-        const asString = value.decoded;
-        if (testLines.includes(asString)) {
-          // skip repeated statements
-          continue;
-        }
+      const metaCommentBlock = this.generateMetaComments(testCase);
 
-        testLines.push(asString);
+      const testLines: string[] = this.generateTestLines(
+        context,
+        testCase,
+        decodings,
+        gatherAssertionData
+      );
 
-        if (gatherAssertionData) {
-          // add log per statement
-          const variableName = context.getOrCreateVariableName(value.reference);
-          testLines.push(`count = ${index + 1};`);
-
-          if (
-            value.reference instanceof FunctionCall ||
-            value.reference instanceof ClassActionStatement
-          ) {
-            testLines.push(
-              `addAssertion('${testCase.id}', '${variableName}', ${variableName})`
-            );
-          }
-        }
-      }
-
-      if (gatherAssertionData) {
-        testLines.push(
-          `} catch (e) {`,
-          `\tsetError('${testCase.id}', e, count)`,
-          "}"
-        );
-      }
-
-      if (testLines.length > 0) {
-        testLines.splice(0, 0, "// Test");
-        testLines.push(" ");
-      }
-
-      const assertions: string[] = this.generateAssertions(testCase);
-
-      if (errorDecoding) {
-        assertions.push(
-          `await expect((async () => {`,
-          `\t${errorDecoding.decoded.split(" = ")[1]}`,
-          `})()).to.be.rejectedWith(\`${testCase.assertionData.error.error.message}\`)`
-        );
-      }
-
-      if (assertions.length > 0) {
-        assertions.splice(0, 0, "// Assertions");
-      }
+      const assertions: string[] = this.generateAssertions(
+        testCase,
+        errorDecoding
+      );
 
       tests.push([...metaCommentBlock, ...testLines, ...assertions]);
     }
@@ -209,11 +121,11 @@ function setError(id, error, count) {
     const lines = [
       "// Imports",
       ...imports,
-      gatherAssertionData ? function_ : "",
+      gatherAssertionData ? assertionFunction : "",
       `describe('${targetName}', function() {`,
       ...beforeEachLines,
       ...tests.flatMap((testLines: string[], index) => [
-        `\tit('${targetName}', async () => {`,
+        `\tit("Test ${index} for '${targetName}'", async () => {`,
         ...testLines.map((line) => `\t\t${line}`),
         index === tests.length - 1 ? "\t})" : "\t})\n",
       ]),
@@ -223,7 +135,77 @@ function setError(id, error, count) {
     return lines.join("\n");
   }
 
-  generateAssertions(testCase: JavaScriptTestCase): string[] {
+  generateMetaComments(testCase: JavaScriptTestCase) {
+    const metaCommentBlock = [];
+    for (const metaComment of testCase.metaComments) {
+      metaCommentBlock.push(`// ${metaComment}`);
+    }
+
+    if (metaCommentBlock.length > 0) {
+      metaCommentBlock.splice(0, 0, "// Meta information");
+      metaCommentBlock.push("");
+    }
+
+    return metaCommentBlock;
+  }
+
+  generateTestLines(
+    context: ContextBuilder,
+    testCase: JavaScriptTestCase,
+    decodings: Decoding[],
+    gatherAssertionData: boolean
+  ) {
+    const testLines: string[] = [];
+    if (gatherAssertionData) {
+      testLines.push("let count = 0;", "try {");
+    }
+
+    for (const [index, value] of decodings.entries()) {
+      const asString = value.decoded;
+      if (testLines.includes(asString)) {
+        // skip repeated statements
+        continue;
+      }
+
+      testLines.push(asString);
+
+      if (gatherAssertionData) {
+        // add log per statement
+        const variableName = context.getOrCreateVariableName(value.reference);
+        testLines.push(`count = ${index + 1};`);
+
+        if (
+          value.reference instanceof FunctionCall ||
+          value.reference instanceof ObjectFunctionCall ||
+          value.reference instanceof ClassActionStatement
+        ) {
+          testLines.push(
+            `addAssertion('${testCase.id}', '${variableName}', ${variableName})`
+          );
+        }
+      }
+    }
+
+    if (gatherAssertionData) {
+      testLines.push(
+        `} catch (e) {`,
+        `\tsetError('${testCase.id}', e, count)`,
+        "}"
+      );
+    }
+
+    if (testLines.length > 0) {
+      testLines.splice(0, 0, "// Test");
+      testLines.push("");
+    }
+
+    return testLines;
+  }
+
+  generateAssertions(
+    testCase: JavaScriptTestCase,
+    errorDecoding: Decoding
+  ): string[] {
     const assertions: string[] = [];
     if (testCase.assertionData) {
       for (const [variableName, assertion] of Object.entries(
@@ -255,6 +237,18 @@ function setError(id, error, count) {
           assertions.push(`expect(${variableName}).to.equal(${stringified})`);
         }
       }
+    }
+
+    if (errorDecoding) {
+      assertions.push(
+        `await expect((async () => {`,
+        `\t${errorDecoding.decoded.split(" = ")[1]}`,
+        `})()).to.be.rejectedWith(\`${testCase.assertionData.error.error.message}\`)`
+      );
+    }
+
+    if (assertions.length > 0) {
+      assertions.splice(0, 0, "// Assertions");
     }
 
     return assertions;
