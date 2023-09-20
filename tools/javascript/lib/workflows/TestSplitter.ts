@@ -118,6 +118,12 @@ export class TestSplitting {
       //   }
       // }
 
+      // TestSplitting.LOGGER.debug(
+      //   `Split found: ${encoding.getLength()} -> ${bestPair[0].getLength()} + ${bestPair[1].getLength()}`
+      // );
+
+      // finalEncodings.push(...bestPair));
+
       for (const pair of possiblePairs) {
         TestSplitting.LOGGER.debug(
           `Split found: ${encoding.getLength()} -> ${pair[0].getLength()} + ${pair[1].getLength()}`
