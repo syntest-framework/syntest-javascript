@@ -31,7 +31,7 @@ export class DeDuplicator {
   }
 
   deDuplicate(
-    secondaryObjectives: Set<SecondaryObjectiveComparator<JavaScriptTestCase>>,
+    secondaryObjectives: SecondaryObjectiveComparator<JavaScriptTestCase>[],
     objectivesMap: Map<Target, ObjectiveFunction<JavaScriptTestCase>[]>,
     encodingsMap: Map<Target, JavaScriptTestCase[]>
   ): Map<Target, Archive<JavaScriptTestCase>> {

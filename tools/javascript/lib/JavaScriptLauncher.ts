@@ -511,15 +511,15 @@ export class JavaScriptLauncher extends Launcher {
       // this.metricManager.recordProperty(PropertyName., `${timeInMs}`); // TODO new metric
     }
 
-    const secondaryObjectives = new Set(
-      this.arguments_.secondaryObjectives.map((secondaryObjective) => {
+    const secondaryObjectives = this.arguments_.secondaryObjectives.map(
+      (secondaryObjective) => {
         return (<SecondaryObjectivePlugin<JavaScriptTestCase>>(
           this.moduleManager.getPlugin(
             PluginType.SecondaryObjective,
             secondaryObjective
           )
         )).createSecondaryObjective();
-      })
+      }
     );
 
     const startDeduplication = Date.now();
@@ -775,15 +775,15 @@ export class JavaScriptLauncher extends Launcher {
     );
     sampler.rootContext = rootContext;
 
-    const secondaryObjectives = new Set(
-      this.arguments_.secondaryObjectives.map((secondaryObjective) => {
+    const secondaryObjectives = this.arguments_.secondaryObjectives.map(
+      (secondaryObjective) => {
         return (<SecondaryObjectivePlugin<JavaScriptTestCase>>(
           this.moduleManager.getPlugin(
             PluginType.SecondaryObjective,
             secondaryObjective
           )
         )).createSecondaryObjective();
-      })
+      }
     );
 
     const objectiveManager = (<ObjectiveManagerPlugin<JavaScriptTestCase>>(
