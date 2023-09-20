@@ -37,7 +37,6 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
 
   decode(
     testCases: JavaScriptTestCase | JavaScriptTestCase[],
-    targetName: string,
     gatherAssertionData = false,
     sourceDirectory = "../instrumented"
   ): string {
@@ -128,10 +127,10 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
       "// Imports",
       ...imports,
       gatherAssertionData ? assertionFunction : "",
-      `describe('${targetName}', function() {`,
+      `describe('TODO proper test naming', function() {`,
       ...beforeEachLines,
       ...tests.flatMap((testLines: string[], index) => [
-        `\tit("Test ${index + 1} for '${targetName}'", async () => {`,
+        `\tit("Test ${index + 1}", async () => {`,
         ...testLines.map((line) => `\t\t${line}`),
         index === tests.length - 1 ? "\t})" : "\t})\n",
       ]),

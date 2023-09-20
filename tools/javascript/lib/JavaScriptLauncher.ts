@@ -79,6 +79,7 @@ import {
 import { StorageManager } from "@syntest/storage";
 
 import { TestCommandOptions } from "./commands/test";
+import { testSplitting } from "./workflows/testSplitting";
 
 export type JavaScriptArguments = ArgumentsObject & TestCommandOptions;
 export class JavaScriptLauncher extends Launcher {
@@ -87,7 +88,7 @@ export class JavaScriptLauncher extends Launcher {
   private targets: Target[];
 
   private rootContext: RootContext;
-  private archive: Archive<JavaScriptTestCase>;
+  private archives: Map<Target, Archive<JavaScriptTestCase>>;
 
   private coveredInPath = new Map<string, Archive<JavaScriptTestCase>>();
 
@@ -109,6 +110,7 @@ export class JavaScriptLauncher extends Launcher {
       userInterface
     );
     JavaScriptLauncher.LOGGER = getLogger("JavaScriptLauncher");
+    this.archives = new Map();
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
@@ -452,12 +454,11 @@ export class JavaScriptLauncher extends Launcher {
   async process(): Promise<void> {
     JavaScriptLauncher.LOGGER.info("Processing started");
     const start = Date.now();
-    this.archive = new Archive<JavaScriptTestCase>();
 
     for (const target of this.targets) {
       JavaScriptLauncher.LOGGER.info(`Processing ${target.name}`);
       const archive = await this.testTarget(this.rootContext, target);
-      this.archive.merge(archive);
+      this.archives.set(target, archive);
     }
     JavaScriptLauncher.LOGGER.info("Processing done");
     const timeInMs = (Date.now() - start) / 1000;
@@ -467,6 +468,11 @@ export class JavaScriptLauncher extends Launcher {
   async postprocess(): Promise<void> {
     JavaScriptLauncher.LOGGER.info("Postprocessing started");
     const start = Date.now();
+    JavaScriptLauncher.LOGGER.info("Minimization started");
+    const finalEncodings = await testSplitting(this.runner, this.archives);
+    JavaScriptLauncher.LOGGER.info("Minimization done");
+    let timeInMs = (Date.now() - start) / 1000;
+    // this.metricManager.recordProperty(PropertyName., `${timeInMs}`); // TODO new metric
 
     const suiteBuilder = new JavaScriptSuiteBuilder(
       this.storageManager,
@@ -474,15 +480,9 @@ export class JavaScriptLauncher extends Launcher {
       this.runner
     );
 
-    const reducedArchive = suiteBuilder.reduceArchive(this.archive);
-
-    if (this.archive.size === 0) {
-      throw new Error("Zero tests were created");
-    }
-
     // TODO fix hardcoded paths
     await suiteBuilder.runSuite(
-      reducedArchive,
+      finalEncodings,
       "../instrumented",
       this.arguments_.testDirectory,
       true,
@@ -495,7 +495,7 @@ export class JavaScriptLauncher extends Launcher {
     ]);
 
     const { stats, instrumentationData } = await suiteBuilder.runSuite(
-      reducedArchive,
+      finalEncodings,
       "../instrumented",
       this.arguments_.testDirectory,
       false,
@@ -596,11 +596,11 @@ export class JavaScriptLauncher extends Launcher {
     // other results
     this.metricManager.recordProperty(
       PropertyName.ARCHIVE_SIZE,
-      `${this.archive.size}`
+      `${this.archives.size}`
     );
     this.metricManager.recordProperty(
       PropertyName.MINIMIZED_ARCHIVE_SIZE,
-      `${this.archive.size}`
+      `${this.archives.size}`
     );
 
     overall["statement"] /= totalStatements;
@@ -630,7 +630,7 @@ export class JavaScriptLauncher extends Launcher {
 
     // create final suite
     await suiteBuilder.runSuite(
-      reducedArchive,
+      finalEncodings,
       originalSourceDirectory,
       this.arguments_.testDirectory,
       false,
@@ -638,7 +638,7 @@ export class JavaScriptLauncher extends Launcher {
       true
     );
     JavaScriptLauncher.LOGGER.info("Postprocessing done");
-    const timeInMs = (Date.now() - start) / 1000;
+    timeInMs = (Date.now() - start) / 1000;
     this.metricManager.recordProperty(
       PropertyName.POSTPROCESS_TIME,
       `${timeInMs}`
