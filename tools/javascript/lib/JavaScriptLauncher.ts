@@ -62,6 +62,7 @@ import {
   EncodingSampler,
   EvaluationBudget,
   IterationBudget,
+  ObjectiveFunction,
   SearchTimeBudget,
   TerminationManager,
   TotalTimeBudget,
@@ -79,7 +80,9 @@ import {
 import { StorageManager } from "@syntest/storage";
 
 import { TestCommandOptions } from "./commands/test";
-import { testSplitting } from "./workflows/testSplitting";
+import { DeDuplicator } from "./workflows/DeDuplicator";
+import { addMetaComments } from "./workflows/MetaComment";
+import { TestSplitting } from "./workflows/TestSplitter";
 
 export type JavaScriptArguments = ArgumentsObject & TestCommandOptions;
 export class JavaScriptLauncher extends Launcher {
@@ -468,11 +471,89 @@ export class JavaScriptLauncher extends Launcher {
   async postprocess(): Promise<void> {
     JavaScriptLauncher.LOGGER.info("Postprocessing started");
     const start = Date.now();
-    JavaScriptLauncher.LOGGER.info("Minimization started");
-    const finalEncodings = await testSplitting(this.runner, this.archives);
-    JavaScriptLauncher.LOGGER.info("Minimization done");
-    let timeInMs = (Date.now() - start) / 1000;
-    // this.metricManager.recordProperty(PropertyName., `${timeInMs}`); // TODO new metric
+    const testSplitter = new TestSplitting(this.runner);
+    const objectives = new Map<Target, ObjectiveFunction<JavaScriptTestCase>[]>(
+      [...this.archives.entries()].map(([target, archive]) => [
+        target,
+        archive.getObjectives(),
+      ])
+    );
+    let finalEncodings = new Map<Target, JavaScriptTestCase[]>(
+      [...this.archives.entries()].map(([target, archive]) => [
+        target,
+        archive.getEncodings(),
+      ])
+    );
+
+    if (this.arguments_.testSplitting) {
+      const start = Date.now();
+      const before = [...finalEncodings.values()]
+        .map((x) => x.length)
+        .reduce((p, c) => p + c);
+      JavaScriptLauncher.LOGGER.info("Splitting started");
+      finalEncodings = await testSplitter.testSplitting(finalEncodings);
+
+      const timeInMs = (Date.now() - start) / 1000;
+      const after = [...finalEncodings.values()]
+        .map((x) => x.length)
+        .reduce((p, c) => p + c);
+
+      JavaScriptLauncher.LOGGER.info(
+        `Splitting done took: ${timeInMs}, went from ${before} to ${after} test cases`
+      );
+      // this.metricManager.recordProperty(PropertyName., `${timeInMs}`); // TODO new metric
+    }
+    if (this.arguments_.testMinimization) {
+      const start = Date.now();
+      JavaScriptLauncher.LOGGER.info("Minimization started");
+      const timeInMs = (Date.now() - start) / 1000;
+      JavaScriptLauncher.LOGGER.info(`Minimization done, took: ${timeInMs}`);
+      // this.metricManager.recordProperty(PropertyName., `${timeInMs}`); // TODO new metric
+    }
+
+    const secondaryObjectives = new Set(
+      this.arguments_.secondaryObjectives.map((secondaryObjective) => {
+        return (<SecondaryObjectivePlugin<JavaScriptTestCase>>(
+          this.moduleManager.getPlugin(
+            PluginType.SecondaryObjective,
+            secondaryObjective
+          )
+        )).createSecondaryObjective();
+      })
+    );
+
+    const startDeduplication = Date.now();
+    const before = [...finalEncodings.values()]
+      .map((x) => x.length)
+      .reduce((p, c) => p + c);
+    JavaScriptLauncher.LOGGER.info("De-Duplication started");
+
+    const deDuplicator = new DeDuplicator();
+    const newArchives = deDuplicator.deDuplicate(
+      secondaryObjectives,
+      objectives,
+      finalEncodings
+    );
+
+    const timeInMsDeDuplication = (Date.now() - startDeduplication) / 1000;
+    const after = [...newArchives.values()]
+      .map((x) => x.size)
+      .reduce((p, c) => p + c);
+
+    JavaScriptLauncher.LOGGER.info(
+      `De-Duplication done took: ${timeInMsDeDuplication}, went from ${before} to ${after} test cases`
+    );
+
+    if (this.arguments_.metaComments) {
+      addMetaComments(newArchives);
+    }
+
+    finalEncodings = new Map<Target, JavaScriptTestCase[]>(
+      [...newArchives.entries()].map(([target, archive]) => [
+        target,
+        archive.getEncodings(),
+      ])
+    );
 
     const suiteBuilder = new JavaScriptSuiteBuilder(
       this.storageManager,
@@ -638,7 +719,7 @@ export class JavaScriptLauncher extends Launcher {
       true
     );
     JavaScriptLauncher.LOGGER.info("Postprocessing done");
-    timeInMs = (Date.now() - start) / 1000;
+    const timeInMs = (Date.now() - start) / 1000;
     this.metricManager.recordProperty(
       PropertyName.POSTPROCESS_TIME,
       `${timeInMs}`
@@ -713,6 +794,7 @@ export class JavaScriptLauncher extends Launcher {
     )).createObjectiveManager({
       runner: this.runner,
       secondaryObjectives: secondaryObjectives,
+      exceptionObjectivesEnabled: this.arguments_.exceptionObjectives,
     });
 
     const crossover = (<CrossoverPlugin<JavaScriptTestCase>>(
