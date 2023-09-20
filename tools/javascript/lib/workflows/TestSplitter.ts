@@ -105,23 +105,25 @@ export class TestSplitting {
         continue;
       }
 
-      // prefer more balanced splits (i.e. 2-2 over 1-3)
-      let bestBalance = Number.MAX_VALUE;
-      let bestPair: JavaScriptTestCase[] = possiblePairs[0];
+      // // prefer more balanced splits (i.e. 2-2 over 1-3)
+      // let bestBalance = Number.MAX_VALUE;
+      // let bestPair: JavaScriptTestCase[] = possiblePairs[0];
+      // for (const pair of possiblePairs) {
+      //   const [encodingA, encodingB] = pair;
+      //   const balance = Math.abs(encodingA.getLength() - encodingB.getLength());
+
+      //   if (balance < bestBalance) {
+      //     bestBalance = balance;
+      //     bestPair = pair;
+      //   }
+      // }
+
       for (const pair of possiblePairs) {
-        const [encodingA, encodingB] = pair;
-        const balance = Math.abs(encodingA.getLength() - encodingB.getLength());
-
-        if (balance < bestBalance) {
-          bestBalance = balance;
-          bestPair = pair;
-        }
+        TestSplitting.LOGGER.debug(
+          `Split found: ${encoding.getLength()} -> ${pair[0].getLength()} + ${pair[1].getLength()}`
+        );
       }
-
-      TestSplitting.LOGGER.debug(
-        `Split found: ${encoding.getLength()} -> ${bestPair[0].getLength()} + ${bestPair[1].getLength()}`
-      );
-      finalEncodings.push(...bestPair);
+      finalEncodings.push(...possiblePairs.flat());
     }
 
     return finalEncodings;
