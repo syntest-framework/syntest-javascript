@@ -127,7 +127,7 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
       "// Imports",
       ...imports,
       gatherAssertionData ? assertionFunction : "",
-      `describe('TODO proper test naming', function() {`,
+      `describe('SynTest Test Suite', function() {`,
       ...beforeEachLines,
       ...tests.flatMap((testLines: string[], index) => [
         `\tit("Test ${index + 1}", async () => {`,
