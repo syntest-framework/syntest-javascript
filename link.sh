@@ -28,33 +28,3 @@ ln -s ../../../syntest-core/libraries/prng prng
 ln -s ../../../syntest-core/tools/cli cli
 ln -s ../../../syntest-core/tools/base-language base-language
 
-
-# cp -r ../syntest-core/libraries/analysis node_modules/@syntest/analysis
-# cp -r ../syntest-core/libraries/base-testing-tool node_modules/@syntest/base-language
-# cp -r ../syntest-core/libraries/cfg-core node_modules/@syntest/cfg
-# cp -r ../syntest-core/libraries/cli node_modules/@syntest/cli
-# cp -r ../syntest-core/libraries/cli-graphics node_modules/@syntest/cli-graphics
-# cp -r ../syntest-core/libraries/core node_modules/@syntest/search
-# cp -r ../syntest-core/libraries/logging node_modules/@syntest/logging
-# cp -r ../syntest-core/libraries/metric node_modules/@syntest/metric
-# cp -r ../syntest-core/libraries/module node_modules/@syntest/module
-
-# npm link ../syntest-core/libraries/analysis
-# npm link ../syntest-core/libraries/base-testing-tool
-# npm link ../syntest-core/libraries/cfg-core
-# npm link ../syntest-core/libraries/cli
-# npm link ../syntest-core/libraries/cli-graphics
-# npm link ../syntest-core/libraries/core
-# npm link ../syntest-core/libraries/logging
-# npm link ../syntest-core/libraries/metric
-# npm link ../syntest-core/libraries/module
-
-# npm link @syntest/analysis
-# npm link @syntest/base-language
-# npm link @syntest/cfg
-# npm link @syntest/cli
-# npm link @syntest/cli-graphics
-# npm link @syntest/search
-# npm link @syntest/logging
-# npm link @syntest/metric
-# npm link @syntest/module
