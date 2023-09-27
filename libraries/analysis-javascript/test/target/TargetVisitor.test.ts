@@ -19,8 +19,8 @@ import { traverse } from "@babel/core";
 import { TargetType } from "@syntest/analysis";
 import * as chai from "chai";
 
-import { AbstractSyntaxTreeFactory } from "../../lib/ast/AbstractSyntaxTreeFactory";
-import { ExportVisitor } from "../../lib/target/export/ExportVisitor";
+import { AbstractSyntaxTreeFactory } from "../../lib/ast/AbstractSyntaxTreeFactory.js";
+import { ExportVisitor } from "../../lib/target/export/ExportVisitor.js";
 import {
   ClassTarget,
   FunctionTarget,
@@ -28,8 +28,8 @@ import {
   ObjectFunctionTarget,
   ObjectTarget,
   SubTarget,
-} from "../../lib/target/Target";
-import { TargetVisitor } from "../../lib/target/TargetVisitor";
+} from "../../lib/target/Target.js";
+import { TargetVisitor } from "../../lib/target/TargetVisitor.js";
 
 const expect = chai.expect;
 

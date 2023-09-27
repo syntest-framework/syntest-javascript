@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { ElementType } from "../discovery/element/Element";
+import { ElementType } from "../discovery/element/Element.js";
 
 export enum TypeEnum {
   NUMERIC = "numeric",

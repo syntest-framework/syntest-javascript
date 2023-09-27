@@ -6,6 +6,7 @@
     "syntest",
     "abstract-syntax-tree"
   ],
+  "type": "module",
   "homepage": "https://www.syntest.org",
   "bugs": {
     "url": "https://github.com/syntest-framework/syntest-javascript/issues"
@@ -56,7 +57,8 @@
   },
   "devDependencies": {
     "@babel/types": "^7.21.5",
-    "@types/babel__core": "7.20.0"
+    "@types/babel__core": "7.20.0",
+    "@types/istanbul-lib-coverage": "^2.0.4"
   },
   "engines": {
     "node": ">=10.24.0"

@@ -17,7 +17,7 @@
  */
 
 import { defaults } from "@istanbuljs/schema";
-import { VisitState } from "./VisitState";
+import { VisitState } from "./VisitState.js";
 import { createHash } from "crypto";
 import { NodePath, template } from "@babel/core";
 import * as t from "@babel/types";
@@ -26,6 +26,7 @@ import {
   globalVariables,
   reservedKeywords,
 } from "@syntest/ast-visitor-javascript";
+import { InstrumentationData } from "../datastructures/InstrumentationData.js";
 
 const name = "syntest";
 
@@ -79,7 +80,7 @@ export class Visitor {
       return undefined;
     }
     this.visitState.cov.freeze();
-    const coverageData = this.visitState.cov.toJSON();
+    const coverageData: InstrumentationData = this.visitState.cov.toJSON();
     if (shouldIgnoreFile(path.find((p) => p.isProgram()))) {
       return {
         fileCoverage: coverageData,

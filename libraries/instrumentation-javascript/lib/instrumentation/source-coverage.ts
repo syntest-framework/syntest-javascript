@@ -17,7 +17,7 @@
  */
 import { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
-const { classes } = require("istanbul-lib-coverage");
+import { InstrumentationData } from "../datastructures/InstrumentationData";
 
 /**
  * SourceCoverage provides mutation methods to manipulate the structure of
@@ -29,12 +29,11 @@ const { classes } = require("istanbul-lib-coverage");
  * @extends FileCoverage
  * @constructor
  */
-export class SourceCoverage extends classes.FileCoverage {
+export class SourceCoverage {
   private meta: any;
-  private data: any;
+  private data: InstrumentationData;
   private _filePath: string;
   constructor(pathOrObj) {
-    super(pathOrObj);
     this._filePath = pathOrObj;
     this.meta = {
       last: {
@@ -42,6 +41,15 @@ export class SourceCoverage extends classes.FileCoverage {
         f: 0,
         b: 0,
       },
+    };
+    this.data = {
+      hash: "",
+      statementMap: {},
+      fnMap: {},
+      branchMap: {},
+      s: {},
+      f: {},
+      b: {},
     };
   }
 
@@ -157,8 +165,8 @@ export class SourceCoverage extends classes.FileCoverage {
     if (type !== "binary-expr") {
       return;
     }
-    this.data.bT = this.data.bT || {};
-    this.data.bT[name] = [];
+    (<{ bT }>(<unknown>this.data)).bT = (<{ bT }>(<unknown>this.data)).bT || {};
+    (<{ bT }>(<unknown>this.data)).bT[name] = [];
   }
 
   addBranchPath(ifPath: NodePath<t.Node>, name, location) {
@@ -188,10 +196,10 @@ export class SourceCoverage extends classes.FileCoverage {
   }
 
   maybeAddBranchTrue(name) {
-    if (!this.data.bT) {
+    if (!(<{ bT }>(<unknown>this.data)).bT) {
       return;
     }
-    const countsTrue = this.data.bT[name];
+    const countsTrue = (<{ bT }>(<unknown>this.data)).bT[name];
     if (!countsTrue) {
       return;
     }
@@ -204,14 +212,14 @@ export class SourceCoverage extends classes.FileCoverage {
    * @param sourceMap {object} the source map
    */
   inputSourceMap(sourceMap) {
-    this.data.inputSourceMap = sourceMap;
+    (<{ inputSourceMap }>(<unknown>this.data)).inputSourceMap = sourceMap;
   }
 
   freeze() {
     // prune empty branches
     const map = this.data.branchMap;
     const branches = this.data.b;
-    const branchesT = this.data.bT || {};
+    const branchesT = (<{ bT }>(<unknown>this.data)).bT || {};
     Object.keys(map).forEach((b) => {
       if (map[b].locations.length === 0) {
         delete map[b];
@@ -219,5 +227,9 @@ export class SourceCoverage extends classes.FileCoverage {
         delete branchesT[b];
       }
     });
+  }
+
+  toJSON() {
+    return this.data;
   }
 }

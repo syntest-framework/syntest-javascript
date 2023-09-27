@@ -17,7 +17,7 @@
  */
 import * as chai from "chai";
 
-import { AbstractSyntaxTreeVisitor } from "../lib/AbstractSyntaxTreeVisitor";
+import { AbstractSyntaxTreeVisitor } from "../lib/AbstractSyntaxTreeVisitor.js";
 
 const expect = chai.expect;
 

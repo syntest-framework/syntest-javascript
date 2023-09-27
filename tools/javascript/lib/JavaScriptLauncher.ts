@@ -79,10 +79,10 @@ import {
 } from "@syntest/search-javascript";
 import { StorageManager } from "@syntest/storage";
 
-import { TestCommandOptions } from "./commands/test";
-import { DeDuplicator } from "./workflows/DeDuplicator";
-import { addMetaComments } from "./workflows/MetaComment";
-import { TestSplitting } from "./workflows/TestSplitter";
+import { TestCommandOptions } from "./commands/test.js";
+import { DeDuplicator } from "./workflows/DeDuplicator.js";
+import { addMetaComments } from "./workflows/MetaComment.js";
+import { TestSplitting } from "./workflows/TestSplitter.js";
 
 export type JavaScriptArguments = ArgumentsObject & TestCommandOptions;
 export class JavaScriptLauncher extends Launcher {
@@ -550,7 +550,6 @@ export class JavaScriptLauncher extends Launcher {
 
     finalEncodings = new Map<Target, JavaScriptTestCase[]>(
       [...newArchives.entries()].map(([target, archive]) => {
-        console.log("archive size", archive.size);
         return [target, archive.getEncodings()];
       })
     );
@@ -919,13 +918,13 @@ export class JavaScriptLauncher extends Launcher {
     }
     // TODO should be cleanup step in tool
     // Finish
-    JavaScriptLauncher.LOGGER.info("Deleting temporary directories");
-    this.storageManager.deleteTemporaryDirectories([
-      [this.arguments_.testDirectory],
-      [this.arguments_.logDirectory],
-      [this.arguments_.instrumentedDirectory],
-    ]);
+    // JavaScriptLauncher.LOGGER.info("Deleting temporary directories");
+    // this.storageManager.deleteTemporaryDirectories([
+    //   [this.arguments_.testDirectory],
+    //   [this.arguments_.logDirectory],
+    //   [this.arguments_.instrumentedDirectory],
+    // ]);
 
-    this.storageManager.deleteMainTemporary();
+    // this.storageManager.deleteMainTemporary();
   }
 }

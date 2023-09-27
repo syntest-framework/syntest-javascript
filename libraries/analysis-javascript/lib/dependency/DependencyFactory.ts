@@ -20,9 +20,9 @@ import { traverse } from "@babel/core";
 import * as t from "@babel/types";
 import { DependencyFactory as CoreDependencyFactory } from "@syntest/analysis";
 
-import { Factory } from "../Factory";
+import { Factory } from "../Factory.js";
 
-import { DependencyVisitor } from "./DependencyVisitor";
+import { DependencyVisitor } from "./DependencyVisitor.js";
 
 /**
  * Dependency generator for targets.

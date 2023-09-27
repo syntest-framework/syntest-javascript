@@ -17,10 +17,10 @@
  */
 import { prng } from "@syntest/prng";
 
-import { StatementPool } from "../../../StatementPool";
-import { ConstantObject } from "../../../statements/action/ConstantObject";
+import { StatementPool } from "../../../StatementPool.js";
+import { ConstantObject } from "../../../statements/action/ConstantObject.js";
 
-import { CallGenerator } from "./CallGenerator";
+import { CallGenerator } from "./CallGenerator.js";
 
 export class ConstantObjectGenerator extends CallGenerator<ConstantObject> {
   override generate(

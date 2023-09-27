@@ -17,7 +17,7 @@
  */
 import * as chai from "chai";
 
-import { RandomSamplerPlugin } from "../lib/plugins/sampler/RandomSamplerPlugin";
+import { RandomSamplerPlugin } from "../lib/plugins/sampler/RandomSamplerPlugin.js";
 
 const expect = chai.expect;
 

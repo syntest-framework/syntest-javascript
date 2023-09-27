@@ -20,12 +20,18 @@ import { Scope as BabelScope, TraverseOptions } from "@babel/traverse";
 import * as t from "@babel/types";
 import { getLogger, Logger } from "@syntest/logging";
 
-import { globalVariables } from "./globalVariables";
-import { reservedKeywords } from "./reservedKeywords";
+import { globalVariables } from "./globalVariables.js";
+import { reservedKeywords } from "./reservedKeywords.js";
 
 export const MemberSeparator = " <-> ";
 
 export class AbstractSyntaxTreeVisitor implements TraverseOptions {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [k: `${string}|${string}`]: (
+    this: any,
+    path: NodePath<any>,
+    state: any
+  ) => void;
   protected static LOGGER: Logger;
 
   protected _filePath: string;

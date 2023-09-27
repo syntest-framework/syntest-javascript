@@ -19,12 +19,12 @@
 import { TypeEnum } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/prng";
 
-import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
-import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
-import { Decoding, Statement } from "../Statement";
+import { ContextBuilder } from "../../../testbuilding/ContextBuilder.js";
+import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler.js";
+import { Decoding, Statement } from "../Statement.js";
 
-import { ClassActionStatement } from "./ClassActionStatement";
-import { ConstructorCall } from "./ConstructorCall";
+import { ClassActionStatement } from "./ClassActionStatement.js";
+import { ConstructorCall } from "./ConstructorCall.js";
 
 /**
  * MethodCall

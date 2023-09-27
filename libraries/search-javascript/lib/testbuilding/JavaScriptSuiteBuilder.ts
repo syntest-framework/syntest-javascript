@@ -18,10 +18,10 @@
 import { Target } from "@syntest/analysis";
 import { StorageManager } from "@syntest/storage";
 
-import { JavaScriptRunner } from "../testcase/execution/JavaScriptRunner";
-import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
+import { JavaScriptRunner } from "../testcase/execution/JavaScriptRunner.js";
+import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase.js";
 
-import { JavaScriptDecoder } from "./JavaScriptDecoder";
+import { JavaScriptDecoder } from "./JavaScriptDecoder.js";
 
 export class JavaScriptSuiteBuilder {
   private storageManager: StorageManager;
@@ -48,7 +48,6 @@ export class JavaScriptSuiteBuilder {
   ) {
     const paths: string[] = [];
 
-    // write the test cases with logs to know what to assert
     let totalAmount = 0;
     if (compact) {
       for (const target of archive.keys()) {

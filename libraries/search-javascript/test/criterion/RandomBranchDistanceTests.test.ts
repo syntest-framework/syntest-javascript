@@ -17,7 +17,7 @@
  */
 import { expect } from "chai";
 
-import { BranchDistance } from "../../lib/criterion/BranchDistance";
+import { BranchDistance } from "../../lib/criterion/BranchDistance.js";
 
 describe("Random Tests", () => {
   it("a !== undefined && !b true", () => {

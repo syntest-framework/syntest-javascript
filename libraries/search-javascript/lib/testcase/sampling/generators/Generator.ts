@@ -17,9 +17,9 @@
  */
 import { RootContext } from "@syntest/analysis-javascript";
 
-import { StatementPool } from "../../StatementPool";
-import { Statement } from "../../statements/Statement";
-import { JavaScriptTestCaseSampler } from "../JavaScriptTestCaseSampler";
+import { StatementPool } from "../../StatementPool.js";
+import { Statement } from "../../statements/Statement.js";
+import { JavaScriptTestCaseSampler } from "../JavaScriptTestCaseSampler.js";
 
 export abstract class Generator<S extends Statement> {
   protected _sampler: JavaScriptTestCaseSampler;

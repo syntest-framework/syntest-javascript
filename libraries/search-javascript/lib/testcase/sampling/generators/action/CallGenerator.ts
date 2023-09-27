@@ -18,8 +18,8 @@
 import { ObjectType } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/prng";
 
-import { Statement } from "../../../statements/Statement";
-import { Generator } from "../Generator";
+import { Statement } from "../../../statements/Statement.js";
+import { Generator } from "../Generator.js";
 
 export abstract class CallGenerator<S extends Statement> extends Generator<S> {
   sampleArguments(depth: number, type_: ObjectType): Statement[] {

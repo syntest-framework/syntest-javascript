@@ -15,50 +15,50 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from "./lib/ast/AbstractSyntaxTreeFactory";
-export * from "./lib/ast/defaultBabelConfig";
+export * from "./lib/ast/AbstractSyntaxTreeFactory.js";
+export * from "./lib/ast/defaultBabelConfig.js";
 
-export * from "./lib/cfg/ControlFlowGraphFactory";
-export * from "./lib/cfg/ControlFlowGraphVisitor";
+export * from "./lib/cfg/ControlFlowGraphFactory.js";
+export * from "./lib/cfg/ControlFlowGraphVisitor.js";
 
-export * from "./lib/constant/ConstantPool";
-export * from "./lib/constant/ConstantPoolFactory";
-export * from "./lib/constant/ConstantPoolManager";
-export * from "./lib/constant/ConstantVisitor";
+export * from "./lib/constant/ConstantPool.js";
+export * from "./lib/constant/ConstantPoolFactory.js";
+export * from "./lib/constant/ConstantPoolManager.js";
+export * from "./lib/constant/ConstantVisitor.js";
 
-export * from "./lib/dependency/DependencyFactory";
-export * from "./lib/dependency/DependencyVisitor";
+export * from "./lib/dependency/DependencyFactory.js";
+export * from "./lib/dependency/DependencyVisitor.js";
 
-export * from "./lib/target/export/Export";
-export * from "./lib/target/export/ExportDefaultDeclaration";
-export * from "./lib/target/export/ExportFactory";
-export * from "./lib/target/export/ExportNamedDeclaration";
-export * from "./lib/target/export/ExportVisitor";
-export * from "./lib/target/export/ExpressionStatement";
+export * from "./lib/target/export/Export.js";
+export * from "./lib/target/export/ExportDefaultDeclaration.js";
+export * from "./lib/target/export/ExportFactory.js";
+export * from "./lib/target/export/ExportNamedDeclaration.js";
+export * from "./lib/target/export/ExportVisitor.js";
+export * from "./lib/target/export/ExpressionStatement.js";
 
-export * from "./lib/target/Target";
-export * from "./lib/target/TargetFactory";
-export * from "./lib/target/TargetVisitor";
-export * from "./lib/target/VisibilityType";
+export * from "./lib/target/Target.js";
+export * from "./lib/target/TargetFactory.js";
+export * from "./lib/target/TargetVisitor.js";
+export * from "./lib/target/VisibilityType.js";
 
-export * from "./lib/type/discovery/element/Element";
-export * from "./lib/type/discovery/element/ElementVisitor";
+export * from "./lib/type/discovery/element/Element.js";
+export * from "./lib/type/discovery/element/ElementVisitor.js";
 
-export * from "./lib/type/discovery/object/DiscoveredType";
-export * from "./lib/type/discovery/object/ObjectVisitor";
+export * from "./lib/type/discovery/object/DiscoveredType.js";
+export * from "./lib/type/discovery/object/ObjectVisitor.js";
 
-export * from "./lib/type/discovery/relation/Relation";
-export * from "./lib/type/discovery/relation/RelationVisitor";
+export * from "./lib/type/discovery/relation/Relation.js";
+export * from "./lib/type/discovery/relation/RelationVisitor.js";
 
-export * from "./lib/type/discovery/TypeExtractor";
+export * from "./lib/type/discovery/TypeExtractor.js";
 
-export * from "./lib/type/resolving/Type";
-export * from "./lib/type/resolving/TypeEnum";
-export * from "./lib/type/resolving/TypeModel";
-export * from "./lib/type/resolving/TypeModelFactory";
-export * from "./lib/type/resolving/InferenceTypeModelFactory";
+export * from "./lib/type/resolving/Type.js";
+export * from "./lib/type/resolving/TypeEnum.js";
+export * from "./lib/type/resolving/TypeModel.js";
+export * from "./lib/type/resolving/TypeModelFactory.js";
+export * from "./lib/type/resolving/InferenceTypeModelFactory.js";
 
-export * from "./lib/utils/fileSystem";
+export * from "./lib/utils/fileSystem.js";
 
-export * from "./lib/Events";
-export * from "./lib/RootContext";
+export * from "./lib/Events.js";
+export * from "./lib/RootContext.js";

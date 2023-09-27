@@ -18,10 +18,10 @@
 
 import { prng } from "@syntest/prng";
 
-import { Export } from "../../target/export/Export";
-import { DiscoveredObjectType } from "../discovery/object/DiscoveredType";
+import { Export } from "../../target/export/Export.js";
+import { DiscoveredObjectType } from "../discovery/object/DiscoveredType.js";
 
-import { ObjectType } from "./Type";
+import { ObjectType } from "./Type.js";
 
 // TODO we could cache some of this stuff (unless we do dynamic adding of properties at some point)
 export class TypePool {

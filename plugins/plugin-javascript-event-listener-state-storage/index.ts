@@ -16,4 +16,4 @@
  * limitations under the License.
  */
 
-export * as module from "./lib/StateStorageModule";
+export * as module from "./lib/StateStorageModule.js";

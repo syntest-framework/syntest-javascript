@@ -20,9 +20,9 @@ import * as t from "@babel/types";
 import { ControlFlowGraphFactory as CoreControlFlowGraphFactory } from "@syntest/analysis";
 import { contractControlFlowProgram, ControlFlowProgram } from "@syntest/cfg";
 
-import { Factory } from "../Factory";
+import { Factory } from "../Factory.js";
 
-import { ControlFlowGraphVisitor } from "./ControlFlowGraphVisitor";
+import { ControlFlowGraphVisitor } from "./ControlFlowGraphVisitor.js";
 
 export class ControlFlowGraphFactory
   extends Factory

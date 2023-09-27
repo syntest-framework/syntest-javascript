@@ -20,16 +20,13 @@ import { MetricManager } from "@syntest/metric";
 import { Module, ModuleManager } from "@syntest/module";
 import { StorageManager } from "@syntest/storage";
 
-import { StateStorageEventListenerPlugin } from "./StateStorageEventListenerPlugin";
+import package_ from "../package.json" assert { type: "json" };
+
+import { StateStorageEventListenerPlugin } from "./StateStorageEventListenerPlugin.js";
 
 export default class StateStorageModule extends Module {
   constructor() {
-    super(
-      // eslint-disable-next-line @typescript-eslint/no-var-requires,unicorn/prefer-module, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-      require("../../package.json").name,
-      // eslint-disable-next-line @typescript-eslint/no-var-requires,unicorn/prefer-module, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-      require("../../package.json").version
-    );
+    super(package_.name, package_.version);
   }
 
   register(

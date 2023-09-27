@@ -18,8 +18,8 @@
 import { traverse } from "@babel/core";
 import * as chai from "chai";
 
-import { AbstractSyntaxTreeFactory } from "../../../lib/ast/AbstractSyntaxTreeFactory";
-import { ExportVisitor } from "../../../lib/target/export/ExportVisitor";
+import { AbstractSyntaxTreeFactory } from "../../../lib/ast/AbstractSyntaxTreeFactory.js";
+import { ExportVisitor } from "../../../lib/target/export/ExportVisitor.js";
 
 const expect = chai.expect;
 

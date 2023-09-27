@@ -38,7 +38,7 @@ export type BranchMap = {
     line: number;
     type: string;
     loc: Location;
-    locations: [Location, Location];
+    locations: Location[];
   };
 };
 
@@ -64,7 +64,7 @@ export type InstrumentationData = {
   };
   b: {
     // 0 is true, 1 is false
-    [id: string]: [number, number];
+    [id: string]: number[];
   };
 };
 

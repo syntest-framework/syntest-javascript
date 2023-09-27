@@ -25,10 +25,10 @@ import {
 } from "@syntest/ast-visitor-javascript";
 import { getLogger, Logger } from "@syntest/logging";
 
-import { ClassActionStatement } from "../testcase/statements/action/ClassActionStatement";
-import { FunctionCall } from "../testcase/statements/action/FunctionCall";
-import { ObjectFunctionCall } from "../testcase/statements/action/ObjectFunctionCall";
-import { Statement } from "../testcase/statements/Statement";
+import { ClassActionStatement } from "../testcase/statements/action/ClassActionStatement.js";
+import { FunctionCall } from "../testcase/statements/action/FunctionCall.js";
+import { ObjectFunctionCall } from "../testcase/statements/action/ObjectFunctionCall.js";
+import { Statement } from "../testcase/statements/Statement.js";
 
 type Import = RegularImport | RenamedImport;
 
@@ -93,15 +93,9 @@ export class ContextBuilder {
 
     let variableName = statement.name;
 
-    variableName =
-      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_".includes(
-        variableName[0]
-      )
-        ? variableName[0].toLowerCase() + variableName.slice(1)
-        : (ContextBuilder.LOGGER.warn(
-            `Found variable name starting with a non-alphabetic character, variable: '${variableName}'`
-          ),
-          "var" + variableName);
+    variableName = variableName.replaceAll(/[^A-Za-z]/g, "");
+
+    variableName = variableName[0].toLowerCase() + variableName.slice(1);
 
     variableName =
       reservedKeywords.has(variableName) || globalVariables.has(variableName)
@@ -219,41 +213,66 @@ export class ContextBuilder {
 
   // TODO we could gather all the imports of a certain path together into one import
   private _getImportString(_path: string, import_: Import): string {
+    // if (import_.module) {
+    //   throw new Error("Only non module imports can use import statements");
+    // }
+
     if (import_.module) {
-      throw new Error("Only non module imports can use import statements");
+      if (!import_.default) {
+        throw new Error("TODO");
+      }
+      if (import_.renamed) {
+        return import_.default
+          ? `import * as ${import_.renamedTo} from "${_path}";`
+          : `import {${import_.name} as ${import_.renamedTo}} from "${_path}";`;
+      } else {
+        return import_.default
+          ? `import * as ${import_.name} from "${_path}";`
+          : `import {${import_.name}} from "${_path}";`;
+      }
     }
 
     if (import_.renamed) {
       return import_.default
-        ? `import ${import_.renamedTo} from "${_path}";`
-        : `import {${import_.name} as ${import_.renamedTo}} from "${_path}";`;
+        ? `const ${import_.renamedTo} = require("${_path}");`
+        : `const {${import_.name} as ${import_.renamedTo}} = require("${_path}");`;
     } else {
       return import_.default
-        ? `import ${import_.name} from "${_path}";`
-        : `import {${import_.name}} from "${_path}";`;
+        ? `const ${import_.name} = require("${_path}");`
+        : `const {${import_.name}} = require("${_path}");`;
     }
+
+    // if (import_.renamed) {
+    //   return import_.default
+    //     ? `import ${import_.renamedTo} from "${_path}";`
+    //     : `import {${import_.name} as ${import_.renamedTo}} from "${_path}";`;
+    // } else {
+    //   return import_.default
+    //     ? `import ${import_.name} from "${_path}";`
+    //     : `import {${import_.name}} from "${_path}";`;
+    // }
   }
 
-  private _getRequireString(_path: string, import_: Import): Require {
-    if (!import_.module) {
-      throw new Error("Only module imports can use require statements");
-    }
+  // private _getRequireString(_path: string, import_: Import): Require {
+  //   if (!import_.module) {
+  //     throw new Error("Only module imports can use require statements");
+  //   }
 
-    const require: Require = {
-      left: "",
-      right: `require("${_path}")`,
-    };
+  //   const require: Require = {
+  //     left: "",
+  //     right: `import("${_path}")`,
+  //   };
 
-    if (import_.renamed) {
-      require.left = import_.default
-        ? import_.renamedTo
-        : `{${import_.name}: ${import_.renamedTo}}`;
-    } else {
-      require.left = import_.default ? import_.name : `{${import_.name}}`;
-    }
+  //   if (import_.renamed) {
+  //     require.left = import_.default
+  //       ? import_.renamedTo
+  //       : `{${import_.name}: ${import_.renamedTo}}`;
+  //   } else {
+  //     require.left = import_.default ? import_.name : `{${import_.name}}`;
+  //   }
 
-    return require;
-  }
+  //   return require;
+  // }
 
   getImports(assertionsPresent: boolean) {
     let requires: Require[] = [];
@@ -262,11 +281,15 @@ export class ContextBuilder {
     for (const [path_, imports_] of this.imports.entries()) {
       // TODO remove unused imports
       for (const import_ of imports_) {
-        if (import_.module) {
-          requires.push(this._getRequireString(path_, import_));
-        } else {
-          imports.push(this._getImportString(path_, import_));
-        }
+        imports.push(this._getImportString(path_, import_));
+
+        // if (import_.module) {
+        //   imports.push(this._getImportString(path_, import_));
+
+        //   // requires.push(this._getRequireString(path_, import_));
+        // } else {
+        //   imports.push(this._getImportString(path_, import_));
+        // }
       }
     }
 

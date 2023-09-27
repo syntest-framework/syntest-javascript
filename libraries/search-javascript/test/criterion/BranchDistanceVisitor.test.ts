@@ -17,7 +17,7 @@
  */
 import { expect } from "chai";
 
-import { BranchDistanceVisitor } from "../../lib/criterion/BranchDistanceVisitor";
+import { BranchDistanceVisitor } from "../../lib/criterion/BranchDistanceVisitor.js";
 
 describe("BranchDistance string functions", () => {
   it("'abc'.endsWith('bc') true", () => {

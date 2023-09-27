@@ -21,20 +21,17 @@ import { UserInterface } from "@syntest/cli-graphics";
 import { MetricManager } from "@syntest/metric";
 import { Module, ModuleManager, Tool } from "@syntest/module";
 import { StorageManager } from "@syntest/storage";
-import yargs = require("yargs");
+import * as yargs from "yargs";
 
-import { getTestCommand } from "./commands/test";
-import { TreeCrossoverPlugin } from "./plugins/crossover/TreeCrossoverPlugin";
-import { RandomSamplerPlugin } from "./plugins/sampler/RandomSamplerPlugin";
+import package_ from "../package.json" assert { type: "json" };
+
+import { getTestCommand } from "./commands/test.js";
+import { TreeCrossoverPlugin } from "./plugins/crossover/TreeCrossoverPlugin.js";
+import { RandomSamplerPlugin } from "./plugins/sampler/RandomSamplerPlugin.js";
 
 export default class JavaScriptModule extends TestingToolModule {
   constructor() {
-    super(
-      // eslint-disable-next-line @typescript-eslint/no-var-requires, unicorn/prefer-module, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-      require("../../package.json").name,
-      // eslint-disable-next-line @typescript-eslint/no-var-requires, unicorn/prefer-module, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-      require("../../package.json").version
-    );
+    super(package_.name, package_.version);
   }
 
   override register(

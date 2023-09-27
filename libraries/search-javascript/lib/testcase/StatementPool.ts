@@ -17,13 +17,13 @@
  */
 import { prng } from "@syntest/prng";
 
-import { ActionStatement } from "./statements/action/ActionStatement";
-import { ClassActionStatement } from "./statements/action/ClassActionStatement";
-import { ConstantObject } from "./statements/action/ConstantObject";
-import { ConstructorCall } from "./statements/action/ConstructorCall";
-import { FunctionCall } from "./statements/action/FunctionCall";
-import { ObjectFunctionCall } from "./statements/action/ObjectFunctionCall";
-import { Statement } from "./statements/Statement";
+import { ActionStatement } from "./statements/action/ActionStatement.js";
+import { ClassActionStatement } from "./statements/action/ClassActionStatement.js";
+import { ConstantObject } from "./statements/action/ConstantObject.js";
+import { ConstructorCall } from "./statements/action/ConstructorCall.js";
+import { FunctionCall } from "./statements/action/FunctionCall.js";
+import { ObjectFunctionCall } from "./statements/action/ObjectFunctionCall.js";
+import { Statement } from "./statements/Statement.js";
 
 export class StatementPool {
   // type -> statement array

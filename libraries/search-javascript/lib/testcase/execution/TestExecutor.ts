@@ -16,18 +16,19 @@
  * limitations under the License.
  */
 
+import { createRequire } from "node:module";
+
 import {
+  AssertionData,
   InstrumentationDataMap,
   MetaDataMap,
 } from "@syntest/instrumentation-javascript";
-import cloneDeep = require("lodash.clonedeep");
-import { Runner } from "mocha";
-import Mocha = require("mocha");
+import cloneDeep from "lodash.clonedeep";
+import Mocha, { Runner } from "mocha";
 
-import { JavaScriptExecutionStatus } from "../../search/JavaScriptExecutionResult";
+import { JavaScriptExecutionStatus } from "../../search/JavaScriptExecutionResult.js";
 
-import { AssertionData } from "./AssertionData";
-import { SilentMochaReporter } from "./SilentMochaReporter";
+import { SilentMochaReporter } from "./SilentMochaReporter.js";
 
 export type Message = RunMessage | DoneMessage;
 
@@ -89,26 +90,50 @@ async function runMocha(silent: boolean, paths: string[], timeout: number) {
     // sort: false,
   });
 
-  const mocha = new Mocha(argv); // require('ts-node/register')
-  // eslint-disable-next-line unicorn/prefer-module
+  const mocha = new Mocha(argv);
+
+  const require = createRequire(import.meta.url);
+
+  // eslint-disable-next-line unicorn/prefer-module, import/extensions
   require("regenerator-runtime/runtime");
   // eslint-disable-next-line unicorn/prefer-module, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-var-requires
   require("@babel/register")({
     // eslint-disable-next-line unicorn/prefer-module
-    presets: [require.resolve("@babel/preset-env")],
+    presets: [
+      [
+        require.resolve("@babel/preset-env"),
+        {
+          modules: false,
+        },
+      ],
+    ],
   });
+
+  // const babelRegister = await import("@babel/register")
+  // babelRegister({
+  //   presets: [
+  //     new URL("@babel/preset-env", import.meta.url).href;
+
+  //     await import.meta.resolve('@babel/preset-env')
+  //   ]
+  // })
 
   for (const _path of paths) {
     // eslint-disable-next-line unicorn/prefer-module
-    delete require.cache[_path];
+    // delete require.cache[_path];
     mocha.addFile(_path);
   }
 
   let runner: Runner;
 
   // Finally, run mocha.
-  await new Promise((resolve) => {
-    runner = mocha.run((failures) => resolve(failures));
+  await new Promise((resolve, reject) => {
+    // runner = mocha.run((failures) => resolve(failures));
+
+    mocha
+      .loadFilesAsync()
+      .then(() => (runner = mocha.run((failures) => resolve(failures))))
+      .catch((error) => reject(error));
   });
 
   const suites: Suite[] = runner.suite.suites.map((suite) => {
@@ -139,6 +164,7 @@ async function runMocha(silent: boolean, paths: string[], timeout: number) {
     };
   });
 
+  console.log(global);
   // Retrieve execution traces
   const result: DoneMessage = {
     message: "done",

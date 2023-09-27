@@ -27,8 +27,8 @@ import {
   shouldNeverHappen,
 } from "@syntest/search";
 
-import { BranchDistance } from "../criterion/BranchDistance";
-import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
+import { BranchDistance } from "../criterion/BranchDistance.js";
+import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase.js";
 
 export class JavaScriptSubject extends SearchSubject<JavaScriptTestCase> {
   protected syntaxForgiving: boolean;

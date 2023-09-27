@@ -19,7 +19,7 @@ import { traverse } from "@babel/core";
 import { AbstractSyntaxTreeVisitor } from "@syntest/ast-visitor-javascript";
 import * as chai from "chai";
 
-import { AbstractSyntaxTreeFactory } from "../lib/ast/AbstractSyntaxTreeFactory";
+import { AbstractSyntaxTreeFactory } from "../lib/ast/AbstractSyntaxTreeFactory.js";
 
 const expect = chai.expect;
 

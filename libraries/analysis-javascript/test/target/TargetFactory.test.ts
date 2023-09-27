@@ -17,8 +17,8 @@
  */
 import { expect } from "chai";
 
-import { AbstractSyntaxTreeFactory } from "../../lib/ast/AbstractSyntaxTreeFactory";
-import { TargetFactory } from "../../lib/target/TargetFactory";
+import { AbstractSyntaxTreeFactory } from "../../lib/ast/AbstractSyntaxTreeFactory.js";
+import { TargetFactory } from "../../lib/target/TargetFactory.js";
 
 describe("TargetFactory", () => {
   it("class with getter and setters", () => {

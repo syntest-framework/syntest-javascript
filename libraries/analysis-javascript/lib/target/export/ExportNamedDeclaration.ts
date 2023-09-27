@@ -18,8 +18,8 @@
 import { NodePath } from "@babel/core";
 import * as t from "@babel/types";
 
-import { Export } from "./Export";
-import { ExportVisitor } from "./ExportVisitor";
+import { Export } from "./Export.js";
+import { ExportVisitor } from "./ExportVisitor.js";
 
 function extractFromObjectPattern(
   visitor: ExportVisitor,

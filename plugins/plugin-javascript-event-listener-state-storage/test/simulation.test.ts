@@ -18,7 +18,7 @@
 import { StorageManager } from "@syntest/storage";
 import * as chai from "chai";
 
-import { StateStorage } from "../lib/StateStorage";
+import { StateStorage } from "../lib/StateStorage.js";
 
 const expect = chai.expect;
 

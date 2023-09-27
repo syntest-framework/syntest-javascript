@@ -17,7 +17,7 @@
  */
 import * as chai from "chai";
 
-import { Instrumenter } from "../lib/instrumentation/Instrumenter";
+import { Instrumenter } from "../lib/instrumentation/Instrumenter.js";
 
 const expect = chai.expect;
 

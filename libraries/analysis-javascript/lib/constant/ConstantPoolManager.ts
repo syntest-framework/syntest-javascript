@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { ConstantPool } from "./ConstantPool";
+import { ConstantPool } from "./ConstantPool.js";
 
 export class ConstantPoolManager {
   protected _targetConstantPool: ConstantPool;
