@@ -217,6 +217,16 @@ export class ContextBuilder {
       throw new Error("Only non module imports can use import statements");
     }
 
+    // if (import_.renamed) {
+    //   return import_.default
+    //     ? `const ${import_.renamedTo} = require("${_path}";`
+    //     : `const {${import_.name} as ${import_.renamedTo}} =  equire("${_path}";`;
+    // } else {
+    //   return import_.default
+    //     ? `const ${import_.name} = require("${_path}";`
+    //     : `const {${import_.name}} = require("${_path}";`;
+    // }
+
     if (import_.renamed) {
       return import_.default
         ? `import ${import_.renamedTo} from "${_path}";`
