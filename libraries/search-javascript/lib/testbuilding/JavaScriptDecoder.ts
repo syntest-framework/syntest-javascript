@@ -133,9 +133,7 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
       ...beforeEachLines,
       ...tests.flatMap((testLines: string[], index) => [
         `\tit("Test ${index + 1}", async () => {`,
-        "\t\tconsole.log(__setProxy)",
         ...testLines.map((line) => `\t\t${line}`),
-        "\t\tconsole.log(global)",
         index === tests.length - 1 ? "\t})" : "\t})\n",
       ]),
       "})",

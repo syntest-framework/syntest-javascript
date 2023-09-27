@@ -164,7 +164,6 @@ async function runMocha(silent: boolean, paths: string[], timeout: number) {
     };
   });
 
-  console.log(global);
   // Retrieve execution traces
   const result: DoneMessage = {
     message: "done",

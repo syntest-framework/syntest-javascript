@@ -79,10 +79,10 @@ import {
 } from "@syntest/search-javascript";
 import { StorageManager } from "@syntest/storage";
 
-import { TestCommandOptions } from "./commands/test.js";
-import { DeDuplicator } from "./workflows/DeDuplicator.js";
-import { addMetaComments } from "./workflows/MetaComment.js";
-import { TestSplitting } from "./workflows/TestSplitter.js";
+import { TestCommandOptions } from "./commands/test";
+import { DeDuplicator } from "./workflows/DeDuplicator";
+import { addMetaComments } from "./workflows/MetaComment";
+import { TestSplitting } from "./workflows/TestSplitter";
 
 export type JavaScriptArguments = ArgumentsObject & TestCommandOptions;
 export class JavaScriptLauncher extends Launcher {

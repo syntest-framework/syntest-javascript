@@ -33,9 +33,9 @@ import { StorageManager } from "@syntest/storage";
 import {
   JavaScriptExecutionResult,
   JavaScriptExecutionStatus,
-} from "../../search/JavaScriptExecutionResult.js";
-import { JavaScriptDecoder } from "../../testbuilding/JavaScriptDecoder.js";
-import { JavaScriptTestCase } from "../JavaScriptTestCase.js";
+} from "../../search/JavaScriptExecutionResult";
+import { JavaScriptDecoder } from "../../testbuilding/JavaScriptDecoder";
+import { JavaScriptTestCase } from "../JavaScriptTestCase";
 
 import { ExecutionInformationIntegrator } from "./ExecutionInformationIntegrator.js";
 import { DoneMessage, Message } from "./TestExecutor.js";
