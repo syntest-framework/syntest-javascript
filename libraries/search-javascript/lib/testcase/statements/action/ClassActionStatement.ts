@@ -18,10 +18,10 @@
 import { TypeEnum } from "@syntest/analysis-javascript";
 import { shouldNeverHappen } from "@syntest/search";
 
-import { Statement } from "../Statement";
+import { Statement } from "../Statement.js";
 
-import { ActionStatement } from "./ActionStatement";
-import { ConstructorCall } from "./ConstructorCall";
+import { ActionStatement } from "./ActionStatement.js";
+import { ConstructorCall } from "./ConstructorCall.js";
 
 export abstract class ClassActionStatement extends ActionStatement {
   private _constructor: ConstructorCall;

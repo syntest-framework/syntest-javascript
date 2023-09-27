@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-import { Element } from "../discovery/element/Element";
-import { Relation } from "../discovery/relation/Relation";
+import { Element } from "../discovery/element/Element.js";
+import { Relation } from "../discovery/relation/Relation.js";
 
-import { TypeModel } from "./TypeModel";
+import { TypeModel } from "./TypeModel.js";
 
 /**
  * Abstract TypeResolver class

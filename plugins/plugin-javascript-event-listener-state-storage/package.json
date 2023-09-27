@@ -6,6 +6,7 @@
     "syntest",
     "automatic-test-generation"
   ],
+  "type": "module",
   "homepage": "https://www.syntest.org",
   "bugs": {
     "url": "https://github.com/syntest-framework/syntest-core/issues"

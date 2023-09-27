@@ -5,5 +5,8 @@
     "rootDir": ".",
     "composite": true
   },
-  "include": ["**/*.ts"]
+  "include": [
+    "**/*.ts",
+    "libraries/instrumentation-javascript/lib/global/Global.cjs"
+  ]
 }

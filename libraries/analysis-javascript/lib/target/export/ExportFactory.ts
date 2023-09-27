@@ -19,10 +19,10 @@
 import { traverse } from "@babel/core";
 import * as t from "@babel/types";
 
-import { Factory } from "../../Factory";
+import { Factory } from "../../Factory.js";
 
-import { Export } from "./Export";
-import { ExportVisitor } from "./ExportVisitor";
+import { Export } from "./Export.js";
+import { ExportVisitor } from "./ExportVisitor.js";
 
 /**
  * ExportFactory for Javascript.

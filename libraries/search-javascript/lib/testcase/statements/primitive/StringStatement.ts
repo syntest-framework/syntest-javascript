@@ -19,11 +19,11 @@
 import { TypeEnum } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/prng";
 
-import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
-import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
-import { Decoding, Statement } from "../Statement";
+import { ContextBuilder } from "../../../testbuilding/ContextBuilder.js";
+import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler.js";
+import { Decoding, Statement } from "../Statement.js";
 
-import { PrimitiveStatement } from "./PrimitiveStatement";
+import { PrimitiveStatement } from "./PrimitiveStatement.js";
 
 /**
  * @author Dimitri Stallenberg

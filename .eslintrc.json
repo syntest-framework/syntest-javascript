@@ -32,6 +32,7 @@
     "@typescript-eslint",
     "notice",
     "unused-imports"
+
   ],
   "rules": {
     "import/first": "error",
@@ -70,6 +71,14 @@
     "unicorn/prefer-ternary": "warn",
     "unicorn/expiring-todo-comments": "off",
     "no-fallthrough": "off",
-    "sonarjs/cognitive-complexity": "warn"
+    "sonarjs/cognitive-complexity": "warn",
+    "import/extensions": [
+      "error",
+      {
+        "ts": "never",
+        "js": "always",
+        "json": "always"
+      }
+    ]
   }
 }

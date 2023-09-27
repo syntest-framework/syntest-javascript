@@ -17,12 +17,12 @@
  */
 
 import { TypeModel } from "@syntest/analysis-javascript";
-import Mocha = require("mocha");
+import * as Mocha from "mocha";
 
-import { JavaScriptTestCase } from "../JavaScriptTestCase";
-import { Statement } from "../statements/Statement";
+import { JavaScriptTestCase } from "../JavaScriptTestCase.js";
+import { Statement } from "../statements/Statement.js";
 
-import { Test } from "./TestExecutor";
+import { Test } from "./TestExecutor.js";
 
 export class ExecutionInformationIntegrator {
   private _typeModel: TypeModel;

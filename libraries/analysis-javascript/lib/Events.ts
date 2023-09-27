@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { RootContext } from "./RootContext";
+import { RootContext } from "./RootContext.js";
 
 export type Events = {
   exportExtractionStart: (rootContext: RootContext, filepath: string) => void;

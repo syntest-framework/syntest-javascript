@@ -18,8 +18,8 @@
 import { traverse } from "@babel/core";
 import * as chai from "chai";
 
-import { AbstractSyntaxTreeFactory } from "../../lib/ast/AbstractSyntaxTreeFactory";
-import { ControlFlowGraphVisitor } from "../../lib/cfg/ControlFlowGraphVisitor";
+import { AbstractSyntaxTreeFactory } from "../../lib/ast/AbstractSyntaxTreeFactory.js";
+import { ControlFlowGraphVisitor } from "../../lib/cfg/ControlFlowGraphVisitor.js";
 
 const expect = chai.expect;
 

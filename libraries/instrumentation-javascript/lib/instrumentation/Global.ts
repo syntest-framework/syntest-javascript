@@ -15,6 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module.exports = {
-  extends: ["@commitlint/config-conventional"],
+
+import { AssertionData } from "../datastructures/AssertionData";
+import { InstrumentationDataMap } from "../datastructures/InstrumentationData";
+import { MetaDataMap } from "../datastructures/MetaData";
+
+type GlobalType = {
+  __coverage__?: InstrumentationDataMap;
+  __meta__?: MetaDataMap;
+  __assertion__?: AssertionData;
 };
+
+export const Global: GlobalType = {};

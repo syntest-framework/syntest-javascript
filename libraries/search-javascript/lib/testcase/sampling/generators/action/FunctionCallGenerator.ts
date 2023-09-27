@@ -17,11 +17,11 @@
  */
 import { prng } from "@syntest/prng";
 
-import { StatementPool } from "../../../StatementPool";
-import { FunctionCall } from "../../../statements/action/FunctionCall";
-import { Statement } from "../../../statements/Statement";
+import { StatementPool } from "../../../StatementPool.js";
+import { FunctionCall } from "../../../statements/action/FunctionCall.js";
+import { Statement } from "../../../statements/Statement.js";
 
-import { CallGenerator } from "./CallGenerator";
+import { CallGenerator } from "./CallGenerator.js";
 
 export class FunctionCallGenerator extends CallGenerator<FunctionCall> {
   override generate(

@@ -19,9 +19,12 @@ import { UserInterface } from "@syntest/cli-graphics";
 import { MetricManager } from "@syntest/metric";
 import { Command, ModuleManager } from "@syntest/module";
 import { StorageManager } from "@syntest/storage";
-import Yargs = require("yargs");
+import * as yargs from "yargs";
 
-import { JavaScriptArguments, JavaScriptLauncher } from "../JavaScriptLauncher";
+import {
+  JavaScriptArguments,
+  JavaScriptLauncher,
+} from "../JavaScriptLauncher.js";
 
 export function getTestCommand(
   tool: string,
@@ -30,7 +33,7 @@ export function getTestCommand(
   storageManager: StorageManager,
   userInterface: UserInterface
 ): Command {
-  const options = new Map<string, Yargs.Options>();
+  const options = new Map<string, yargs.Options>();
 
   const commandGroup = "Type Inference Options:";
   const samplingGroup = "Sampling Options:";
@@ -164,7 +167,7 @@ export function getTestCommand(
     "test",
     "Run the test case generation tool on a certain JavaScript project.",
     options,
-    async (arguments_: Yargs.ArgumentsCamelCase) => {
+    async (arguments_: yargs.ArgumentsCamelCase) => {
       const launcher = new JavaScriptLauncher(
         <JavaScriptArguments>(<unknown>arguments_),
         moduleManager,

@@ -20,10 +20,10 @@ import { NodePath } from "@babel/core";
 import * as t from "@babel/types";
 import { AbstractSyntaxTreeVisitor } from "@syntest/ast-visitor-javascript";
 
-import { Export } from "./Export";
-import { extractExportsFromExportDefaultDeclaration } from "./ExportDefaultDeclaration";
-import { extractExportsFromExportNamedDeclaration } from "./ExportNamedDeclaration";
-import { extractExportsFromAssignmentExpression } from "./ExpressionStatement";
+import { Export } from "./Export.js";
+import { extractExportsFromExportDefaultDeclaration } from "./ExportDefaultDeclaration.js";
+import { extractExportsFromExportNamedDeclaration } from "./ExportNamedDeclaration.js";
+import { extractExportsFromAssignmentExpression } from "./ExpressionStatement.js";
 
 export class ExportVisitor extends AbstractSyntaxTreeVisitor {
   private _exports: Export[];

@@ -19,7 +19,7 @@
 import { TypeEnum } from "@syntest/analysis-javascript";
 import { Encoding, EncodingSampler } from "@syntest/search";
 
-import { ContextBuilder } from "../../testbuilding/ContextBuilder";
+import { ContextBuilder } from "../../testbuilding/ContextBuilder.js";
 
 /**
  * @author Dimitri Stallenberg

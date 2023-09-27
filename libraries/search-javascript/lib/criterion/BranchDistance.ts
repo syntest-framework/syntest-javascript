@@ -24,7 +24,7 @@ import {
   shouldNeverHappen,
 } from "@syntest/search";
 
-import { BranchDistanceVisitor } from "./BranchDistanceVisitor";
+import { BranchDistanceVisitor } from "./BranchDistanceVisitor.js";
 
 export class BranchDistance extends CoreBranchDistance {
   protected static LOGGER: Logger;

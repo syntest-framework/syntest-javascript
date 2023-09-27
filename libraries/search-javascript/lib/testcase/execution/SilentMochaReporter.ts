@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import Mocha = require("mocha");
+import * as Mocha from "mocha";
 
 const {
   EVENT_RUN_BEGIN,

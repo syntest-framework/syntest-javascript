@@ -16,16 +16,16 @@
  * limitations under the License.
  */
 
-import { Element, ElementType } from "../discovery/element/Element";
+import { Element, ElementType } from "../discovery/element/Element.js";
 import {
   getRelationName,
   Relation,
   RelationType,
-} from "../discovery/relation/Relation";
+} from "../discovery/relation/Relation.js";
 
-import { elementTypeToTypingType, TypeEnum } from "./TypeEnum";
-import { TypeModel } from "./TypeModel";
-import { TypeModelFactory } from "./TypeModelFactory";
+import { elementTypeToTypingType, TypeEnum } from "./TypeEnum.js";
+import { TypeModel } from "./TypeModel.js";
+import { TypeModelFactory } from "./TypeModelFactory.js";
 
 export class InferenceTypeModelFactory extends TypeModelFactory {
   private _typeModel: TypeModel;

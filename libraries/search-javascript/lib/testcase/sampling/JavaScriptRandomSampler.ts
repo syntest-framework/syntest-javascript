@@ -29,29 +29,29 @@ import {
 } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/prng";
 
-import { JavaScriptSubject } from "../../search/JavaScriptSubject";
-import { JavaScriptTestCase } from "../JavaScriptTestCase";
-import { StatementPool } from "../StatementPool";
-import { ActionStatement } from "../statements/action/ActionStatement";
-import { ConstantObject } from "../statements/action/ConstantObject";
-import { ConstructorCall } from "../statements/action/ConstructorCall";
-import { FunctionCall } from "../statements/action/FunctionCall";
-import { Getter } from "../statements/action/Getter";
-import { MethodCall } from "../statements/action/MethodCall";
-import { ObjectFunctionCall } from "../statements/action/ObjectFunctionCall";
-import { Setter } from "../statements/action/Setter";
-import { ArrayStatement } from "../statements/complex/ArrayStatement";
-import { ArrowFunctionStatement } from "../statements/complex/ArrowFunctionStatement";
-import { ObjectStatement } from "../statements/complex/ObjectStatement";
-import { BoolStatement } from "../statements/primitive/BoolStatement";
-import { IntegerStatement } from "../statements/primitive/IntegerStatement";
-import { NullStatement } from "../statements/primitive/NullStatement";
-import { NumericStatement } from "../statements/primitive/NumericStatement";
-import { StringStatement } from "../statements/primitive/StringStatement";
-import { UndefinedStatement } from "../statements/primitive/UndefinedStatement";
-import { Statement } from "../statements/Statement";
+import { JavaScriptSubject } from "../../search/JavaScriptSubject.js";
+import { JavaScriptTestCase } from "../JavaScriptTestCase.js";
+import { StatementPool } from "../StatementPool.js";
+import { ActionStatement } from "../statements/action/ActionStatement.js";
+import { ConstantObject } from "../statements/action/ConstantObject.js";
+import { ConstructorCall } from "../statements/action/ConstructorCall.js";
+import { FunctionCall } from "../statements/action/FunctionCall.js";
+import { Getter } from "../statements/action/Getter.js";
+import { MethodCall } from "../statements/action/MethodCall.js";
+import { ObjectFunctionCall } from "../statements/action/ObjectFunctionCall.js";
+import { Setter } from "../statements/action/Setter.js";
+import { ArrayStatement } from "../statements/complex/ArrayStatement.js";
+import { ArrowFunctionStatement } from "../statements/complex/ArrowFunctionStatement.js";
+import { ObjectStatement } from "../statements/complex/ObjectStatement.js";
+import { BoolStatement } from "../statements/primitive/BoolStatement.js";
+import { IntegerStatement } from "../statements/primitive/IntegerStatement.js";
+import { NullStatement } from "../statements/primitive/NullStatement.js";
+import { NumericStatement } from "../statements/primitive/NumericStatement.js";
+import { StringStatement } from "../statements/primitive/StringStatement.js";
+import { UndefinedStatement } from "../statements/primitive/UndefinedStatement.js";
+import { Statement } from "../statements/Statement.js";
 
-import { JavaScriptTestCaseSampler } from "./JavaScriptTestCaseSampler";
+import { JavaScriptTestCaseSampler } from "./JavaScriptTestCaseSampler.js";
 
 export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   constructor(

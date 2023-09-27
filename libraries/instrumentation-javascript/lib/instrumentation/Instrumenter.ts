@@ -17,7 +17,7 @@
  */
 
 import { transformSync } from "@babel/core";
-import { Visitor } from "./Visitor";
+import { Visitor } from "./Visitor.js";
 import {
   RootContext,
   Target,

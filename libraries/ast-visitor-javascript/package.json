@@ -6,6 +6,7 @@
     "syntest",
     "abstract-syntax-tree"
   ],
+  "type": "module",
   "homepage": "https://www.syntest.org",
   "bugs": {
     "url": "https://github.com/syntest-framework/syntest-javascript/issues"

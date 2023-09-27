@@ -22,11 +22,11 @@ import { traverse } from "@babel/core";
 import * as t from "@babel/types";
 import { TargetFactory as CoreTargetFactory } from "@syntest/analysis";
 
-import { Factory } from "../Factory";
+import { Factory } from "../Factory.js";
 
-import { ExportVisitor } from "./export/ExportVisitor";
-import { Target } from "./Target";
-import { TargetVisitor } from "./TargetVisitor";
+import { ExportVisitor } from "./export/ExportVisitor.js";
+import { Target } from "./Target.js";
+import { TargetVisitor } from "./TargetVisitor.js";
 
 /**
  * TargetFactory for Javascript.

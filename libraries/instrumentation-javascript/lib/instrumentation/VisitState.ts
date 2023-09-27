@@ -18,7 +18,7 @@
 
 import { createHash } from "crypto";
 
-import { SourceCoverage } from "./source-coverage";
+import { SourceCoverage } from "./source-coverage.js";
 
 const SHA = "sha1";
 
@@ -41,7 +41,7 @@ export class VisitState {
   public metaVarName: string;
   public attrs: any;
   public nextIgnore: any;
-  public cov: any;
+  public cov: SourceCoverage;
 
   public ignoreClassMethods: any;
   public types: any;
@@ -390,13 +390,13 @@ export class VisitState {
     return metaTracker;
   }
 
-  getBranchLogicIncrement(path, branchName, loc) {
-    const index = this.cov.addBranchPath(branchName, loc);
-    return [
-      this.increase("b", branchName, index),
-      this.increaseTrue("bT", branchName, index, path.node),
-    ];
-  }
+  // getBranchLogicIncrement(path, branchName, loc) {
+  //   const index = this.cov.addBranchPath(branchName, loc);
+  //   return [
+  //     this.increase("b", branchName, index),
+  //     this.increaseTrue("bT", branchName, index, path.node),
+  //   ];
+  // }
 
   insertBranchCounter(ifPath, path, branchName, placeholder = false) {
     const increment = this.getBranchIncrement(

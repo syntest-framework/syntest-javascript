@@ -16,43 +16,43 @@
  * limitations under the License.
  */
 
-export * from "./lib/criterion/BranchDistance";
+export * from "./lib/criterion/BranchDistance.js";
 
-export * from "./lib/search/crossover/TreeCrossover";
+export * from "./lib/search/crossover/TreeCrossover.js";
 
-export * from "./lib/search/JavaScriptExecutionResult";
-export * from "./lib/search/JavaScriptSubject";
+export * from "./lib/search/JavaScriptExecutionResult.js";
+export * from "./lib/search/JavaScriptSubject.js";
 
-export * from "./lib/testbuilding/JavaScriptDecoder";
-export * from "./lib/testbuilding/JavaScriptSuiteBuilder";
+export * from "./lib/testbuilding/JavaScriptDecoder.js";
+export * from "./lib/testbuilding/JavaScriptSuiteBuilder.js";
 
-export * from "./lib/testcase/execution/ExecutionInformationIntegrator";
-export * from "./lib/testcase/execution/JavaScriptRunner";
-export * from "./lib/testcase/execution/SilentMochaReporter";
+export * from "./lib/testcase/execution/ExecutionInformationIntegrator.js";
+export * from "./lib/testcase/execution/JavaScriptRunner.js";
+export * from "./lib/testcase/execution/SilentMochaReporter.js";
 
-export * from "./lib/testcase/sampling/JavaScriptRandomSampler";
-export * from "./lib/testcase/sampling/JavaScriptTestCaseSampler";
+export * from "./lib/testcase/sampling/JavaScriptRandomSampler.js";
+export * from "./lib/testcase/sampling/JavaScriptTestCaseSampler.js";
 
-export * from "./lib/testcase/statements/action/ActionStatement";
-export * from "./lib/testcase/statements/action/Getter";
-export * from "./lib/testcase/statements/action/MethodCall";
-export * from "./lib/testcase/statements/action/Setter";
+export * from "./lib/testcase/statements/action/ActionStatement.js";
+export * from "./lib/testcase/statements/action/Getter.js";
+export * from "./lib/testcase/statements/action/MethodCall.js";
+export * from "./lib/testcase/statements/action/Setter.js";
 
-export * from "./lib/testcase/statements/complex/ArrayStatement";
-export * from "./lib/testcase/statements/complex/ArrowFunctionStatement";
-export * from "./lib/testcase/statements/complex/ObjectStatement";
+export * from "./lib/testcase/statements/complex/ArrayStatement.js";
+export * from "./lib/testcase/statements/complex/ArrowFunctionStatement.js";
+export * from "./lib/testcase/statements/complex/ObjectStatement.js";
 
-export * from "./lib/testcase/statements/primitive/BoolStatement";
-export * from "./lib/testcase/statements/primitive/NullStatement";
-export * from "./lib/testcase/statements/primitive/NumericStatement";
-export * from "./lib/testcase/statements/primitive/PrimitiveStatement";
-export * from "./lib/testcase/statements/primitive/StringStatement";
-export * from "./lib/testcase/statements/primitive/UndefinedStatement";
+export * from "./lib/testcase/statements/primitive/BoolStatement.js";
+export * from "./lib/testcase/statements/primitive/NullStatement.js";
+export * from "./lib/testcase/statements/primitive/NumericStatement.js";
+export * from "./lib/testcase/statements/primitive/PrimitiveStatement.js";
+export * from "./lib/testcase/statements/primitive/StringStatement.js";
+export * from "./lib/testcase/statements/primitive/UndefinedStatement.js";
 
-export * from "./lib/testcase/statements/action/ConstructorCall";
-export * from "./lib/testcase/statements/action/FunctionCall";
-export * from "./lib/testcase/statements/action/ConstantObject";
+export * from "./lib/testcase/statements/action/ConstructorCall.js";
+export * from "./lib/testcase/statements/action/FunctionCall.js";
+export * from "./lib/testcase/statements/action/ConstantObject.js";
 
-export * from "./lib/testcase/statements/Statement";
+export * from "./lib/testcase/statements/Statement.js";
 
-export * from "./lib/testcase/JavaScriptTestCase";
+export * from "./lib/testcase/JavaScriptTestCase.js";

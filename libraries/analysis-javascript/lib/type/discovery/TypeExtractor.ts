@@ -15,14 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import traverse from "@babel/traverse";
+import _traverse from "@babel/traverse";
 import * as t from "@babel/types";
 
-import { Factory } from "../../Factory";
+import { Factory } from "../../Factory.js";
 
-import { ElementVisitor } from "./element/ElementVisitor";
-import { ObjectVisitor } from "./object/ObjectVisitor";
-import { RelationVisitor } from "./relation/RelationVisitor";
+import { ElementVisitor } from "./element/ElementVisitor.js";
+import { ObjectVisitor } from "./object/ObjectVisitor.js";
+import { RelationVisitor } from "./relation/RelationVisitor.js";
+
+const traverse = (<{ default: typeof _traverse }>(<unknown>_traverse)).default;
 
 export class TypeExtractor extends Factory {
   extractElements(filepath: string, ast: t.Node) {

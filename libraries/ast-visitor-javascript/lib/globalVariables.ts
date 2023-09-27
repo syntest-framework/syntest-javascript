@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as globals from "globals";
+import globals from "globals";
 
 export const globalVariables = new Set(
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument

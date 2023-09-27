@@ -16,6 +16,6 @@
  * limitations under the License.
  */
 
-export * from "./lib/AbstractSyntaxTreeVisitor";
-export * from "./lib/globalVariables";
-export * from "./lib/reservedKeywords";
+export * from "./lib/AbstractSyntaxTreeVisitor.js";
+export * from "./lib/globalVariables.js";
+export * from "./lib/reservedKeywords.js";

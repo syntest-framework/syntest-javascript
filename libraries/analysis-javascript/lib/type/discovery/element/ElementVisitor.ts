@@ -22,7 +22,7 @@ import {
   MemberSeparator,
 } from "@syntest/ast-visitor-javascript";
 
-import { Element, ElementType } from "../element/Element";
+import { Element, ElementType } from "../element/Element.js";
 
 export class ElementVisitor extends AbstractSyntaxTreeVisitor {
   private _elementMap: Map<string, Element>;
@@ -84,7 +84,11 @@ export class ElementVisitor extends AbstractSyntaxTreeVisitor {
         return;
       }
 
-      throw new Error(`Overriding element with id: ${id}`);
+      // known cases
+      // ({ x = 5 }) => {...} (x is recorded twice)
+
+      ElementVisitor.LOGGER.warn(`Overriding element with id: ${id}`);
+      return;
     }
 
     if (type === ElementType.Identifier) {

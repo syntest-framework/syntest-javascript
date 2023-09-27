@@ -17,7 +17,7 @@
  */
 import * as chai from "chai";
 
-import { AbstractSyntaxTreeFactory } from "../lib/ast/AbstractSyntaxTreeFactory";
+import { AbstractSyntaxTreeFactory } from "../lib/ast/AbstractSyntaxTreeFactory.js";
 
 const expect = chai.expect;
 

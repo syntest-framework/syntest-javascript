@@ -19,11 +19,11 @@
 import { TypeEnum } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/prng";
 
-import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
-import { Statement } from "../Statement";
+import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler.js";
+import { Statement } from "../Statement.js";
 
-import { NumericStatement } from "./NumericStatement";
-import { PrimitiveStatement } from "./PrimitiveStatement";
+import { NumericStatement } from "./NumericStatement.js";
+import { PrimitiveStatement } from "./PrimitiveStatement.js";
 
 /**
  * Generic number class

@@ -20,7 +20,7 @@ import { transformSync } from "@babel/core";
 import * as t from "@babel/types";
 import { AbstractSyntaxTreeFactory as CoreAbstractSyntaxTreeFactory } from "@syntest/analysis";
 
-import { defaultBabelOptions } from "./defaultBabelConfig";
+import { defaultBabelOptions } from "./defaultBabelConfig.js";
 
 export class AbstractSyntaxTreeFactory
   implements CoreAbstractSyntaxTreeFactory<t.Node>

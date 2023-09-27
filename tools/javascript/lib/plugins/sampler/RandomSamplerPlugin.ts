@@ -23,7 +23,7 @@ import {
   JavaScriptTestCase,
 } from "@syntest/search-javascript";
 
-import { JavaScriptArguments } from "../../JavaScriptLauncher";
+import { JavaScriptArguments } from "../../JavaScriptLauncher.js";
 
 /**
  * Plugin for RandomSampler

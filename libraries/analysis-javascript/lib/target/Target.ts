@@ -21,7 +21,7 @@ import {
   TargetType,
 } from "@syntest/analysis";
 
-import { VisibilityType } from "./VisibilityType";
+import { VisibilityType } from "./VisibilityType.js";
 
 export interface Target extends CoreTarget {
   path: string;

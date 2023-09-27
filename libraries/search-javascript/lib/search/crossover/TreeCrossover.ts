@@ -19,11 +19,11 @@
 import { prng } from "@syntest/prng";
 import { Crossover } from "@syntest/search";
 
-import { JavaScriptTestCase } from "../../testcase/JavaScriptTestCase";
-import { ActionStatement } from "../../testcase/statements/action/ActionStatement";
-import { ConstantObject } from "../../testcase/statements/action/ConstantObject";
-import { ConstructorCall } from "../../testcase/statements/action/ConstructorCall";
-import { Statement } from "../../testcase/statements/Statement";
+import { JavaScriptTestCase } from "../../testcase/JavaScriptTestCase.js";
+import { ActionStatement } from "../../testcase/statements/action/ActionStatement.js";
+import { ConstantObject } from "../../testcase/statements/action/ConstantObject.js";
+import { ConstructorCall } from "../../testcase/statements/action/ConstructorCall.js";
+import { Statement } from "../../testcase/statements/Statement.js";
 
 type SwapStatement = {
   parent: Statement;

@@ -18,15 +18,15 @@
 
 import { Decoder } from "@syntest/search";
 
-import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
-import { ActionStatement } from "../testcase/statements/action/ActionStatement";
-import { ClassActionStatement } from "../testcase/statements/action/ClassActionStatement";
-import { FunctionCall } from "../testcase/statements/action/FunctionCall";
-import { ObjectFunctionCall } from "../testcase/statements/action/ObjectFunctionCall";
-import { Decoding } from "../testcase/statements/Statement";
+import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase.js";
+import { ActionStatement } from "../testcase/statements/action/ActionStatement.js";
+import { ClassActionStatement } from "../testcase/statements/action/ClassActionStatement.js";
+import { FunctionCall } from "../testcase/statements/action/FunctionCall.js";
+import { ObjectFunctionCall } from "../testcase/statements/action/ObjectFunctionCall.js";
+import { Decoding } from "../testcase/statements/Statement.js";
 
-import { assertionFunction } from "./assertionFunctionTemplate";
-import { ContextBuilder } from "./ContextBuilder";
+import { assertionFunction } from "./assertionFunctionTemplate.js";
+import { ContextBuilder } from "./ContextBuilder.js";
 
 export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
   private targetRootDirectory: string;
@@ -110,6 +110,7 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
         `\tbeforeEach(() => {`,
         "\t\t// This is a hack to force the require cache to be emptied",
         "\t\t// Without this we would be using the same required object for each test",
+        "\t\trequire = require('esm')(module);",
         ...requires.map(
           (m) =>
             `\t\tdelete require.cache[${m.right.replace(
@@ -125,6 +126,7 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
 
     const lines = [
       "// Imports",
+      "require = require('esm')(module);",
       ...imports,
       gatherAssertionData ? assertionFunction : "",
       `describe('SynTest Test Suite', function() {`,

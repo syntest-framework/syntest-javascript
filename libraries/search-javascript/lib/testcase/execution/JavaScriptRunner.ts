@@ -18,6 +18,7 @@
 
 import { ChildProcess, fork } from "node:child_process";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import {
   InstrumentationData,
@@ -36,8 +37,8 @@ import {
 import { JavaScriptDecoder } from "../../testbuilding/JavaScriptDecoder";
 import { JavaScriptTestCase } from "../JavaScriptTestCase";
 
-import { ExecutionInformationIntegrator } from "./ExecutionInformationIntegrator";
-import { DoneMessage, Message } from "./TestExecutor";
+import { ExecutionInformationIntegrator } from "./ExecutionInformationIntegrator.js";
+import { DoneMessage, Message } from "./TestExecutor.js";
 
 export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
   protected static LOGGER: Logger;
@@ -73,8 +74,8 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     this.testTimeout = testTimeout;
     this.silenceTestOutput = silenceTestOutput;
 
-    // eslint-disable-next-line unicorn/prefer-module
-    this._process = fork(path.join(__dirname, "TestExecutor.js"));
+    const _dirname = path.dirname(fileURLToPath(import.meta.url));
+    this._process = fork(path.join(_dirname, "TestExecutor"));
   }
 
   async run(
@@ -87,8 +88,8 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     paths = paths.map((p) => path.resolve(p));
 
     if (!this._process.connected || this._process.killed) {
-      // eslint-disable-next-line unicorn/prefer-module
-      this._process = fork(path.join(__dirname, "TestExecutor.js"));
+      const _dirname = path.dirname(fileURLToPath(import.meta.url));
+      this._process = fork(path.join(_dirname, "TestExecutor"));
     }
 
     const childProcess = this._process;
@@ -261,7 +262,7 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     const traces: Trace[] = [];
     for (const branchKey of Object.keys(instrumentationData.branchMap)) {
       const branch = instrumentationData.branchMap[branchKey];
-      const hits = <number[]>instrumentationData.b[branchKey];
+      const hits = instrumentationData.b[branchKey];
       let meta;
 
       if (metaData !== undefined) {

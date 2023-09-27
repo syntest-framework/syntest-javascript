@@ -23,8 +23,8 @@ import {
   functionProperties,
   ObjectType,
   stringProperties,
-} from "./Type";
-import { TypeEnum } from "./TypeEnum";
+} from "./Type.js";
+import { TypeEnum } from "./TypeEnum.js";
 
 export class TypeModel {
   private _elements: Set<string>;

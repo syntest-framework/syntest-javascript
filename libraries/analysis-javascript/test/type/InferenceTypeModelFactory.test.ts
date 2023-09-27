@@ -17,11 +17,11 @@
  */
 import traverse from "@babel/traverse";
 
-import { AbstractSyntaxTreeFactory } from "../../lib/ast/AbstractSyntaxTreeFactory";
-import { ElementVisitor } from "../../lib/type/discovery/element/ElementVisitor";
-import { RelationType } from "../../lib/type/discovery/relation/Relation";
-import { RelationVisitor } from "../../lib/type/discovery/relation/RelationVisitor";
-import { InferenceTypeModelFactory } from "../../lib/type/resolving/InferenceTypeModelFactory";
+import { AbstractSyntaxTreeFactory } from "../../lib/ast/AbstractSyntaxTreeFactory.js";
+import { ElementVisitor } from "../../lib/type/discovery/element/ElementVisitor.js";
+import { RelationType } from "../../lib/type/discovery/relation/Relation.js";
+import { RelationVisitor } from "../../lib/type/discovery/relation/RelationVisitor.js";
+import { InferenceTypeModelFactory } from "../../lib/type/resolving/InferenceTypeModelFactory.js";
 
 function helper(source: string) {
   const generator = new AbstractSyntaxTreeFactory();

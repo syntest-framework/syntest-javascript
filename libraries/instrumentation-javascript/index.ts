@@ -16,9 +16,11 @@
  * limitations under the License.
  */
 
-export * from "./lib/datastructures/InstrumentationData";
-export * from "./lib/datastructures/MetaData";
+export * from "./lib/datastructures/AssertionData.js";
+export * from "./lib/datastructures/InstrumentationData.js";
+export * from "./lib/datastructures/MetaData.js";
 
-export * from "./lib/instrumentation/Instrumenter";
-export * from "./lib/instrumentation/Visitor";
-export * from "./lib/instrumentation/VisitState";
+export * from "./lib/instrumentation/Global.js";
+export * from "./lib/instrumentation/Instrumenter.js";
+export * from "./lib/instrumentation/Visitor.js";
+export * from "./lib/instrumentation/VisitState.js";
