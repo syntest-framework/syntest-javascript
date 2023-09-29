@@ -550,7 +550,6 @@ export class JavaScriptLauncher extends Launcher {
 
     finalEncodings = new Map<Target, JavaScriptTestCase[]>(
       [...newArchives.entries()].map(([target, archive]) => {
-        console.log("archive size", archive.size);
         return [target, archive.getEncodings()];
       })
     );
