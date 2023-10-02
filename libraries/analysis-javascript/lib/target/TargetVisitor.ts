@@ -53,11 +53,14 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
 
   private _subTargets: SubTarget[];
 
+  private _equalObjects: Map<string, Set<string>>;
+
   constructor(filePath: string, syntaxForgiving: boolean, exports: Export[]) {
     super(filePath, syntaxForgiving);
     TargetVisitor.LOGGER = getLogger("TargetVisitor");
     this._exports = exports;
     this._subTargets = [];
+    this._equalObjects = new Map();
   }
 
   private _getExport(id: string): Export | undefined {
@@ -372,6 +375,23 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
     path.skip();
   };
 
+  // public ObjectExpression: (
+  //   path: NodePath<t.ObjectExpression>
+  // ) => void = (path) => {
+  //   const targetName = this._getTargetNameOfExpression(path);
+
+  //   if (!targetName) {
+  //     return;
+  //   }
+
+  //   const id = this._getNodeId(path);
+  //   const export_ = this._getExport(id);
+
+  //   this._extractFromObjectExpression(path, id, id, targetName, export_);
+
+  //   path.skip();
+  // };
+
   public VariableDeclarator: (path: NodePath<t.VariableDeclarator>) => void = (
     path
   ) => {
@@ -381,10 +401,11 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
     }
     const idPath = <NodePath<t.Identifier>>path.get("id");
     const init = path.get("init");
+    const initId = this._getNodeId(init);
 
     const targetName = idPath.node.name;
     const id = this._getNodeId(path);
-    const typeId = this._getNodeId(init);
+    const typeId = initId;
     const export_ = this._getExport(id);
 
     if (init.isFunction()) {
@@ -400,7 +421,10 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
     } else if (init.isClass()) {
       this._extractFromClass(init, id, typeId, targetName, export_);
     } else if (init.isObjectExpression()) {
-      this._extractFromObjectExpression(init, id, typeId, targetName, export_);
+      this._findOrCreateObject(id, typeId, id, targetName);
+      this._extractFromObjectExpression(init, id);
+    } else if (init.isIdentifier()) {
+      this._setEqual(id, initId);
     } else {
       // TODO
     }
@@ -414,36 +438,37 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
     const left = path.get("left");
     const right = path.get("right");
 
-    if (
-      !right.isFunction() &&
-      !right.isClass() &&
-      !right.isObjectExpression()
-    ) {
-      return;
-    }
-
     const targetName = this._getTargetNameOfExpression(right);
     if (!targetName) {
       return;
     }
     let isObject = false;
     let isMethod = false;
-    let objectId: string;
+    let superId: string;
 
-    let id: string = this._getBindingId(left);
+    let id: string;
+
+    if (left.isIdentifier()) {
+      // x = ?
+      id = this._getBindingId(left);
+    } else {
+      // ? = ?
+      id = this._getBindingId(right);
+    }
+
     if (left.isMemberExpression()) {
       const object = left.get("object");
       const property = left.get("property");
 
       if (property.isIdentifier() && left.node.computed) {
         path.skip();
-
         this._logOrFail(computedProperty(left.type, this._getNodeId(path)));
         return;
-      } else if (!left.get("property").isIdentifier() && !left.node.computed) {
+      } else if (!property.isIdentifier() && !left.node.computed) {
         // we also dont support a.f() = ?
         // or equivalent
         path.skip();
+        this._logOrFail(unsupportedSyntax(left.type, this._getNodeId(path)));
         return;
       }
 
@@ -460,28 +485,36 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
           // module.exports = ?
           isObject = false;
           id = this._getBindingId(right);
-        } else {
+        } else if (
+          (property.isIdentifier() && property.node.name === "prototype") ||
+          (property.isStringLiteral() && property.node.value === "prototype")
+        ) {
+          // x.prototype = ?
+          // x['prototype'] = ?
           isObject = true;
-          objectId = this._getBindingId(object);
-          // find object
-          const objectTarget = this._subTargets.find(
-            (value) => value.id === objectId && value.type === TargetType.OBJECT
-          );
+          superId = this._getBindingId(object);
+          const typeId = this._getBindingId(right);
 
-          if (!objectTarget) {
-            const export_ = this._getExport(objectId);
-            // create one if it does not exist
-            const objectTarget: ObjectTarget = {
-              id: objectId,
-              typeId: objectId,
-              name: object.node.name,
-              type: TargetType.OBJECT,
-              exported: !!export_,
-              default: export_ ? export_.default : false,
-              module: export_ ? export_.module : false,
-            };
-            this._subTargets.push(objectTarget);
-          }
+          this._findAndReplaceOrCreateClass(
+            superId,
+            typeId,
+            superId,
+            object.node.name
+          );
+          isMethod = true;
+
+          // // find object
+          // this._findOrCreateObject(superId, typeId, superId, object.node.name)
+
+          const prototypeId = this._getBindingId(right);
+
+          this._setEqual(superId, prototypeId);
+        } else {
+          // x.x = ?
+          isObject = true;
+          superId = this._getBindingId(object);
+          // find object
+          this._findOrCreateObject(superId, superId, superId, object.node.name);
         }
       } else if (object.isMemberExpression()) {
         // ?.?.? = ?
@@ -490,47 +523,21 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
         // what about module.exports.x
         if (
           subObject.isIdentifier() &&
-          subProperty.isIdentifier() &&
-          subProperty.node.name === "prototype"
+          ((subProperty.isIdentifier() &&
+            subProperty.node.name === "prototype") ||
+            (subProperty.isStringLiteral() &&
+              subProperty.node.value === "prototype"))
         ) {
           // x.prototype.? = ?
-          objectId = this._getBindingId(subObject);
-          const objectTarget = <NamedSubTarget & Exportable>(
-            this._subTargets.find((value) => value.id === objectId)
+          // x['prototype'].? = ?
+          superId = this._getBindingId(subObject);
+
+          this._findAndReplaceOrCreateClass(
+            superId,
+            superId,
+            superId,
+            subObject.node.name
           );
-
-          const newTargetClass: ClassTarget = {
-            id: objectTarget.id,
-            type: TargetType.CLASS,
-            name: objectTarget.name,
-            typeId: objectTarget.id,
-            exported: objectTarget.exported,
-            renamedTo: objectTarget.renamedTo,
-            module: objectTarget.module,
-            default: objectTarget.default,
-          };
-
-          // replace original target by prototype class
-          this._subTargets[this._subTargets.indexOf(objectTarget)] =
-            newTargetClass;
-
-          const constructorTarget: MethodTarget = {
-            id: objectTarget.id,
-            type: TargetType.METHOD,
-            name: objectTarget.name,
-            typeId: objectTarget.id,
-            methodType: "constructor",
-            classId: objectTarget.id,
-            visibility: "public",
-            isStatic: false,
-            isAsync:
-              "isAsync" in objectTarget
-                ? (<Callable>objectTarget).isAsync
-                : false,
-          };
-
-          this._subTargets.push(constructorTarget);
-
           isMethod = true;
         }
       } else {
@@ -540,7 +547,7 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
     }
 
     const typeId = this._getNodeId(right);
-    const export_ = this._getExport(isObject ? objectId : id);
+    const export_ = this._getExport(isObject || isMethod ? superId : id);
 
     if (right.isFunction()) {
       this._extractFromFunction(
@@ -551,18 +558,151 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
         export_,
         isObject,
         isMethod,
-        objectId
+        superId
       );
     } else if (right.isClass()) {
       this._extractFromClass(right, id, typeId, targetName, export_);
     } else if (right.isObjectExpression()) {
-      this._extractFromObjectExpression(right, id, typeId, targetName, export_);
+      this._findOrCreateObject(id, typeId, isObject ? superId : id, targetName);
+      this._extractFromObjectExpression(right, id);
+    } else if (right.isIdentifier()) {
+      this._setEqual(id, this._getBindingId(right));
     } else {
       // TODO
     }
 
     path.skip();
   };
+
+  private _findAndReplaceOrCreateClass(
+    id: string,
+    typeId: string,
+    exportId: string,
+    name: string
+  ) {
+    const objectTarget = <NamedSubTarget & Exportable>(
+      this._subTargets.find(
+        (value) => value.id === id && value.type === TargetType.OBJECT
+      )
+    );
+
+    const functionTarget = <NamedSubTarget & Exportable>(
+      this._subTargets.find(
+        (value) => value.id === id && value.type === TargetType.FUNCTION
+      )
+    );
+
+    const classTarget = <NamedSubTarget & Exportable>(
+      this._subTargets.find(
+        (value) => value.id === id && value.type === TargetType.CLASS
+      )
+    );
+
+    if (
+      (objectTarget && classTarget) ||
+      (objectTarget && functionTarget) ||
+      (classTarget && functionTarget)
+    ) {
+      // only one can exist
+      throw new Error("should not be possible");
+    }
+
+    if (objectTarget) {
+      const newClassTarget: ClassTarget = {
+        id: id,
+        type: TargetType.CLASS,
+        name: objectTarget.name,
+        typeId: id,
+        exported: objectTarget.exported,
+        renamedTo: objectTarget.renamedTo,
+        module: objectTarget.module,
+        default: objectTarget.default,
+      };
+      // replace original target by prototype class
+      this._subTargets[this._subTargets.indexOf(objectTarget)] = newClassTarget;
+
+      return newClassTarget;
+    } else if (functionTarget) {
+      const newClassTarget: ClassTarget = {
+        id: id,
+        type: TargetType.CLASS,
+        name: functionTarget.name,
+        typeId: id,
+        exported: functionTarget.exported,
+        renamedTo: functionTarget.renamedTo,
+        module: functionTarget.module,
+        default: functionTarget.default,
+      };
+      // replace original target by prototype class
+      this._subTargets[this._subTargets.indexOf(functionTarget)] =
+        newClassTarget;
+
+      const constructorTarget: MethodTarget = {
+        id: id,
+        type: TargetType.METHOD,
+        name: functionTarget.name,
+        typeId: id,
+        methodType: "constructor",
+        classId: newClassTarget.id,
+        visibility: "public",
+        isStatic: false,
+        isAsync:
+          "isAsync" in functionTarget
+            ? (<Callable>functionTarget).isAsync
+            : false,
+      };
+
+      this._subTargets.push(constructorTarget);
+
+      return newClassTarget;
+    } else if (classTarget) {
+      // nothing igues?
+      return classTarget;
+    } else {
+      const export_ = this._getExport(exportId);
+
+      const newClassTarget: ClassTarget = {
+        id: id,
+        type: TargetType.CLASS,
+        name: name,
+        typeId: typeId,
+        exported: !!export_,
+        default: export_ ? export_.default : false,
+        module: export_ ? export_.module : false,
+      };
+      this._subTargets.push(newClassTarget);
+      return newClassTarget;
+    }
+  }
+
+  private _findOrCreateObject(
+    id: string,
+    typeId: string,
+    exportId: string,
+    name: string
+  ) {
+    const objectTarget = this._subTargets.find(
+      (value) => value.id === id && value.type === TargetType.OBJECT
+    );
+
+    if (!objectTarget) {
+      const export_ = this._getExport(exportId);
+      // create one if it does not exist
+      const objectTarget: ObjectTarget = {
+        id: id,
+        typeId: typeId,
+        name: name,
+        type: TargetType.OBJECT,
+        exported: !!export_,
+        default: export_ ? export_.default : false,
+        module: export_ ? export_.module : false,
+      };
+      this._subTargets.push(objectTarget);
+      return objectTarget;
+    }
+
+    return objectTarget;
+  }
 
   private _extractFromFunction(
     path: NodePath<t.Function>,
@@ -643,23 +783,8 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
 
   private _extractFromObjectExpression(
     path: NodePath<t.ObjectExpression>,
-    objectId: string,
-    typeId: string,
-    objectName: string,
-    export_?: Export
+    objectId: string
   ) {
-    const target: ObjectTarget = {
-      id: objectId,
-      typeId: typeId,
-      name: objectName,
-      type: TargetType.OBJECT,
-      exported: !!export_,
-      default: export_ ? export_.default : false,
-      module: export_ ? export_.module : false,
-    };
-
-    this._subTargets.push(target);
-
     // loop over object properties
     for (const property of path.get("properties")) {
       if (property.isObjectMethod()) {
@@ -740,7 +865,10 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
           } else if (value.isClass()) {
             this._extractFromClass(value, id, id, targetName);
           } else if (value.isObjectExpression()) {
-            this._extractFromObjectExpression(value, id, id, targetName);
+            this._findOrCreateObject(id, id, id, targetName);
+            this._extractFromObjectExpression(value, id);
+          } else if (value.isIdentifier()) {
+            this._setEqual(id, this._getBindingId(value));
           } else {
             // TODO
           }
@@ -833,7 +961,10 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
           } else if (value.isClass()) {
             this._extractFromClass(value, id, id, targetName);
           } else if (value.isObjectExpression()) {
-            this._extractFromObjectExpression(value, id, id, targetName);
+            this._findOrCreateObject(id, typeId, id, targetName);
+            this._extractFromObjectExpression(value, id);
+          } else if (value.isIdentifier()) {
+            this._setEqual(id, this._getBindingId(value));
           } else {
             // TODO
           }
@@ -846,39 +977,223 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
     }
   }
 
-  get subTargets(): SubTarget[] {
-    return this._subTargets
-      .reverse()
-      .filter((subTarget, index, self) => {
-        if (!("name" in subTarget)) {
-          // paths/branches/lines are always unique
-          return true;
-        }
+  private _setEqual(idA: string, idB: string) {
+    if (idA === idB) {
+      return;
+    }
+    if (this._equalObjects.has(idA) && this._equalObjects.has(idB)) {
+      // merge them
+      const merged = new Set<string>([
+        ...this._equalObjects.get(idA),
+        ...this._equalObjects.get(idB),
+      ]);
+      // update for each entry?
+      for (const id of merged) {
+        this._equalObjects.set(id, merged);
+      }
+    } else if (this._equalObjects.has(idA)) {
+      // add b to a
+      this._equalObjects.get(idA).add(idB);
+    } else if (this._equalObjects.has(idB)) {
+      // add a to b
+      this._equalObjects.get(idB).add(idA);
+    } else {
+      // create new set
+      const set = new Set<string>([idA, idB]);
+      this._equalObjects.set(idA, set);
+      this._equalObjects.set(idB, set);
+    }
+  }
 
-        // filter duplicates because of redefinitions
-        // e.g. let a = 1; a = 2;
-        // this would result in two subtargets with the same name "a"
-        // but we only want the last one
-        return (
-          index ===
-          self.findIndex((t) => {
-            return (
-              "name" in t &&
-              t.id === subTarget.id &&
-              t.type === subTarget.type &&
-              t.name === subTarget.name &&
-              (t.type === TargetType.METHOD
-                ? (<MethodTarget>t).methodType ===
-                    (<MethodTarget>subTarget).methodType &&
-                  (<MethodTarget>t).isStatic ===
-                    (<MethodTarget>subTarget).isStatic &&
-                  (<MethodTarget>t).classId ===
-                    (<MethodTarget>subTarget).classId
-                : true)
+  private _equalize(): SubTarget[] {
+    const subTargets = [...this._subTargets];
+    const originalTargets = [...subTargets];
+
+    const processedSets = new Set<Set<string>>();
+    console.log(this._equalObjects);
+    for (const set of this._equalObjects.values()) {
+      if (processedSets.has(set)) {
+        continue;
+      }
+      processedSets.add(set);
+      const asArray = [...set];
+      for (let index = 0; index < asArray.length; index++) {
+        for (let index_ = index + 1; index_ < asArray.length; index_++) {
+          const a = asArray[index];
+          const b = asArray[index_];
+
+          const subTargetA = originalTargets.filter(
+            (s) =>
+              s.id === a &&
+              (s.type === TargetType.OBJECT || s.type === TargetType.CLASS)
+          );
+          const subTargetB = originalTargets.filter(
+            (s) =>
+              s.id === b &&
+              (s.type === TargetType.OBJECT || s.type === TargetType.CLASS)
+          );
+
+          if (subTargetA.length === 0 || subTargetB.length === 0) {
+            continue;
+          }
+
+          // if (subTargetA.length !== 1) {
+          //   console.log(subTargetA);
+          //   throw new Error(
+          //     `Should always be 1 but is ${subTargetA.length} ${a}`
+          //   );
+          // }
+
+          // if (subTargetB.length !== 1) {
+          //   console.log(subTargetB);
+          //   throw new Error(
+          //     `Should always be 1 but is ${subTargetB.length} ${b}`
+          //   );
+          // }
+
+          if (
+            subTargetA[0].type === TargetType.CLASS &&
+            subTargetB[0].type === TargetType.OBJECT
+          ) {
+            this._convertMethodsToObjectFunctions(
+              <ClassTarget>subTargetA[0],
+              <ObjectTarget>subTargetB[0],
+              originalTargets,
+              subTargets
             );
-          })
-        );
-      })
-      .reverse();
+            this._convertObjectFunctionsToMethods(
+              <ObjectTarget>subTargetB[0],
+              <ClassTarget>subTargetA[0],
+              originalTargets,
+              subTargets
+            );
+          } else if (
+            subTargetA[0].type === TargetType.OBJECT &&
+            subTargetB[0].type === TargetType.CLASS
+          ) {
+            this._convertMethodsToObjectFunctions(
+              <ClassTarget>subTargetB[0],
+              <ObjectTarget>subTargetA[0],
+              originalTargets,
+              subTargets
+            );
+            this._convertObjectFunctionsToMethods(
+              <ObjectTarget>subTargetA[0],
+              <ClassTarget>subTargetB[0],
+              originalTargets,
+              subTargets
+            );
+          } else {
+            // both objects??
+            // both classes??
+            throw new Error(
+              `Cannot both be objects or both classes ${subTargetA[0].id} && ${subTargetB[0].id}`
+            );
+          }
+        }
+      }
+    }
+
+    return subTargets;
+  }
+
+  private _convertMethodsToObjectFunctions(
+    parentClass: ClassTarget,
+    newParentObject: ObjectTarget,
+    originalSubTargets: SubTarget[],
+    subTargets: SubTarget[]
+  ) {
+    const methods: MethodTarget[] = <MethodTarget[]>(
+      originalSubTargets.filter(
+        (v) =>
+          v.type === TargetType.METHOD &&
+          (<MethodTarget>v).classId === parentClass.id
+      )
+    );
+
+    for (const method of methods) {
+      const objectFunction: ObjectFunctionTarget = {
+        id: method.id,
+        typeId: method.typeId,
+        objectId: newParentObject.id,
+        name: method.name,
+        type: TargetType.OBJECT_FUNCTION,
+        isAsync: method.isAsync,
+      };
+      // insert after original
+      subTargets.splice(subTargets.indexOf(method) + 1, 0, objectFunction);
+    }
+  }
+
+  private _convertObjectFunctionsToMethods(
+    parentObject: ObjectTarget,
+    newParentClass: ClassTarget,
+    originalSubTargets: SubTarget[],
+    subTargets: SubTarget[]
+  ) {
+    const objectFunctions: ObjectFunctionTarget[] = <ObjectFunctionTarget[]>(
+      originalSubTargets.filter(
+        (v) =>
+          v.type === TargetType.OBJECT_FUNCTION &&
+          (<ObjectFunctionTarget>v).objectId === parentObject.id
+      )
+    );
+
+    for (const objectFunction of objectFunctions) {
+      const method: MethodTarget = {
+        id: objectFunction.id,
+        typeId: objectFunction.typeId,
+        classId: newParentClass.id,
+        name: objectFunction.name,
+        type: TargetType.METHOD,
+        isAsync: objectFunction.isAsync,
+        isStatic: false,
+        methodType: "method",
+        visibility: "public",
+      };
+      // insert after original
+      subTargets.splice(subTargets.indexOf(objectFunction) + 1, 0, method);
+    }
+  }
+
+  get subTargets(): SubTarget[] {
+    // for equal objects:
+    const targets = this._equalize();
+
+    return (
+      targets
+        .reverse()
+        // .filter((subTarget, index, self) => {
+        //   if (!("name" in subTarget)) {
+        //     // paths/branches/lines are always unique
+        //     return true;
+        //   }
+
+        //   // filter duplicates because of redefinitions
+        //   // e.g. let a = 1; a = 2;
+        //   // this would result in two subtargets with the same name "a"
+        //   // but we only want the last one
+        //   return (
+        //     index ===
+        //     self.findIndex((t) => {
+        //       return (
+        //         "name" in t &&
+        //         t.id === subTarget.id &&
+        //         t.type === subTarget.type &&
+        //         t.name === subTarget.name &&
+        //         (t.type === TargetType.METHOD
+        //           ? (<MethodTarget>t).methodType ===
+        //               (<MethodTarget>subTarget).methodType &&
+        //             (<MethodTarget>t).isStatic ===
+        //               (<MethodTarget>subTarget).isStatic &&
+        //             (<MethodTarget>t).classId ===
+        //               (<MethodTarget>subTarget).classId
+        //           : true)
+        //       );
+        //     })
+        //   );
+        // })
+        .reverse()
+    );
   }
 }

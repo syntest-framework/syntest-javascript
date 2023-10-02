@@ -34,6 +34,7 @@ export type Message = RunMessage | DoneMessage;
 export type RunMessage = {
   message: "run";
   silent: boolean;
+  esm: boolean;
   paths: string[];
   timeout: number;
 };
@@ -71,11 +72,16 @@ process.on("message", async (data: Message) => {
     throw new TypeError("Invalid data received from child process");
   }
   if (data.message === "run") {
-    await runMocha(data.silent, data.paths, data.timeout);
+    await runMocha(data.silent, data.esm, data.paths, data.timeout);
   }
 });
 
-async function runMocha(silent: boolean, paths: string[], timeout: number) {
+async function runMocha(
+  silent: boolean,
+  esm: boolean,
+  paths: string[],
+  timeout: number
+) {
   const argv: Mocha.MochaOptions = <Mocha.MochaOptions>(<unknown>{
     reporter: silent ? SilentMochaReporter : undefined,
     // diff: false,
@@ -90,13 +96,16 @@ async function runMocha(silent: boolean, paths: string[], timeout: number) {
   });
 
   const mocha = new Mocha(argv); // require('ts-node/register')
-  // eslint-disable-next-line unicorn/prefer-module
-  require("regenerator-runtime/runtime");
-  // eslint-disable-next-line unicorn/prefer-module, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-var-requires
-  require("@babel/register")({
+
+  if (esm) {
     // eslint-disable-next-line unicorn/prefer-module
-    presets: [require.resolve("@babel/preset-env")],
-  });
+    require("regenerator-runtime/runtime");
+    // eslint-disable-next-line unicorn/prefer-module, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-var-requires
+    require("@babel/register")({
+      // eslint-disable-next-line unicorn/prefer-module
+      presets: [require.resolve("@babel/preset-env")],
+    });
+  }
 
   for (const _path of paths) {
     // eslint-disable-next-line unicorn/prefer-module
@@ -126,7 +135,7 @@ async function runMocha(silent: boolean, paths: string[], timeout: number) {
         return {
           status: status,
           error:
-            status === JavaScriptExecutionStatus.FAILED
+            test && test.err
               ? {
                   name: test.err.name,
                   message: test.err.message,
