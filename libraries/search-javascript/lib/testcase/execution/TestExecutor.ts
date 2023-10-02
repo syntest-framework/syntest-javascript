@@ -135,7 +135,7 @@ async function runMocha(
         return {
           status: status,
           error:
-            status === JavaScriptExecutionStatus.FAILED
+            test && test.err
               ? {
                   name: test.err.name,
                   message: test.err.message,

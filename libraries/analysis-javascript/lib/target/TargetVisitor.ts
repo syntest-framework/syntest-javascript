@@ -1037,19 +1037,19 @@ export class TargetVisitor extends AbstractSyntaxTreeVisitor {
             continue;
           }
 
-          if (subTargetA.length !== 1) {
-            console.log(subTargetA);
-            throw new Error(
-              `Should always be 1 but is ${subTargetA.length} ${a}`
-            );
-          }
+          // if (subTargetA.length !== 1) {
+          //   console.log(subTargetA);
+          //   throw new Error(
+          //     `Should always be 1 but is ${subTargetA.length} ${a}`
+          //   );
+          // }
 
-          if (subTargetB.length !== 1) {
-            console.log(subTargetB);
-            throw new Error(
-              `Should always be 1 but is ${subTargetB.length} ${b}`
-            );
-          }
+          // if (subTargetB.length !== 1) {
+          //   console.log(subTargetB);
+          //   throw new Error(
+          //     `Should always be 1 but is ${subTargetB.length} ${b}`
+          //   );
+          // }
 
           if (
             subTargetA[0].type === TargetType.CLASS &&

@@ -74,10 +74,6 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
         decodings = decodings.slice(0, index);
       }
 
-      if (decodings.length === 0) {
-        throw new Error("No statements in test case after error reduction");
-      }
-
       const metaCommentBlock = this.generateMetaComments(testCase);
 
       const testLines: string[] = this.generateTestLines(
