@@ -24,10 +24,8 @@ import { ExportVisitor } from "../../lib/target/export/ExportVisitor";
 import {
   ClassTarget,
   FunctionTarget,
-  MethodTarget,
-  ObjectFunctionTarget,
   ObjectTarget,
-  SubTarget,
+  Target,
 } from "../../lib/target/Target";
 import { TargetVisitor } from "../../lib/target/TargetVisitor";
 
@@ -37,83 +35,35 @@ function targetHelper(source: string) {
   const generator = new AbstractSyntaxTreeFactory();
   const ast = generator.convert("", source);
 
-  const exportVisitor = new ExportVisitor("", true);
-  traverse(ast, exportVisitor);
-  const exports = exportVisitor.exports;
-
-  const visitor = new TargetVisitor("", true, exports);
+  const visitor = new TargetVisitor("", true);
   traverse(ast, visitor);
 
-  return visitor.subTargets;
+  return visitor._getTargetGraph();
 }
 
 function checkFunction(
-  target: SubTarget,
-  name: string,
-  exported: boolean,
-  isAsync: boolean
+  target: Target,
+  isAsync: boolean,
+  methodType: string,
+  visibility: string,
+  isStatic: boolean
 ): void {
   expect(target.type).to.equal(TargetType.FUNCTION);
 
   const functionTarget = <FunctionTarget>target;
 
-  expect(functionTarget.name).to.equal(name);
-  expect(functionTarget.exported).to.equal(exported);
   expect(functionTarget.isAsync).to.equal(isAsync);
+  expect(functionTarget.methodType).to.equal(methodType);
+  expect(functionTarget.visibility).to.equal(visibility);
+  expect(functionTarget.isStatic).to.equal(isStatic);
 }
 
-function checkObject(target: SubTarget, name: string, exported: boolean): void {
+function checkObject(target: Target): void {
   expect(target.type).to.equal(TargetType.OBJECT);
-
-  const objectTarget = <ObjectTarget>target;
-
-  expect(objectTarget.name).to.equal(name);
-  expect(objectTarget.exported).to.equal(exported);
 }
 
-function checkObjectFunction(
-  target: SubTarget,
-  name: string,
-  objectId: string,
-  isAsync: boolean
-): void {
-  expect(target.type).to.equal(TargetType.OBJECT_FUNCTION);
-
-  const functionTarget = <ObjectFunctionTarget>target;
-
-  expect(functionTarget.name).to.equal(name);
-  expect(functionTarget.objectId).to.equal(objectId);
-  expect(functionTarget.isAsync).to.equal(isAsync);
-}
-
-function checkClass(target: SubTarget, name: string, exported: boolean): void {
+function checkClass(target: Target): void {
   expect(target.type).to.equal(TargetType.CLASS);
-
-  const classTarget = <ClassTarget>target;
-
-  expect(classTarget.name).to.equal(name);
-  expect(classTarget.exported).to.equal(exported);
-}
-
-function checkClassMethod(
-  target: SubTarget,
-  name: string,
-  classId: string,
-  methodType: string,
-  visibility: string,
-  isStatic: boolean,
-  isAsync: boolean
-): void {
-  expect(target.type).to.equal(TargetType.METHOD);
-
-  const methodTarget = <MethodTarget>target;
-
-  expect(methodTarget.name).to.equal(name);
-  expect(methodTarget.classId).to.equal(classId);
-  expect(methodTarget.methodType).to.equal(methodType);
-  expect(methodTarget.visibility).to.equal(visibility);
-  expect(methodTarget.isStatic).to.equal(isStatic);
-  expect(methodTarget.isAsync).to.equal(isAsync);
 }
 
 describe("TargetVisitor test", () => {
@@ -125,13 +75,14 @@ describe("TargetVisitor test", () => {
         export { name1 }
       `;
 
-    const targets = targetHelper(source);
+    const targetGraph = targetHelper(source);
+    const targets = [...targetGraph.targetMap.values()]
 
     expect(targets.length).to.equal(3);
 
-    checkFunction(targets[0], "name1", true, false);
-    checkFunction(targets[1], "name2", false, true);
-    checkFunction(targets[2], "name3", false, true);
+    checkFunction(targets[0], false, 'method', 'public', true);
+    checkFunction(targets[1], true, 'method', 'public', true);
+    checkFunction(targets[2], true, 'method', 'public', true);
   });
 
   it("FunctionExpression: functions overwritten", () => {
@@ -141,7 +92,8 @@ describe("TargetVisitor test", () => {
           export { name1 }
         `;
 
-    const targets = targetHelper(source);
+    const targetGraph = targetHelper(source);
+    const targets = [...targetGraph.targetMap.values()]
     expect(targets.length).to.equal(1);
 
     checkFunction(targets[0], "name1", true, true);
@@ -159,7 +111,8 @@ describe("TargetVisitor test", () => {
           export { name1 }
         `;
 
-    const targets = targetHelper(source);
+    const targetGraph = targetHelper(source);
+    const targets = [...targetGraph.targetMap.values()]
 
     expect(targets.length).to.equal(1);
 
@@ -173,7 +126,8 @@ describe("TargetVisitor test", () => {
           export { name1 }
         `;
 
-    const targets = targetHelper(source);
+    const targetGraph = targetHelper(source);
+    const targets = [...targetGraph.targetMap.values()]
 
     expect(targets.length).to.equal(2);
 
@@ -187,7 +141,8 @@ describe("TargetVisitor test", () => {
           export { x }
         `;
 
-    const targets = targetHelper(source);
+    const targetGraph = targetHelper(source);
+    const targets = [...targetGraph.targetMap.values()]
 
     expect(targets.length).to.equal(1);
 
@@ -200,7 +155,8 @@ describe("TargetVisitor test", () => {
           export { name1 }
         `;
 
-    const targets = targetHelper(source);
+    const targetGraph = targetHelper(source);
+    const targets = [...targetGraph.targetMap.values()]
 
     expect(targets.length).to.equal(1);
 
@@ -227,7 +183,8 @@ describe("TargetVisitor test", () => {
           }
         `;
 
-    const targets = targetHelper(source);
+    const targetGraph = targetHelper(source);
+    const targets = [...targetGraph.targetMap.values()]
 
     expect(targets.length).to.equal(8);
 
@@ -302,7 +259,8 @@ describe("TargetVisitor test", () => {
           const x = () => {}
         `;
 
-    const targets = targetHelper(source);
+    const targetGraph = targetHelper(source);
+    const targets = [...targetGraph.targetMap.values()]
 
     expect(targets.length).to.equal(1);
 
@@ -316,7 +274,8 @@ describe("TargetVisitor test", () => {
         }
         `;
 
-    const targets = targetHelper(source);
+    const targetGraph = targetHelper(source);
+    const targets = [...targetGraph.targetMap.values()]
 
     expect(targets.length).to.equal(2);
 
@@ -339,7 +298,8 @@ describe("TargetVisitor test", () => {
         }
         `;
 
-    const targets = targetHelper(source);
+    const targetGraph = targetHelper(source);
+    const targets = [...targetGraph.targetMap.values()]
 
     expect(targets.length).to.equal(2);
 
@@ -362,7 +322,8 @@ describe("TargetVisitor test", () => {
         }
         `;
 
-    const targets = targetHelper(source);
+    const targetGraph = targetHelper(source);
+    const targets = [...targetGraph.targetMap.values()]
 
     expect(targets.length).to.equal(2);
 
@@ -387,7 +348,8 @@ describe("TargetVisitor test", () => {
         }
         `;
 
-    const targets = targetHelper(source);
+    const targetGraph = targetHelper(source);
+    const targets = [...targetGraph.targetMap.values()]
 
     expect(targets.length).to.equal(3);
 
@@ -413,7 +375,8 @@ describe("TargetVisitor test", () => {
         }
         `;
 
-    const targets = targetHelper(source);
+    const targetGraph = targetHelper(source);
+    const targets = [...targetGraph.targetMap.values()]
 
     expect(targets.length).to.equal(3);
 
@@ -440,7 +403,8 @@ describe("TargetVisitor test", () => {
         exports = obj
         `;
 
-    const targets = targetHelper(source);
+    const targetGraph = targetHelper(source);
+    const targets = [...targetGraph.targetMap.values()]
 
     expect(targets.length).to.equal(3);
 
@@ -462,7 +426,8 @@ describe("TargetVisitor test", () => {
         const x = {}
         x[y] = function name1() {}
         `;
-    const targets = targetHelper(source);
+    const targetGraph = targetHelper(source);
+    const targets = [...targetGraph.targetMap.values()]
 
     expect(targets.length).to.equal(1);
   });
@@ -473,7 +438,8 @@ describe("TargetVisitor test", () => {
         x.y = function name1() {}
         `;
 
-    const targets = targetHelper(source);
+    const targetGraph = targetHelper(source);
+    const targets = [...targetGraph.targetMap.values()]
 
     expect(targets.length).to.equal(2);
 
@@ -488,7 +454,8 @@ describe("TargetVisitor test", () => {
         x['z'] = async () => {}
         `;
 
-    const targets = targetHelper(source);
+    const targetGraph = targetHelper(source);
+    const targets = [...targetGraph.targetMap.values()]
 
     expect(targets.length).to.equal(3);
 
@@ -504,7 +471,8 @@ describe("TargetVisitor test", () => {
         export { x }
         `;
 
-    const targets = targetHelper(source);
+    const targetGraph = targetHelper(source);
+    const targets = [...targetGraph.targetMap.values()]
 
     expect(targets.length).to.equal(2);
 
@@ -519,7 +487,8 @@ describe("TargetVisitor test", () => {
         module.exports = x
         `;
 
-    const targets = targetHelper(source);
+    const targetGraph = targetHelper(source);
+    const targets = [...targetGraph.targetMap.values()]
 
     expect(targets.length).to.equal(2);
 

@@ -16,22 +16,17 @@
  * limitations under the License.
  */
 
-import * as path from "node:path";
-
 import { traverse } from "@babel/core";
 import * as t from "@babel/types";
 import { TargetFactory as CoreTargetFactory } from "@syntest/analysis";
 
 import { Factory } from "../Factory";
 
-import { ExportVisitor } from "./export/ExportVisitor";
 import { Target } from "./Target";
 import { TargetVisitor } from "./TargetVisitor";
 
 /**
  * TargetFactory for Javascript.
- *
- * @author Dimitri Stallenberg
  */
 export class TargetFactory
   extends Factory
@@ -44,23 +39,13 @@ export class TargetFactory
    * @param AST The AST of the target
    */
   extract(filePath: string, AST: t.Node): Target {
-    // bit sad that we have to do this twice, but we need to know the exports
-    const exportVisitor = new ExportVisitor(filePath, this.syntaxForgiving);
-
-    traverse(AST, exportVisitor);
-
-    const exports = exportVisitor.exports;
-    const visitor = new TargetVisitor(filePath, this.syntaxForgiving, exports);
+    const visitor = new TargetVisitor(filePath, this.syntaxForgiving);
 
     traverse(AST, visitor);
 
     // we should check wether every export is actually used
     // TODO
 
-    return {
-      path: filePath,
-      name: path.basename(filePath),
-      subTargets: visitor.subTargets,
-    };
+    return visitor._getTargetGraph()
   }
 }
