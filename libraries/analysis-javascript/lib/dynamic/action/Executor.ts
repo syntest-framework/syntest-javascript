@@ -16,8 +16,9 @@
  * limitations under the License.
  */
 
-import { Action, ActionType } from "./Action";
+import { Session } from "node:inspector";
 
+import { Action, ActionType } from "./Action";
 
 export type ExecuteMessage = {
     message: 'execute',
@@ -122,6 +123,17 @@ async function gatherIntel(filePath: string, source: string) {
 
     let rootAction: Action
 
+    const session = new Session()
+    session.connect()
+    let objectId
+    session.post('Runtime.evaluate', { expression: source }, (error, {result}) => {
+      console.log(result)
+      objectId = result.objectId
+    })
+    session.post('Runtime.getProperties', { objectId }, (error, {internalProperties}) => {
+      console.log(internalProperties)
+    })
+    console.log('aaaa')
     // queue of [parent, key, child]
     const queue: [Action, string, unknown][] = [[undefined, undefined, import_]]
 
