@@ -109,8 +109,6 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   }
 
   sampleRoot(): ActionStatement {
-    const targets = (<JavaScriptSubject>this._subject).getActionableTargets();
-
     if (this.statementPoolEnabled) {
       const constructor_ = this.statementPool.getRandomConstructor();
 
@@ -150,27 +148,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     }
 
     const action = prng.pickOne(
-      targets.filter(
-        (target) =>
-          (target.type === TargetType.FUNCTION && isExported(target)) ||
-          (target.type === TargetType.CLASS && isExported(target)) ||
-          (target.type === TargetType.OBJECT && isExported(target)) ||
-          (target.type === TargetType.METHOD &&
-            (<MethodTarget>target).methodType !== "constructor" &&
-            isExported(
-              targets.find(
-                (classTarget) =>
-                  classTarget.id === (<MethodTarget>target).classId
-              )
-            )) || // check whether parent class is exported
-          (target.type === TargetType.OBJECT_FUNCTION &&
-            isExported(
-              targets.find(
-                (objectTarget) =>
-                  objectTarget.id === (<ObjectFunctionTarget>target).objectId
-              )
-            )) // check whether parent object is exported
-      )
+      (<JavaScriptSubject>this._subject).getActions()
     );
 
     switch (action.type) {
@@ -196,9 +174,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     // get a random function
     const function_ = <FunctionTarget>(
       prng.pickOne(
-        (<JavaScriptSubject>this._subject)
-          .getActionableTargetsByType(TargetType.FUNCTION)
-          .filter((target) => isExported(target))
+        (<JavaScriptSubject>this._subject).getActionByType(TargetType.FUNCTION)
       )
     );
 
@@ -216,7 +192,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     if (id) {
       const result = <ClassTarget>(
         (<JavaScriptSubject>this._subject)
-          .getActionableTargetsByType(TargetType.CLASS)
+          .getActionByType(TargetType.CLASS)
           .find((target) => (<ClassTarget>target).id === id)
       );
       if (!result) {
@@ -230,9 +206,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     // random
     return <ClassTarget>(
       prng.pickOne(
-        (<JavaScriptSubject>this._subject)
-          .getActionableTargetsByType(TargetType.CLASS)
-          .filter((target) => isExported(target))
+        (<JavaScriptSubject>this._subject).getActionByType(TargetType.CLASS)
       )
     );
   }
@@ -243,7 +217,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
     // get the constructor of the class
     const constructor_ = (<JavaScriptSubject>this._subject)
-      .getActionableTargetsByType(TargetType.METHOD)
+      .getActionByType(TargetType.METHOD)
       .filter(
         (method) =>
           (<MethodTarget>method).classId === class_.id &&
@@ -283,19 +257,9 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   }
 
   override sampleClassAction(depth: number): MethodCall | Getter | Setter {
-    const targets = (<JavaScriptSubject>this._subject).getActionableTargets();
-
     const methods = (<JavaScriptSubject>this._subject)
-      .getActionableTargetsByType(TargetType.METHOD)
-      .filter(
-        (method) =>
-          (<MethodTarget>method).methodType !== "constructor" &&
-          isExported(
-            targets.find(
-              (classTarget) => classTarget.id === (<MethodTarget>method).classId
-            )
-          )
-      );
+      .getActionByType(TargetType.METHOD)
+      .filter((method) => (<MethodTarget>method).methodType !== "constructor");
 
     const randomMethod = <MethodTarget>prng.pickOne(methods);
     switch (randomMethod.methodType) {
@@ -316,18 +280,9 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   }
 
   override sampleMethodCall(depth: number): MethodCall {
-    const targets = (<JavaScriptSubject>this._subject).getActionableTargets();
-
     const methods = (<JavaScriptSubject>this._subject)
-      .getActionableTargetsByType(TargetType.METHOD)
-      .filter((method) => (<MethodTarget>method).methodType === "method")
-      .filter((target) =>
-        isExported(
-          targets.find(
-            (objectTarget) => objectTarget.id === (<MethodTarget>target).classId
-          )
-        )
-      );
+      .getActionByType(TargetType.METHOD)
+      .filter((method) => (<MethodTarget>method).methodType === "method");
 
     const method = <MethodTarget>prng.pickOne(methods);
     const class_ = this._getClass(method.classId);
@@ -343,18 +298,9 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   }
 
   sampleGetter(depth: number): Getter {
-    const targets = (<JavaScriptSubject>this._subject).getActionableTargets();
-
     const methods = (<JavaScriptSubject>this._subject)
-      .getActionableTargetsByType(TargetType.METHOD)
-      .filter((method) => (<MethodTarget>method).methodType === "get")
-      .filter((target) =>
-        isExported(
-          targets.find(
-            (objectTarget) => objectTarget.id === (<MethodTarget>target).classId
-          )
-        )
-      );
+      .getActionByType(TargetType.METHOD)
+      .filter((method) => (<MethodTarget>method).methodType === "get");
 
     const method = <MethodTarget>prng.pickOne(methods);
     const class_ = this._getClass(method.classId);
@@ -370,18 +316,9 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   }
 
   sampleSetter(depth: number): Setter {
-    const targets = (<JavaScriptSubject>this._subject).getActionableTargets();
-
     const methods = (<JavaScriptSubject>this._subject)
-      .getActionableTargetsByType(TargetType.METHOD)
-      .filter((method) => (<MethodTarget>method).methodType === "set")
-      .filter((target) =>
-        isExported(
-          targets.find(
-            (objectTarget) => objectTarget.id === (<MethodTarget>target).classId
-          )
-        )
-      );
+      .getActionByType(TargetType.METHOD)
+      .filter((method) => (<MethodTarget>method).methodType === "set");
 
     const method = <MethodTarget>prng.pickOne(methods);
     const class_ = this._getClass(method.classId);
@@ -400,7 +337,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     if (id) {
       const result = <ObjectTarget>(
         (<JavaScriptSubject>this._subject)
-          .getActionableTargetsByType(TargetType.OBJECT)
+          .getActionByType(TargetType.OBJECT)
           .find((target) => (<ObjectTarget>target).id === id)
       );
       if (!result) {
@@ -414,9 +351,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     // random
     return <ObjectTarget>(
       prng.pickOne(
-        (<JavaScriptSubject>this._subject)
-          .getActionableTargetsByType(TargetType.OBJECT)
-          .filter((target) => isExported(target))
+        (<JavaScriptSubject>this._subject).getActionByType(TargetType.OBJECT)
       )
     );
   }
@@ -436,18 +371,9 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
   }
 
   sampleObjectFunctionCall(depth: number): ObjectFunctionCall {
-    const targets = (<JavaScriptSubject>this._subject).getActionableTargets();
-
-    const functions = (<JavaScriptSubject>this._subject)
-      .getActionableTargetsByType(TargetType.OBJECT_FUNCTION)
-      .filter((target) =>
-        isExported(
-          targets.find(
-            (objectTarget) =>
-              objectTarget.id === (<ObjectFunctionTarget>target).objectId
-          )
-        )
-      );
+    const functions = (<JavaScriptSubject>this._subject).getActionByType(
+      TargetType.OBJECT_FUNCTION
+    );
 
     const randomFunction = <ObjectFunctionTarget>prng.pickOne(functions);
     const object_ = this._getObject(randomFunction.objectId);
