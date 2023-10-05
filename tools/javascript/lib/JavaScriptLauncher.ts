@@ -31,6 +31,7 @@ import {
   TargetFactory,
   TypeExtractor,
   TypeModelFactory,
+  ActionFactory
 } from "@syntest/analysis-javascript";
 import {
   ArgumentsObject,
@@ -201,6 +202,8 @@ export class JavaScriptLauncher extends Launcher {
       this.arguments_.analysisExclude
     );
 
+    const actionFactory = new ActionFactory((<JavaScriptArguments>this.arguments_).executionTimeout)
+
     this.rootContext = new RootContext(
       this.arguments_.targetRootDirectory,
       targetFiles,
@@ -212,7 +215,8 @@ export class JavaScriptLauncher extends Launcher {
       exportFactory,
       typeExtractor,
       typeResolver,
-      constantPoolFactory
+      constantPoolFactory,
+      actionFactory
     );
 
     this.userInterface.printHeader("GENERAL INFO");
@@ -403,7 +407,7 @@ export class JavaScriptLauncher extends Launcher {
 
     this.userInterface.printTable("DIRECTORY SETTINGS", directorySettings);
 
-    JavaScriptLauncher.LOGGER.info("Instrumenting targets");
+    JavaScriptLauncher.LOGGER.info("Instrumenting target files");
     const startInstrumentation = Date.now();
     const instrumenter = new Instrumenter();
     await instrumenter.instrumentAll(
@@ -417,6 +421,9 @@ export class JavaScriptLauncher extends Launcher {
       PropertyName.INSTRUMENTATION_TIME,
       `${timeInMs}`
     );
+
+    JavaScriptLauncher.LOGGER.info("Gathering actions");
+    await this.rootContext.getAllActions()
 
     const startTypeResolving = Date.now();
     JavaScriptLauncher.LOGGER.info("Extracting types");
@@ -916,6 +923,9 @@ export class JavaScriptLauncher extends Launcher {
     JavaScriptLauncher.LOGGER.info("Exiting");
     if (this.runner && this.runner.process) {
       this.runner.process.kill();
+    }
+    if (this.rootContext) {
+      this.rootContext.exit()
     }
     // TODO should be cleanup step in tool
     // Finish
