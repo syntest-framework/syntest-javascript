@@ -101,7 +101,7 @@ export class RootContext extends CoreRootContext<t.Node> {
     this._typeExtractor = typeExtractor;
     this._typeResolver = typeResolver;
     this._constantPoolFactory = constantPoolFactory;
-    this._actionFactory = actionFactory
+    this._actionFactory = actionFactory;
   }
 
   get rootPath(): string {
@@ -141,8 +141,8 @@ export class RootContext extends CoreRootContext<t.Node> {
   }
 
   async getActions(filePath: string) {
-    const factory = new ActionFactory(1000)
-    return await factory.extract(filePath, this.getSource(filePath))
+    const factory = new ActionFactory(1000);
+    return await factory.extract(filePath, this.getSource(filePath));
   }
 
   getExports(filePath: string): Export[] {
@@ -173,14 +173,14 @@ export class RootContext extends CoreRootContext<t.Node> {
 
   async getAllActions() {
     if (!this._actionMap) {
-      this._actionMap = new Map()
+      this._actionMap = new Map();
 
       for (const filepath of this._analysisFiles) {
-        this._actionMap.set(filepath, await this.getActions(filepath))
+        this._actionMap.set(filepath, await this.getActions(filepath));
       }
     }
-    
-    return this._actionMap
+
+    return this._actionMap;
   }
 
   getAllExports(): Map<string, Export[]> {
@@ -380,6 +380,6 @@ export class RootContext extends CoreRootContext<t.Node> {
   }
 
   exit() {
-    this._actionFactory.exit()
+    this._actionFactory.exit();
   }
 }

@@ -31,7 +31,7 @@ import {
   TargetFactory,
   TypeExtractor,
   TypeModelFactory,
-  ActionFactory
+  ActionFactory,
 } from "@syntest/analysis-javascript";
 import {
   ArgumentsObject,
@@ -202,7 +202,9 @@ export class JavaScriptLauncher extends Launcher {
       this.arguments_.analysisExclude
     );
 
-    const actionFactory = new ActionFactory((<JavaScriptArguments>this.arguments_).executionTimeout)
+    const actionFactory = new ActionFactory(
+      (<JavaScriptArguments>this.arguments_).executionTimeout
+    );
 
     this.rootContext = new RootContext(
       this.arguments_.targetRootDirectory,
@@ -423,7 +425,7 @@ export class JavaScriptLauncher extends Launcher {
     );
 
     JavaScriptLauncher.LOGGER.info("Gathering actions");
-    await this.rootContext.getAllActions()
+    await this.rootContext.getAllActions();
 
     const startTypeResolving = Date.now();
     JavaScriptLauncher.LOGGER.info("Extracting types");
@@ -925,7 +927,7 @@ export class JavaScriptLauncher extends Launcher {
       this.runner.process.kill();
     }
     if (this.rootContext) {
-      this.rootContext.exit()
+      this.rootContext.exit();
     }
     // TODO should be cleanup step in tool
     // Finish

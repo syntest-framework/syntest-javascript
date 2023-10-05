@@ -25,73 +25,73 @@ import { Action } from "./Action";
 import { ExecuteMessage, ResultMessage } from "./Executor";
 
 export class ActionFactory {
-    protected static LOGGER: Logger;
+  protected static LOGGER: Logger;
 
-    private executionTimeout: number
-    private _process: ChildProcess;
+  private executionTimeout: number;
+  private _process: ChildProcess;
 
-    constructor(executionTimeout: number) {
-        ActionFactory.LOGGER = getLogger(ActionFactory.name);
+  constructor(executionTimeout: number) {
+    ActionFactory.LOGGER = getLogger(ActionFactory.name);
 
-        this.executionTimeout = executionTimeout
-        // eslint-disable-next-line unicorn/prefer-module
-        this._process = fork(path.join(__dirname, "Executor.js"));
-        console.log('created')
+    this.executionTimeout = executionTimeout;
+    // eslint-disable-next-line unicorn/prefer-module
+    this._process = fork(path.join(__dirname, "Executor.js"));
+    console.log("created");
+  }
+
+  exit() {
+    if (this._process) {
+      this._process.kill();
     }
+  }
 
-    exit() {
-        if (this._process) {
-            this._process.kill()
+  async extract(filePath: string, source: string) {
+    // try catch maybe?
+    return await this._extract(filePath, source);
+  }
+
+  private async _extract(filePath: string, source: string): Promise<Action[]> {
+    if (!this._process.connected || this._process.killed) {
+      // eslint-disable-next-line unicorn/prefer-module
+      this._process = fork(path.join(__dirname, "Executor.js"));
+    }
+    const childProcess = this._process;
+
+    return await new Promise<Action[]>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        ActionFactory.LOGGER.warn(
+          `Execution timeout reached killing process, timeout: ${this.executionTimeout}`
+        );
+        childProcess.removeAllListeners();
+        childProcess.kill();
+        reject("timeout");
+      }, this.executionTimeout);
+
+      childProcess.on("message", (message: ResultMessage) => {
+        if (typeof message !== "object") {
+          return reject(
+            new TypeError("Invalid data received from child process")
+          );
         }
-    }
 
-    async extract(filePath: string, source: string) {
-        // try catch maybe?
-        return await this._extract(filePath, source)
-    }
+        if (message.message === "result") {
+          childProcess.removeAllListeners();
+          clearTimeout(timeout);
+          return resolve(message.actions);
+        }
+      });
 
-    private async _extract(filePath: string, source: string): Promise<Action[]> {
-        if (!this._process.connected || this._process.killed) {
-            // eslint-disable-next-line unicorn/prefer-module
-            this._process = fork(path.join(__dirname, "Executor.js"));
-          }
-          const childProcess = this._process;
+      childProcess.on("error", (error) => {
+        reject(error);
+      });
 
-          return await new Promise<Action[]>((resolve, reject) => {
-            const timeout = setTimeout(() => {
-                ActionFactory.LOGGER.warn(
-                `Execution timeout reached killing process, timeout: ${this.executionTimeout}`
-              );
-              childProcess.removeAllListeners();
-              childProcess.kill();
-              reject("timeout");
-            }, this.executionTimeout);
-      
-            childProcess.on("message", (message: ResultMessage) => {
-              if (typeof message !== "object") {
-                return reject(
-                  new TypeError("Invalid data received from child process")
-                );
-              }
-      
-              if (message.message === "result") {
-                childProcess.removeAllListeners();
-                clearTimeout(timeout);
-                return resolve(message.actions);
-              }
-            });
-      
-            childProcess.on("error", (error) => {
-              reject(error);
-            });
-      
-            const executeMessage: ExecuteMessage = {
-                message: 'execute',
-                filePath: filePath,
-                source: source
-            }
+      const executeMessage: ExecuteMessage = {
+        message: "execute",
+        filePath: filePath,
+        source: source,
+      };
 
-            childProcess.send(executeMessage);
-          });
-    }
+      childProcess.send(executeMessage);
+    });
+  }
 }

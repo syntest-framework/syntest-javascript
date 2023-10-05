@@ -17,11 +17,18 @@
  */
 
 export type Action = {
-    id: string
-    type: ActionType
-    children: {
-        [key: string]: Action
-    }
-}
+  id: string;
+  type: ActionType;
+  children: {
+    [key: string]: Action;
+  };
+};
 
-export type ActionType = 'function' | 'method' | 'class' | 'object' | 'constructor' | 'setter' | 'getter'
+export type ActionType =
+  | "function"
+  | "method"
+  | "class"
+  | "object"
+  | "constructor"
+  | "setter"
+  | "getter";
