@@ -24,12 +24,13 @@ import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";
 
-/**
- * @author Dimitri Stallenberg
- */
 type ObjectType = {
   [key: string]: Statement | undefined;
 };
+
+/**
+ * Object Statement
+ */
 export class ObjectStatement extends Statement {
   private _object: ObjectType;
 
@@ -40,7 +41,7 @@ export class ObjectStatement extends Statement {
     uniqueId: string,
     object: ObjectType
   ) {
-    super(variableIdentifier, typeIdentifier, name, TypeEnum.OBJECT, uniqueId);
+    super(variableIdentifier, typeIdentifier, name, uniqueId);
     this._object = object;
 
     // check for circular
@@ -179,13 +180,14 @@ export class ObjectStatement extends Statement {
       )
       .join(",");
 
-    const decoded = `const ${context.getOrCreateVariableName(
-      this
-    )} = {${children}${children.length > 0 ? "\n\t\t" : ""}}`;
+    const decoded = `{${children}${children.length > 0 ? "\n\t\t" : ""}}`;
 
     return [
       ...childStatements,
       {
+        variableName: context.getOrCreateVariableName(
+          this
+        ),
         decoded: decoded,
         reference: this,
       },
@@ -219,4 +221,12 @@ export class ObjectStatement extends Statement {
 
     this._object[key] = newChild;
   }
+
+  override get returnType(): string {
+      return TypeEnum.OBJECT
+  }
+
+  override get type(): TypeEnum {
+    return <TypeEnum>this.returnType
+}
 }

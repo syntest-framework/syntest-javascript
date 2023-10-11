@@ -16,72 +16,65 @@
  * limitations under the License.
  */
 
-import { Export, TypeEnum } from "@syntest/analysis-javascript";
+import { TypeEnum } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/prng";
 
-import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
-import { Decoding } from "../Statement";
+import { Statement } from "../Statement";
 
-import { ActionStatement } from "./ActionStatement";
+import { LiteralStatement } from "./LiteralStatement";
 
 /**
  * @author Dimitri Stallenberg
  */
-export class ConstantObject extends ActionStatement {
+export class BoolStatement extends LiteralStatement<boolean> {
   constructor(
     variableIdentifier: string,
     typeIdentifier: string,
     name: string,
     uniqueId: string,
-    export_: Export
+    value: boolean
   ) {
     super(
       variableIdentifier,
       typeIdentifier,
       name,
-      TypeEnum.OBJECT,
       uniqueId,
-      [],
-      export_
+      value
     );
   }
 
-  mutate(sampler: JavaScriptTestCaseSampler, depth: number): ConstantObject {
-    // delta mutations are non existance here so we make a copy instead
-    return prng.nextBoolean(sampler.deltaMutationProbability)
-      ? this.copy()
-      : sampler.constantObjectGenerator.generate(
-          depth,
-          this.variableIdentifier,
-          this.typeIdentifier,
-          this.export.id,
-          this.name,
-          sampler.statementPool
-        );
+  mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
+    if (prng.nextBoolean(sampler.deltaMutationProbability)) {
+      // 80%
+      return new BoolStatement(
+        this.variableIdentifier,
+        this.typeIdentifier,
+        this.name,
+        prng.uniqueId(),
+        !this.value
+      );
+    } else {
+      // 20%
+      return sampler.sampleArgument(
+        depth + 1,
+        this.variableIdentifier,
+        this.name
+      );
+    }
   }
 
-  copy(): ConstantObject {
-    return new ConstantObject(
+  copy(): BoolStatement {
+    return new BoolStatement(
       this.variableIdentifier,
       this.typeIdentifier,
       this.name,
       this.uniqueId,
-      this.export
+      this.value
     );
   }
 
-  decode(context: ContextBuilder): Decoding[] {
-    const import_ = context.getOrCreateImportName(this.export);
-    const decoded = `const ${context.getOrCreateVariableName(
-      this
-    )} = ${import_}`;
-
-    return [
-      {
-        decoded: decoded,
-        reference: this,
-      },
-    ];
+  get returnType() {
+    return TypeEnum.BOOLEAN
   }
 }

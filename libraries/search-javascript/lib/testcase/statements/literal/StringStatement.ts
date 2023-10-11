@@ -23,12 +23,12 @@ import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";
 
-import { PrimitiveStatement } from "./PrimitiveStatement";
+import { LiteralStatement } from "./LiteralStatement";
 
 /**
- * @author Dimitri Stallenberg
+ * StringStatement
  */
-export class StringStatement extends PrimitiveStatement<string> {
+export class StringStatement extends LiteralStatement<string> {
   constructor(
     variableIdentifier: string,
     typeIdentifier: string,
@@ -40,7 +40,6 @@ export class StringStatement extends PrimitiveStatement<string> {
       variableIdentifier,
       typeIdentifier,
       name,
-      TypeEnum.STRING,
       uniqueId,
       value
     );
@@ -207,9 +206,14 @@ export class StringStatement extends PrimitiveStatement<string> {
 
     return [
       {
-        decoded: `const ${context.getOrCreateVariableName(this)} = "${value}";`,
+        variableName: context.getOrCreateVariableName(this),
+        decoded: `"${value}";`,
         reference: this,
       },
     ];
+  }
+
+  get returnType() {
+    return TypeEnum.STRING
   }
 }

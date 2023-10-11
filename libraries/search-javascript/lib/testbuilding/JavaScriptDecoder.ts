@@ -20,9 +20,8 @@ import { Decoder } from "@syntest/search";
 
 import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
 import { ActionStatement } from "../testcase/statements/action/ActionStatement";
-import { ClassActionStatement } from "../testcase/statements/action/ClassActionStatement";
 import { FunctionCall } from "../testcase/statements/action/FunctionCall";
-import { ObjectFunctionCall } from "../testcase/statements/action/ObjectFunctionCall";
+import { ImportStatement } from "../testcase/statements/action/ImportStatement";
 import { Decoding } from "../testcase/statements/Statement";
 
 import { assertionFunction } from "./assertionFunctionTemplate";
@@ -125,7 +124,6 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
 
     const lines = [
       "// Imports",
-      "require = require('esm')(module)",
       ...imports,
       gatherAssertionData ? assertionFunction : "",
       `describe('SynTest Test Suite', function() {`,
@@ -167,23 +165,27 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
     }
 
     for (const [index, value] of decodings.entries()) {
+      if (value.reference instanceof ImportStatement) {
+        // do not include import statements in the test lines
+        continue
+      }
+
+      const variableName = value.variableName
       const asString = value.decoded;
-      if (testLines.includes(asString)) {
+      const fullString = `const ${variableName} = ${asString}`
+      if (testLines.includes(fullString)) {
         // skip repeated statements
         continue;
       }
 
-      testLines.push(asString);
+      testLines.push(fullString);
 
       if (gatherAssertionData) {
         // add log per statement
-        const variableName = context.getOrCreateVariableName(value.reference);
         testLines.push(`count = ${index + 1};`);
 
         if (
-          value.reference instanceof FunctionCall ||
-          value.reference instanceof ObjectFunctionCall ||
-          value.reference instanceof ClassActionStatement
+          value.reference instanceof FunctionCall
         ) {
           testLines.push(
             `addAssertion('${testCase.id}', '${variableName}', ${variableName})`
@@ -256,7 +258,7 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
 
       assertions.push(
         `await expect((async () => {`,
-        `\t${errorDecoding.decoded.split(" = ")[1]}`,
+        `\t${errorDecoding.decoded}`,
         `})()).to.be.rejectedWith("${value}")`
       );
     }

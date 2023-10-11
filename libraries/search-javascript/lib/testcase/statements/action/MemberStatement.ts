@@ -16,82 +16,85 @@
  * limitations under the License.
  */
 
-import { TypeEnum } from "@syntest/analysis-javascript";
+import { Action, TypeEnum } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/prng";
 
 import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
-import { Decoding } from "../Statement";
+import { Decoding, Statement } from "../Statement";
 
-import { ClassActionStatement } from "./ClassActionStatement";
-import { ConstructorCall } from "./ConstructorCall";
+import { ActionStatement } from "./ActionStatement";
+
 
 /**
- * @author Dimitri Stallenberg
+ * MemberStatement
  */
-export class Getter extends ClassActionStatement {
-  /**
-   * Constructor
-   * @param identifierDescription the return type options of the function
-   * @param type the type of property
-   * @param uniqueId id of the gene
-   * @param property the name of the property
-   */
+export class MemberStatement extends ActionStatement {
+  private key: string
+
   constructor(
     variableIdentifier: string,
     typeIdentifier: string,
     name: string,
     uniqueId: string,
-    constructor_: ConstructorCall
+    action: Action,
+    parent: Statement,
+    key: string
   ) {
     super(
       variableIdentifier,
       typeIdentifier,
       name,
-      TypeEnum.FUNCTION,
       uniqueId,
+      action,
       [],
-      constructor_
+      parent
     );
+    this.key = key
   }
 
-  mutate(sampler: JavaScriptTestCaseSampler, depth: number): Getter {
-    const constructor_ = this.constructor_.mutate(sampler, depth + 1);
-
-    return new Getter(
-      this.variableIdentifier,
-      this.typeIdentifier,
-      this.name,
-      prng.uniqueId(),
-      constructor_
-    );
+  mutate(sampler: JavaScriptTestCaseSampler, depth: number): MemberStatement {
+    return prng.nextBoolean(sampler.deltaMutationProbability) ? new MemberStatement(
+        this.variableIdentifier,
+        this.typeIdentifier,
+        this.name,
+        prng.uniqueId(),
+        this.action,
+        this.parent.mutate(sampler, depth + 1),
+        this.key
+      ) : sampler.sampleMemberStatement(
+        depth,
+        this.action,
+        this.key
+      );
   }
 
-  copy(): Getter {
-    return new Getter(
+  copy(): MemberStatement {
+    return new MemberStatement(
       this.variableIdentifier,
       this.typeIdentifier,
       this.name,
       this.uniqueId,
-      this.constructor_.copy()
+      this.action,
+      this.parent.copy(),
+      this.key
     );
   }
 
   decode(context: ContextBuilder): Decoding[] {
-    const constructorDecoding = this.constructor_.decode(context);
-
-    const decoded = `const ${context.getOrCreateVariableName(
-      this
-    )} = await ${context.getOrCreateVariableName(this.constructor_)}.${
-      this.name
-    }`;
-
     return [
-      ...constructorDecoding,
+      ...this.parent.decode(context),
       {
-        decoded: decoded,
+        variableName: context.getOrCreateVariableName(
+            this
+          ),
+        decoded: `${context.getOrCreateVariableName(this.parent)}.${this.name}`,
         reference: this,
       },
     ];
+  }
+
+  override get type(): TypeEnum {
+    return TypeEnum.NULL
   }
 }

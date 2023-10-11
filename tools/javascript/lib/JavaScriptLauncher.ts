@@ -20,18 +20,17 @@ import * as path from "node:path";
 
 import {
   AbstractSyntaxTreeFactory,
+  ActionFactory,
   ConstantPoolFactory,
   ControlFlowGraphFactory,
   DependencyFactory,
   ExportFactory,
   InferenceTypeModelFactory,
-  isExported,
   RootContext,
   Target,
   TargetFactory,
   TypeExtractor,
   TypeModelFactory,
-  ActionFactory,
 } from "@syntest/analysis-javascript";
 import {
   ArgumentsObject,
@@ -425,7 +424,7 @@ export class JavaScriptLauncher extends Launcher {
     );
 
     JavaScriptLauncher.LOGGER.info("Gathering actions");
-    await this.rootContext.getAllActions();
+    await this.rootContext.extractAllActions();
 
     const startTypeResolving = Date.now();
     JavaScriptLauncher.LOGGER.info("Extracting types");
@@ -742,16 +741,16 @@ export class JavaScriptLauncher extends Launcher {
     JavaScriptLauncher.LOGGER.info(
       `Testing target ${target.name} in ${target.path}`
     );
+    const actions = this.rootContext.getAllActions().get(target.path)
     const currentSubject = new JavaScriptSubject(
       target,
+      actions,
       this.rootContext,
       (<JavaScriptArguments>this.arguments_).syntaxForgiving,
       this.arguments_.stringAlphabet
     );
 
-    const rootTargets = currentSubject
-      .getActionableTargets()
-      .filter((target) => isExported(target));
+    const rootTargets = currentSubject.actions
 
     if (rootTargets.length === 0) {
       JavaScriptLauncher.LOGGER.info(
@@ -833,6 +832,7 @@ export class JavaScriptLauncher extends Launcher {
       sampler: sampler,
     });
 
+    console.log('generating algo')
     const algorithm = (<SearchAlgorithmPlugin<JavaScriptTestCase>>(
       this.moduleManager.getPlugin(
         PluginType.SearchAlgorithm,
@@ -877,6 +877,7 @@ export class JavaScriptLauncher extends Launcher {
       );
     }
 
+    console.log('starting search')
     // This searches for a covering population
     const archive = await algorithm.search(
       currentSubject,

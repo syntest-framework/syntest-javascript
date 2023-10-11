@@ -15,14 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { Action } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/prng";
 
 import { ActionStatement } from "./statements/action/ActionStatement";
-import { ClassActionStatement } from "./statements/action/ClassActionStatement";
-import { ConstantObject } from "./statements/action/ConstantObject";
 import { ConstructorCall } from "./statements/action/ConstructorCall";
 import { FunctionCall } from "./statements/action/FunctionCall";
-import { ObjectFunctionCall } from "./statements/action/ObjectFunctionCall";
 import { Statement } from "./statements/Statement";
 
 export class StatementPool {
@@ -31,12 +29,10 @@ export class StatementPool {
   // this is a bit out of scope for this class but otherwise we have to walk the tree multiple times
   // we can solve this by making a singular tree walker class with visitors
   private constructors: ConstructorCall[];
-  private objects: ConstantObject[];
 
   constructor(roots: ActionStatement[]) {
     this.pool = new Map();
     this.constructors = [];
-    this.objects = [];
     this._fillGenePool(roots);
   }
 
@@ -50,21 +46,11 @@ export class StatementPool {
     return prng.pickOne(statements);
   }
 
-  public getRandomConstructor(exportId?: string): ConstructorCall {
-    const options = exportId
-      ? this.constructors.filter((o) => exportId === o.export.id)
+  public getRandomConstructor(action?: Action): ConstructorCall {
+    const options = action
+      ? this.constructors.filter((o) => action.id === o.action.id)
       : this.constructors;
 
-    if (options.length === 0) {
-      return undefined;
-    }
-    return prng.pickOne(options);
-  }
-
-  public getRandomConstantObject(exportId: string): ConstantObject {
-    const options = exportId
-      ? this.objects.filter((o) => exportId === o.export.id)
-      : this.objects;
     if (options.length === 0) {
       return undefined;
     }
@@ -83,20 +69,10 @@ export class StatementPool {
         }
 
         // use type enum for primitives and arrays
-        let type: string = statement.ownType;
+        const type: string = statement.returnType;
 
-        if (statement instanceof ConstantObject) {
-          // use export identifier
-          type = statement.export.id;
-          this.objects.push(statement);
-        } else if (statement instanceof ConstructorCall) {
-          // use export identifier
-          type = statement.export.id;
-          this.constructors.push(statement);
-        } else if (
-          statement instanceof FunctionCall ||
-          statement instanceof ClassActionStatement ||
-          statement instanceof ObjectFunctionCall
+       if (
+          statement instanceof FunctionCall
         ) {
           // TODO use return type
           // type = statement.

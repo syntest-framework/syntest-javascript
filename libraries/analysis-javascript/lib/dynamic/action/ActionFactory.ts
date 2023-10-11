@@ -19,6 +19,7 @@
 import { ChildProcess, fork } from "node:child_process";
 import * as path from "node:path";
 
+import * as t from "@babel/types";
 import { getLogger, Logger } from "@syntest/logging";
 
 import { Action } from "./Action";
@@ -36,7 +37,6 @@ export class ActionFactory {
     this.executionTimeout = executionTimeout;
     // eslint-disable-next-line unicorn/prefer-module
     this._process = fork(path.join(__dirname, "Executor.js"));
-    console.log("created");
   }
 
   exit() {
@@ -45,19 +45,19 @@ export class ActionFactory {
     }
   }
 
-  async extract(filePath: string, source: string) {
+  async extract(filePath: string, source: string, ast: t.Node) {
     // try catch maybe?
-    return await this._extract(filePath, source);
+    return await this._extract(filePath, source, ast);
   }
 
-  private async _extract(filePath: string, source: string): Promise<Action[]> {
+  private async _extract(filePath: string, source: string, ast: t.Node): Promise<Map<string, Action>> {
     if (!this._process.connected || this._process.killed) {
       // eslint-disable-next-line unicorn/prefer-module
       this._process = fork(path.join(__dirname, "Executor.js"));
     }
     const childProcess = this._process;
 
-    return await new Promise<Action[]>((resolve, reject) => {
+    return await new Promise<Map<string, Action>>((resolve, reject) => {
       const timeout = setTimeout(() => {
         ActionFactory.LOGGER.warn(
           `Execution timeout reached killing process, timeout: ${this.executionTimeout}`
@@ -77,7 +77,15 @@ export class ActionFactory {
         if (message.message === "result") {
           childProcess.removeAllListeners();
           clearTimeout(timeout);
-          return resolve(message.actions);
+
+          // 
+          const actionMap = new Map<string, Action>()
+
+          for (const key of Object.keys(message.actions)) {
+            actionMap.set(key, message.actions[key])
+          }
+
+          return resolve(actionMap);
         }
       });
 
@@ -89,6 +97,7 @@ export class ActionFactory {
         message: "execute",
         filePath: filePath,
         source: source,
+        ast: ast
       };
 
       childProcess.send(executeMessage);

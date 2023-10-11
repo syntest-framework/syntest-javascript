@@ -21,7 +21,6 @@ import { Crossover } from "@syntest/search";
 
 import { JavaScriptTestCase } from "../../testcase/JavaScriptTestCase";
 import { ActionStatement } from "../../testcase/statements/action/ActionStatement";
-import { ConstantObject } from "../../testcase/statements/action/ConstantObject";
 import { ConstructorCall } from "../../testcase/statements/action/ConstructorCall";
 import { Statement } from "../../testcase/statements/Statement";
 
@@ -85,29 +84,7 @@ export class TreeCrossover extends Crossover<JavaScriptTestCase> {
           if (
             swapA.child instanceof ConstructorCall &&
             swapB.child instanceof ConstructorCall &&
-            swapA.child.export.id !== swapB.child.export.id
-          ) {
-            continue;
-          }
-
-          if (
-            swapA.child instanceof ConstantObject &&
-            !(swapB.child instanceof ConstantObject)
-          ) {
-            continue;
-          }
-
-          if (
-            swapB.child instanceof ConstantObject &&
-            !(swapA.child instanceof ConstantObject)
-          ) {
-            continue;
-          }
-
-          if (
-            swapA.child instanceof ConstantObject &&
-            swapB.child instanceof ConstantObject &&
-            swapA.child.export.id !== swapB.child.export.id
+            swapA.child.action.id !== swapB.child.action.id
           ) {
             continue;
           }

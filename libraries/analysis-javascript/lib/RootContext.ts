@@ -70,7 +70,7 @@ export class RootContext extends CoreRootContext<t.Node> {
 
   // Mapping: filepath -> target name -> Exports
   protected _exportMap: Map<string, Export[]>;
-  protected _actionMap: Map<string, Action[]>;
+  protected _actionMap: Map<string, Map<string, Action>>;
 
   constructor(
     rootPath: string,
@@ -140,9 +140,9 @@ export class RootContext extends CoreRootContext<t.Node> {
     return this._sources.get(absoluteTargetPath);
   }
 
-  async getActions(filePath: string) {
+  protected async getActions(filePath: string) {
     const factory = new ActionFactory(1000);
-    return await factory.extract(filePath, this.getSource(filePath));
+    return await factory.extract(filePath, this.getSource(filePath), this.getAbstractSyntaxTree(filePath));
   }
 
   getExports(filePath: string): Export[] {
@@ -171,13 +171,23 @@ export class RootContext extends CoreRootContext<t.Node> {
     return this._exportMap.get(absolutePath);
   }
 
-  async getAllActions() {
+  async extractAllActions() {
     if (!this._actionMap) {
       this._actionMap = new Map();
 
       for (const filepath of this._analysisFiles) {
         this._actionMap.set(filepath, await this.getActions(filepath));
       }
+
+      this._actionFactory.exit()
+    }
+
+    return this._actionMap;
+  }
+
+  getAllActions() {
+    if (!this._actionMap) {
+      throw new Error("First call extractAllActions before calling getAllActions")
     }
 
     return this._actionMap;

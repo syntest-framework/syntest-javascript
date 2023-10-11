@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { Export, TypeEnum } from "@syntest/analysis-javascript";
+import { Action, TypeEnum } from "@syntest/analysis-javascript";
 import { prng } from "@syntest/prng";
 
 import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
@@ -29,103 +29,97 @@ import { ActionStatement } from "./ActionStatement";
  * ConstructorCall
  */
 export class ConstructorCall extends ActionStatement {
-  private _classIdentifier: string;
 
-  get classIdentifier(): string {
-    return this._classIdentifier;
-  }
-
-  /**
-   * Constructor
-   * @param type the return identifierDescription of the constructor
-   * @param uniqueId optional argument
-   * @param args the arguments of the constructor
-   */
   constructor(
     variableIdentifier: string,
     typeIdentifier: string,
-    classIdentifier: string,
     name: string,
     uniqueId: string,
+    action: Action,
     arguments_: Statement[],
-    export_: Export
+    parent: Statement
   ) {
     super(
       variableIdentifier,
       typeIdentifier,
       name,
-      TypeEnum.FUNCTION,
       uniqueId,
+      action,
       arguments_,
-      export_
+      parent
     );
-    this._classIdentifier = classIdentifier;
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): ConstructorCall {
     if (prng.nextBoolean(sampler.deltaMutationProbability)) {
-      const arguments_ = this.args.map((a: Statement) => a.copy());
+      let parent = this.parent.copy()
+      const arguments_ = this.children.map((a: Statement) => a.copy());
 
-      if (arguments_.length > 0) {
-        const index = prng.nextInt(0, arguments_.length - 1);
+      const index = prng.nextInt(0, arguments_.length);
+
+      if (index < arguments_.length) {
         arguments_[index] = arguments_[index].mutate(sampler, depth + 1);
+      } else {
+        parent = parent.mutate(sampler, depth + 1)
       }
 
       return new ConstructorCall(
         this.variableIdentifier,
         this.typeIdentifier,
-        this._classIdentifier,
         this.name,
         prng.uniqueId(),
+        this.action,
         arguments_,
-        this.export
+        parent
       );
     } else {
-      return sampler.constructorCallGenerator.generate(
+      return sampler.sampleSpecificConstructorCall(
         depth,
-        this.variableIdentifier,
-        this.typeIdentifier,
-        this.export.id,
-        this.name,
-        sampler.statementPool
+        this.action
       );
     }
   }
 
   copy(): ConstructorCall {
-    const deepCopyArguments = this.args.map((a: Statement) => a.copy());
+    const deepCopyArguments = this.children.map((a: Statement) => a.copy());
 
     return new ConstructorCall(
       this.variableIdentifier,
       this.typeIdentifier,
-      this._classIdentifier,
       this.name,
       this.uniqueId,
+      this.action,
       deepCopyArguments,
-      this.export
+      this.parent.copy()
     );
   }
 
   decode(context: ContextBuilder): Decoding[] {
-    const argumentsDecoding: Decoding[] = this.args.flatMap((a) =>
+    const parentDecoding = this.parent.decode(context)
+    const argumentsDecoding: Decoding[] = this.children.flatMap((a) =>
       a.decode(context)
     );
 
-    const arguments_ = this.args
+    const arguments_ = this.children
       .map((a) => context.getOrCreateVariableName(a))
       .join(", ");
 
-    const import_ = context.getOrCreateImportName(this.export);
-    const decoded = `const ${context.getOrCreateVariableName(
-      this
-    )} = new ${import_}(${arguments_})`;
+    const decoded = `new ${context.getOrCreateVariableName(this.parent)}(${arguments_})`;
 
     return [
+      ...parentDecoding,
       ...argumentsDecoding,
       {
+        variableName: context.getOrCreateVariableName(
+          this
+        ),
         decoded: decoded,
         reference: this,
       },
     ];
+  }
+
+  override get type(): TypeEnum {
+    return TypeEnum.OBJECT
   }
 }

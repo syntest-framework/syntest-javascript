@@ -22,15 +22,13 @@ import { prng } from "@syntest/prng";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Statement } from "../Statement";
 
-import { NumericStatement } from "./NumericStatement";
-import { PrimitiveStatement } from "./PrimitiveStatement";
+import { IntegerStatement } from "./IntegerStatement";
+import { LiteralStatement } from "./LiteralStatement";
 
 /**
  * Generic number class
- *
- * @author Dimitri Stallenberg
  */
-export class IntegerStatement extends PrimitiveStatement<number> {
+export class NumericStatement extends LiteralStatement<number> {
   constructor(
     variableIdentifier: string,
     typeIdentifier: string,
@@ -42,9 +40,8 @@ export class IntegerStatement extends PrimitiveStatement<number> {
       variableIdentifier,
       typeIdentifier,
       name,
-      TypeEnum.INTEGER,
       uniqueId,
-      Math.round(value)
+      value
     );
   }
 
@@ -53,7 +50,7 @@ export class IntegerStatement extends PrimitiveStatement<number> {
       // 80%
       if (prng.nextBoolean(0.5)) {
         // 50%
-        return new NumericStatement(
+        return new IntegerStatement(
           this.variableIdentifier,
           this.typeIdentifier,
           this.name,
@@ -73,7 +70,7 @@ export class IntegerStatement extends PrimitiveStatement<number> {
         );
       } else {
         // 50%
-        return sampler.sampleInteger(
+        return sampler.sampleNumber(
           this.variableIdentifier,
           this.typeIdentifier,
           this.name
@@ -82,11 +79,11 @@ export class IntegerStatement extends PrimitiveStatement<number> {
     }
   }
 
-  deltaMutation(sampler: JavaScriptTestCaseSampler): IntegerStatement {
+  deltaMutation(sampler: JavaScriptTestCaseSampler): NumericStatement {
     // small mutation
     const change = prng.nextGaussian(0, 5);
 
-    let newValue = Math.round(this.value + change);
+    let newValue = this.value + change;
 
     // If illegal values are not allowed we make sure the value does not exceed the specified bounds
     if (!sampler.exploreIllegalValues) {
@@ -100,7 +97,7 @@ export class IntegerStatement extends PrimitiveStatement<number> {
       }
     }
 
-    return new IntegerStatement(
+    return new NumericStatement(
       this.variableIdentifier,
       this.typeIdentifier,
       this.name,
@@ -109,13 +106,17 @@ export class IntegerStatement extends PrimitiveStatement<number> {
     );
   }
 
-  copy(): IntegerStatement {
-    return new IntegerStatement(
+  copy(): NumericStatement {
+    return new NumericStatement(
       this.variableIdentifier,
       this.typeIdentifier,
       this.name,
       this.uniqueId,
       this.value
     );
+  }
+
+  get returnType() {
+    return TypeEnum.NUMERIC
   }
 }

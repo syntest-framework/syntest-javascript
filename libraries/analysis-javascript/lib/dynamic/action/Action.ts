@@ -17,18 +17,25 @@
  */
 
 export type Action = {
-  id: string;
   type: ActionType;
+
+  // identification
+  id: string;
+  filePath: string;
+  // location: Location; ??
+
+  // ancestory
   children: {
     [key: string]: Action;
   };
+  parentId: string | undefined
+
+  // properties
+  constructable: boolean
+  name: string
 };
 
 export type ActionType =
   | "function"
-  | "method"
-  | "class"
   | "object"
-  | "constructor"
-  | "setter"
-  | "getter";
+  | "constant" // maybe nice
