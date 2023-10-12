@@ -110,6 +110,7 @@ export class JavaScriptSuiteBuilder {
 
     // TODO use the results of the tests to show some statistics
 
-    return { stats, instrumentationData };
+
+    return { stats, instrumentationData, paths };
   }
 }

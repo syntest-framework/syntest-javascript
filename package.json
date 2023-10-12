@@ -92,5 +92,8 @@
       "prettier --config .prettierrc.json --ignore-path .prettierignore --write .",
       "eslint --config .eslintrc.json --ignore-path .eslintignore . --fix"
     ]
+  },
+  "dependencies": {
+    "@stryker-mutator/api": "^7.2.0"
   }
 }

@@ -18,6 +18,7 @@
 
 import * as path from "node:path";
 
+import {  } from '@stryker-mutator/api/core'
 import {
   AbstractSyntaxTreeFactory,
   ConstantPoolFactory,
@@ -83,6 +84,7 @@ import { TestCommandOptions } from "./commands/test";
 import { DeDuplicator } from "./workflows/DeDuplicator";
 import { addMetaComments } from "./workflows/MetaComment";
 import { TestSplitting } from "./workflows/TestSplitter";
+
 
 export type JavaScriptArguments = ArgumentsObject & TestCommandOptions;
 export class JavaScriptLauncher extends Launcher {
@@ -550,7 +552,6 @@ export class JavaScriptLauncher extends Launcher {
 
     finalEncodings = new Map<Target, JavaScriptTestCase[]>(
       [...newArchives.entries()].map(([target, archive]) => {
-        console.log("archive size", archive.size);
         return [target, archive.getEncodings()];
       })
     );
@@ -575,13 +576,23 @@ export class JavaScriptLauncher extends Launcher {
       this.arguments_.testDirectory,
     ]);
 
-    const { stats, instrumentationData } = await suiteBuilder.runSuite(
+    const { stats, instrumentationData, paths } = await suiteBuilder.runSuite(
       finalEncodings,
       "../instrumented",
       this.arguments_.testDirectory,
       false,
       true
     );
+
+    const stryker = new Stryker({
+      testRunner: "mocha",
+      mochaOptions: {
+        spec: paths
+      }
+    })
+
+    const results = await stryker.runMutationTest()
+    console.log(results)
 
     if (stats.failures > 0) {
       this.userInterface.printError("Test case has failed!");
