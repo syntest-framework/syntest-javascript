@@ -15,8 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { TargetType } from "@syntest/analysis";
-import { RootContext, SubTarget, Target } from "@syntest/analysis-javascript";
+import { Action, RootContext, Target } from "@syntest/analysis-javascript";
 import { ControlFlowGraph, Edge, EdgeType } from "@syntest/cfg";
 import {
   ApproachLevel,
@@ -31,15 +30,18 @@ import { BranchDistance } from "../criterion/BranchDistance";
 import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
 
 export class JavaScriptSubject extends SearchSubject<JavaScriptTestCase> {
+  protected _actions: Map<string, Action>
   protected syntaxForgiving: boolean;
   protected stringAlphabet: string;
   constructor(
     target: Target,
+    actions: Map<string, Action>,
     rootContext: RootContext,
     syntaxForgiving: boolean,
     stringAlphabet: string
   ) {
     super(target, rootContext);
+    this._actions = actions
     this.syntaxForgiving = syntaxForgiving;
     this.stringAlphabet = stringAlphabet;
 
@@ -181,19 +183,19 @@ export class JavaScriptSubject extends SearchSubject<JavaScriptTestCase> {
     return childObjectives;
   }
 
-  getActionableTargets(): SubTarget[] {
-    return this._target.subTargets.filter((t) => {
-      return (
-        t.type === TargetType.FUNCTION ||
-        t.type === TargetType.CLASS ||
-        t.type === TargetType.METHOD ||
-        t.type === TargetType.OBJECT ||
-        t.type === TargetType.OBJECT_FUNCTION
-      );
-    });
+  get actionsMap(): Map<string, Action> {
+    return this._actions
   }
 
-  getActionableTargetsByType(type: TargetType): SubTarget[] {
-    return this.getActionableTargets().filter((t) => t.type === type);
+  get actions(): Action[] {
+    return [...this._actions.values()]
+  }
+
+  get constructableActions(): Action[] {
+    return this.actions.filter((x) => x.constructable)
+  }
+
+  get functionActions(): Action[] {
+    return this.actions.filter((x) => x.type === 'function')
   }
 }

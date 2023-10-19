@@ -18,16 +18,15 @@
 
 import * as path from "node:path";
 
-import { Export } from "@syntest/analysis-javascript";
+import { Action } from "@syntest/analysis-javascript";
 import {
   globalVariables,
   reservedKeywords,
 } from "@syntest/ast-visitor-javascript";
 import { getLogger, Logger } from "@syntest/logging";
 
-import { ClassActionStatement } from "../testcase/statements/action/ClassActionStatement";
 import { FunctionCall } from "../testcase/statements/action/FunctionCall";
-import { ObjectFunctionCall } from "../testcase/statements/action/ObjectFunctionCall";
+import { ImportStatement } from "../testcase/statements/action/ImportStatement";
 import { Statement } from "../testcase/statements/Statement";
 
 type Import = RegularImport | RenamedImport;
@@ -35,16 +34,12 @@ type Import = RegularImport | RenamedImport;
 type RegularImport = {
   name: string;
   renamed: false;
-  module: boolean;
-  default: boolean;
 };
 
 type RenamedImport = {
   name: string;
   renamed: true;
   renamedTo: string;
-  module: boolean;
-  default: boolean;
 };
 
 type Require = {
@@ -69,6 +64,7 @@ export class ContextBuilder {
   // Statement -> variableName
   private statementVariableNameMap: Map<Statement, string>;
 
+
   constructor(targetRootDirectory: string, sourceDirectory: string) {
     ContextBuilder.LOGGER = getLogger("ContextBuilder");
     this.targetRootDirectory = targetRootDirectory;
@@ -87,6 +83,10 @@ export class ContextBuilder {
   }
 
   getOrCreateVariableName(statement: Statement): string {
+    if (statement instanceof ImportStatement) {
+      return this.getOrCreateImportName(statement.action)
+    }
+
     if (this.statementVariableNameMap.has(statement)) {
       return this.statementVariableNameMap.get(statement);
     }
@@ -103,9 +103,7 @@ export class ContextBuilder {
         : variableName;
 
     if (
-      statement instanceof ClassActionStatement ||
-      statement instanceof FunctionCall ||
-      statement instanceof ObjectFunctionCall
+      statement instanceof FunctionCall
     ) {
       variableName += "ReturnValue";
     }
@@ -136,33 +134,31 @@ export class ContextBuilder {
     return variableName;
   }
 
-  getOrCreateImportName(export_: Export): string {
-    const import_ = this._addImport(export_);
+  getOrCreateImportName(action: Action): string {
+    const import_ = this._addImport(action);
 
     return import_.renamed ? import_.renamedTo : import_.name;
   }
 
-  private _addImport(export_: Export): Import {
-    const path_ = export_.filePath.replace(
+  protected _addImport(action: Action): Import {
+    const path_ = action.filePath.replace(
       path.resolve(this.targetRootDirectory),
       path.join(this.sourceDirectory, path.basename(this.targetRootDirectory))
     );
 
-    const exportedName = export_.renamedTo;
+    
+
+    const exportedName = action.name;
     let import_: Import = {
-      name: exportedName === "default" ? "defaultExport" : exportedName,
+      name: exportedName === "__root__" ? "defaultExport" : exportedName,
       renamed: false,
-      default: export_.default,
-      module: export_.module,
     };
     let newName: string = exportedName;
 
     if (this.imports.has(path_)) {
       const foundImport = this.imports.get(path_).find((value) => {
         return (
-          value.name === import_.name &&
-          value.default === import_.default &&
-          value.module === import_.module
+          value.name === import_.name
         );
       });
       if (foundImport !== undefined) {
@@ -197,9 +193,7 @@ export class ContextBuilder {
       import_ = {
         name: exportedName,
         renamed: true,
-        renamedTo: newName,
-        default: export_.default,
-        module: export_.module,
+        renamedTo: newName
       };
     }
 
@@ -211,50 +205,13 @@ export class ContextBuilder {
     return import_;
   }
 
-  // TODO we could gather all the imports of a certain path together into one import
-  private _getImportString(_path: string, import_: Import): string {
-    if (import_.module) {
-      throw new Error("Only non module imports can use import statements");
-    }
-
-    // if (import_.renamed) {
-    //   return import_.default
-    //     ? `const ${import_.renamedTo} = require("${_path}";`
-    //     : `const {${import_.name} as ${import_.renamedTo}} =  equire("${_path}";`;
-    // } else {
-    //   return import_.default
-    //     ? `const ${import_.name} = require("${_path}";`
-    //     : `const {${import_.name}} = require("${_path}";`;
-    // }
-
-    if (import_.renamed) {
-      return import_.default
-        ? `import ${import_.renamedTo} from "${_path}";`
-        : `import {${import_.name} as ${import_.renamedTo}} from "${_path}";`;
-    } else {
-      return import_.default
-        ? `import ${import_.name} from "${_path}";`
-        : `import {${import_.name}} from "${_path}";`;
-    }
-  }
-
   private _getRequireString(_path: string, import_: Import): Require {
-    if (!import_.module) {
-      throw new Error("Only module imports can use require statements");
-    }
-
     const require: Require = {
       left: "",
-      right: `require("${_path}")`,
+      right: `import("${_path}")`,
     };
 
-    if (import_.renamed) {
-      require.left = import_.default
-        ? import_.renamedTo
-        : `{${import_.name}: ${import_.renamedTo}}`;
-    } else {
-      require.left = import_.default ? import_.name : `{${import_.name}}`;
-    }
+    require.left = import_.renamed && import_.renamedTo ? import_.renamedTo : import_.name;
 
     return require;
   }
@@ -266,11 +223,7 @@ export class ContextBuilder {
     for (const [path_, imports_] of this.imports.entries()) {
       // TODO remove unused imports
       for (const import_ of imports_) {
-        if (import_.module) {
-          requires.push(this._getRequireString(path_, import_));
-        } else {
-          imports.push(this._getImportString(path_, import_));
-        }
+        requires.push(this._getRequireString(path_, import_));
       }
     }
 

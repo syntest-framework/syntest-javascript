@@ -20,12 +20,12 @@ import * as path from "node:path";
 
 import {
   AbstractSyntaxTreeFactory,
+  ActionFactory,
   ConstantPoolFactory,
   ControlFlowGraphFactory,
   DependencyFactory,
   ExportFactory,
   InferenceTypeModelFactory,
-  isExported,
   RootContext,
   Target,
   TargetFactory,
@@ -201,6 +201,10 @@ export class JavaScriptLauncher extends Launcher {
       this.arguments_.analysisExclude
     );
 
+    const actionFactory = new ActionFactory(
+      (<JavaScriptArguments>this.arguments_).executionTimeout
+    );
+
     this.rootContext = new RootContext(
       this.arguments_.targetRootDirectory,
       targetFiles,
@@ -212,7 +216,8 @@ export class JavaScriptLauncher extends Launcher {
       exportFactory,
       typeExtractor,
       typeResolver,
-      constantPoolFactory
+      constantPoolFactory,
+      actionFactory
     );
 
     this.userInterface.printHeader("GENERAL INFO");
@@ -403,7 +408,7 @@ export class JavaScriptLauncher extends Launcher {
 
     this.userInterface.printTable("DIRECTORY SETTINGS", directorySettings);
 
-    JavaScriptLauncher.LOGGER.info("Instrumenting targets");
+    JavaScriptLauncher.LOGGER.info("Instrumenting target files");
     const startInstrumentation = Date.now();
     const instrumenter = new Instrumenter();
     await instrumenter.instrumentAll(
@@ -417,6 +422,9 @@ export class JavaScriptLauncher extends Launcher {
       PropertyName.INSTRUMENTATION_TIME,
       `${timeInMs}`
     );
+
+    JavaScriptLauncher.LOGGER.info("Gathering actions");
+    await this.rootContext.extractAllActions();
 
     const startTypeResolving = Date.now();
     JavaScriptLauncher.LOGGER.info("Extracting types");
@@ -733,16 +741,16 @@ export class JavaScriptLauncher extends Launcher {
     JavaScriptLauncher.LOGGER.info(
       `Testing target ${target.name} in ${target.path}`
     );
+    const actions = this.rootContext.getAllActions().get(target.path)
     const currentSubject = new JavaScriptSubject(
       target,
+      actions,
       this.rootContext,
       (<JavaScriptArguments>this.arguments_).syntaxForgiving,
       this.arguments_.stringAlphabet
     );
 
-    const rootTargets = currentSubject
-      .getActionableTargets()
-      .filter((target) => isExported(target));
+    const rootTargets = currentSubject.actions
 
     if (rootTargets.length === 0) {
       JavaScriptLauncher.LOGGER.info(
@@ -824,6 +832,7 @@ export class JavaScriptLauncher extends Launcher {
       sampler: sampler,
     });
 
+    console.log('generating algo')
     const algorithm = (<SearchAlgorithmPlugin<JavaScriptTestCase>>(
       this.moduleManager.getPlugin(
         PluginType.SearchAlgorithm,
@@ -868,6 +877,7 @@ export class JavaScriptLauncher extends Launcher {
       );
     }
 
+    console.log('starting search')
     // This searches for a covering population
     const archive = await algorithm.search(
       currentSubject,
@@ -916,6 +926,9 @@ export class JavaScriptLauncher extends Launcher {
     JavaScriptLauncher.LOGGER.info("Exiting");
     if (this.runner && this.runner.process) {
       this.runner.process.kill();
+    }
+    if (this.rootContext) {
+      this.rootContext.exit();
     }
     // TODO should be cleanup step in tool
     // Finish

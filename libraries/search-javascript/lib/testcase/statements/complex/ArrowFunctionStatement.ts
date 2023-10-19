@@ -25,7 +25,7 @@ import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSamp
 import { Decoding, Statement } from "../Statement";
 
 /**
- * @author Dimitri Stallenberg
+ * Arrow function statement
  */
 export class ArrowFunctionStatement extends Statement {
   private _parameters: string[];
@@ -43,7 +43,6 @@ export class ArrowFunctionStatement extends Statement {
       variableIdentifier,
       typeIdentifier,
       name,
-      TypeEnum.FUNCTION,
       uniqueId
     );
     this._parameters = parameters;
@@ -59,7 +58,7 @@ export class ArrowFunctionStatement extends Statement {
         this.name,
         prng.uniqueId(),
         this._parameters,
-        this.returnValue
+        this._returnValue
           ? this._returnValue.mutate(sampler, depth + 1)
           : undefined
       );
@@ -99,9 +98,10 @@ export class ArrowFunctionStatement extends Statement {
     if (this._returnValue === undefined) {
       return [
         {
-          decoded: `const ${context.getOrCreateVariableName(
+          variableName: context.getOrCreateVariableName(
             this
-          )} = (${this._parameters.join(", ")}) => {};`,
+          ),
+          decoded: `(${this._parameters.join(", ")}) => {};`,
           reference: this,
         },
       ];
@@ -109,15 +109,16 @@ export class ArrowFunctionStatement extends Statement {
 
     const returnStatement: Decoding[] = this._returnValue.decode(context);
 
-    const decoded = `const ${context.getOrCreateVariableName(
-      this
-    )} = (${this._parameters.join(
+    const decoded = `(${this._parameters.join(
       ", "
-    )}) => { return ${context.getOrCreateVariableName(this.returnValue)} };`;
+    )}) => { return ${context.getOrCreateVariableName(this._returnValue)} };`;
 
     return [
       ...returnStatement,
       {
+        variableName: context.getOrCreateVariableName(
+          this
+        ),
         decoded: decoded,
         reference: this,
       },
@@ -128,7 +129,7 @@ export class ArrowFunctionStatement extends Statement {
     if (this._returnValue === undefined) {
       return [];
     }
-    return [this.returnValue];
+    return [this._returnValue];
   }
 
   hasChildren(): boolean {
@@ -147,7 +148,11 @@ export class ArrowFunctionStatement extends Statement {
     this._returnValue = newChild;
   }
 
-  get returnValue(): Statement {
-    return this._returnValue;
+  override get returnType(): string {
+      return TypeEnum.FUNCTION
   }
+
+  override get type(): TypeEnum {
+    return <TypeEnum>this.returnType
+}
 }

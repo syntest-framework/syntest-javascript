@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { Export, TypeEnum } from "@syntest/analysis-javascript";
+import { Action } from "@syntest/analysis-javascript";
 import { Encoding, EncodingSampler, shouldNeverHappen } from "@syntest/search";
 
 import { Statement } from "../Statement";
@@ -25,21 +25,29 @@ import { Statement } from "../Statement";
  * ActionStatement
  */
 export abstract class ActionStatement extends Statement {
-  private _args: Statement[];
-  protected _export?: Export;
+  protected _action: Action;
+  private _children: Statement[];
+  private _parent: Statement | undefined
 
   protected constructor(
     variableIdentifier: string,
     typeIdentifier: string,
     name: string,
-    ownType: TypeEnum,
     uniqueId: string,
-    arguments_: Statement[],
-    export_?: Export
+    action: Action,
+    children: Statement[],
+    parent?: Statement | undefined
   ) {
-    super(variableIdentifier, typeIdentifier, name, ownType, uniqueId);
-    this._args = arguments_;
-    this._export = export_;
+    super(variableIdentifier, typeIdentifier, name, uniqueId);
+    this._action = action;
+    this._children = children;
+    this._parent = parent
+
+    for (const child of children) {
+      if (!child) {
+        throw new Error("Invalid arg")
+      }
+    }
   }
 
   abstract override mutate(
@@ -49,31 +57,51 @@ export abstract class ActionStatement extends Statement {
 
   abstract override copy(): ActionStatement;
 
-  setChild(index: number, newChild: Statement) {
+  hasChildren(): boolean {
+    return this._children.length > 0 || !this._parent;
+  }
+
+  getChildren(): Statement[] {
+    const children = [...this._children]
+    if (this._parent) {
+      children.push(this._parent)
+    }
+    return children;
+  }
+
+  override setChild(index: number, newChild: Statement) {
     if (!newChild) {
       throw new Error("Invalid new child!");
     }
 
-    if (index < 0 || index >= this.args.length) {
+    if (index < 0 || index > this.children.length) {
       throw new Error(shouldNeverHappen(`Invalid index used index: ${index}`));
     }
 
-    this.args[index] = newChild;
+    if (index === this.children.length && !this.parent) {
+      throw new Error(shouldNeverHappen(`Invalid index used index: ${index}`));
+    }
+
+    if (index === this.children.length) {
+      this._parent = newChild;
+    } else {
+      this._children[index] = newChild;
+    }
   }
 
-  hasChildren(): boolean {
-    return this._args.length > 0;
+  get action() {
+    return this._action;
   }
 
-  getChildren(): Statement[] {
-    return [...this._args];
+  protected get parent(): Statement {
+    return this._parent
   }
 
-  protected get args(): Statement[] {
-    return this._args;
+  protected get children(): Statement[] {
+    return this._children;
   }
 
-  get export() {
-    return this._export;
+  override get returnType(): string {
+    return this.typeIdentifier
   }
 }

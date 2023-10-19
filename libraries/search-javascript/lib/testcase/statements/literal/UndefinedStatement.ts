@@ -22,12 +22,12 @@ import { prng } from "@syntest/prng";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Statement } from "../Statement";
 
-import { PrimitiveStatement } from "./PrimitiveStatement";
+import { LiteralStatement } from "./LiteralStatement";
 
 /**
- * @author Dimitri Stallenberg
+ * UndefinedStatement
  */
-export class NullStatement extends PrimitiveStatement<boolean> {
+export class UndefinedStatement extends LiteralStatement<undefined> {
   constructor(
     variableIdentifier: string,
     typeIdentifier: string,
@@ -38,17 +38,16 @@ export class NullStatement extends PrimitiveStatement<boolean> {
       variableIdentifier,
       typeIdentifier,
       name,
-      TypeEnum.NULL,
       uniqueId,
-      // eslint-disable-next-line unicorn/no-null
-      null
+      // eslint-disable-next-line unicorn/no-useless-undefined
+      undefined
     );
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
     if (prng.nextBoolean(sampler.deltaMutationProbability)) {
       // 80%
-      return new NullStatement(
+      return new UndefinedStatement(
         this.variableIdentifier,
         this.typeIdentifier,
         this.name,
@@ -64,12 +63,16 @@ export class NullStatement extends PrimitiveStatement<boolean> {
     }
   }
 
-  copy(): NullStatement {
-    return new NullStatement(
+  copy(): UndefinedStatement {
+    return new UndefinedStatement(
       this.variableIdentifier,
       this.typeIdentifier,
       this.name,
       this.uniqueId
     );
+  }
+
+  get returnType() {
+    return TypeEnum.UNDEFINED
   }
 }

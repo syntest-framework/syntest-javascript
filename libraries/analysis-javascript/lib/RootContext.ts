@@ -29,6 +29,8 @@ import { ConstantPool } from "./constant/ConstantPool";
 import { ConstantPoolFactory } from "./constant/ConstantPoolFactory";
 import { ConstantPoolManager } from "./constant/ConstantPoolManager";
 import { DependencyFactory } from "./dependency/DependencyFactory";
+import { Action } from "./dynamic/action/Action";
+import { ActionFactory } from "./dynamic/action/ActionFactory";
 import { Events } from "./Events";
 import { Export } from "./target/export/Export";
 import { ExportFactory } from "./target/export/ExportFactory";
@@ -51,6 +53,8 @@ export class RootContext extends CoreRootContext<t.Node> {
 
   protected _constantPoolFactory: ConstantPoolFactory;
 
+  protected _actionFactory: ActionFactory;
+
   protected _targetFiles: Set<string>;
   protected _analysisFiles: Set<string>;
 
@@ -66,6 +70,7 @@ export class RootContext extends CoreRootContext<t.Node> {
 
   // Mapping: filepath -> target name -> Exports
   protected _exportMap: Map<string, Export[]>;
+  protected _actionMap: Map<string, Map<string, Action>>;
 
   constructor(
     rootPath: string,
@@ -78,7 +83,8 @@ export class RootContext extends CoreRootContext<t.Node> {
     exportFactory: ExportFactory,
     typeExtractor: TypeExtractor,
     typeResolver: TypeModelFactory,
-    constantPoolFactory: ConstantPoolFactory
+    constantPoolFactory: ConstantPoolFactory,
+    actionFactory: ActionFactory
   ) {
     super(
       rootPath,
@@ -95,6 +101,7 @@ export class RootContext extends CoreRootContext<t.Node> {
     this._typeExtractor = typeExtractor;
     this._typeResolver = typeResolver;
     this._constantPoolFactory = constantPoolFactory;
+    this._actionFactory = actionFactory;
   }
 
   get rootPath(): string {
@@ -133,6 +140,11 @@ export class RootContext extends CoreRootContext<t.Node> {
     return this._sources.get(absoluteTargetPath);
   }
 
+  protected async getActions(filePath: string) {
+    const factory = new ActionFactory(1000);
+    return await factory.extract(filePath, this.getSource(filePath), this.getAbstractSyntaxTree(filePath));
+  }
+
   getExports(filePath: string): Export[] {
     const absolutePath = this.resolvePath(filePath);
 
@@ -157,6 +169,28 @@ export class RootContext extends CoreRootContext<t.Node> {
     }
 
     return this._exportMap.get(absolutePath);
+  }
+
+  async extractAllActions() {
+    if (!this._actionMap) {
+      this._actionMap = new Map();
+
+      for (const filepath of this._analysisFiles) {
+        this._actionMap.set(filepath, await this.getActions(filepath));
+      }
+
+      this._actionFactory.exit()
+    }
+
+    return this._actionMap;
+  }
+
+  getAllActions() {
+    if (!this._actionMap) {
+      throw new Error("First call extractAllActions before calling getAllActions")
+    }
+
+    return this._actionMap;
   }
 
   getAllExports(): Map<string, Export[]> {
@@ -353,5 +387,9 @@ export class RootContext extends CoreRootContext<t.Node> {
 
     RootContext.LOGGER.info("Extracting constants done");
     return constantPoolManager;
+  }
+
+  exit() {
+    this._actionFactory.exit();
   }
 }

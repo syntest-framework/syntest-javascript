@@ -16,60 +16,69 @@
  * limitations under the License.
  */
 
-import { TypeEnum } from "@syntest/analysis-javascript";
-import { prng } from "@syntest/prng";
+import { Action, TypeEnum } from "@syntest/analysis-javascript";
 
+import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
-import { Statement } from "../Statement";
+import { Decoding, Statement } from "../Statement";
 
-import { PrimitiveStatement } from "./PrimitiveStatement";
+import { ActionStatement } from "./ActionStatement";
+
 
 /**
- * @author Dimitri Stallenberg
+ * ImportStatement
  */
-export class UndefinedStatement extends PrimitiveStatement<undefined> {
+export class ImportStatement extends ActionStatement {
+
   constructor(
     variableIdentifier: string,
     typeIdentifier: string,
     name: string,
-    uniqueId: string
+    uniqueId: string,
+    action: Action,
   ) {
     super(
       variableIdentifier,
       typeIdentifier,
       name,
-      TypeEnum.UNDEFINED,
       uniqueId,
-      // eslint-disable-next-line unicorn/no-useless-undefined
-      undefined
+      action,
+      []
     );
   }
 
-  mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
-    if (prng.nextBoolean(sampler.deltaMutationProbability)) {
-      // 80%
-      return new UndefinedStatement(
-        this.variableIdentifier,
-        this.typeIdentifier,
-        this.name,
-        prng.uniqueId()
-      );
-    } else {
-      // 20%
-      return sampler.sampleArgument(
-        depth + 1,
-        this.variableIdentifier,
-        this.name
-      );
-    }
+  mutate(_sampler: JavaScriptTestCaseSampler, _depth: number): ImportStatement {
+    // nothing to mutate actually
+    return this.copy()
   }
 
-  copy(): UndefinedStatement {
-    return new UndefinedStatement(
+  copy(): ImportStatement {
+    return new ImportStatement(
       this.variableIdentifier,
       this.typeIdentifier,
       this.name,
-      this.uniqueId
+      this.uniqueId,
+      this.action
     );
+  }
+
+  decode(context: ContextBuilder): Decoding[] {
+    return [
+      {
+        variableName: context.getOrCreateVariableName(
+            this
+          ),
+        decoded: `SHOULD NOT BE USED`,
+        reference: this,
+      },
+    ];
+  }
+
+  override setChild(_index: number, _newChild: Statement): void {
+      throw new Error("Import statement does not have children")
+  }
+
+  override get type(): TypeEnum {
+    return TypeEnum.NULL
   }
 }

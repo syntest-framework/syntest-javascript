@@ -15,33 +15,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { prng } from "@syntest/prng";
 
-import { StatementPool } from "../../../StatementPool";
-import { Getter } from "../../../statements/action/Getter";
+export type Action = {
+  type: ActionType;
 
-import { CallGenerator } from "./CallGenerator";
+  // identification
+  id: string;
+  filePath: string;
+  // location: Location; ??
 
-export class GetterGenerator extends CallGenerator<Getter> {
-  override generate(
-    depth: number,
-    variableIdentifier: string,
-    typeIdentifier: string,
-    exportIdentifier: string,
-    name: string,
-    _statementPool: StatementPool
-  ): Getter {
-    const constructor_ = this.sampler.sampleConstructorCall(
-      depth + 1,
-      exportIdentifier
-    );
+  // ancestory
+  children: {
+    [key: string]: Action;
+  };
+  parentId: string | undefined
 
-    return new Getter(
-      variableIdentifier,
-      typeIdentifier,
-      name,
-      prng.uniqueId(),
-      constructor_
-    );
-  }
-}
+  // properties
+  constructable: boolean
+  name: string
+};
+
+export type ActionType =
+  | "function"
+  | "object"
+  | "constant" // maybe nice

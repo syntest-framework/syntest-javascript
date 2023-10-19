@@ -16,43 +16,31 @@
  * limitations under the License.
  */
 
-import { ConstantPoolManager, RootContext } from "@syntest/analysis-javascript";
+import { Action, ConstantPoolManager, ObjectType, RootContext } from "@syntest/analysis-javascript";
+import { prng } from "@syntest/prng";
 import { EncodingSampler } from "@syntest/search";
 
 import { JavaScriptSubject } from "../../search/JavaScriptSubject";
 import { JavaScriptTestCase } from "../JavaScriptTestCase";
 import { StatementPool } from "../StatementPool";
 import { ActionStatement } from "../statements/action/ActionStatement";
-import { ConstantObject } from "../statements/action/ConstantObject";
 import { ConstructorCall } from "../statements/action/ConstructorCall";
 import { FunctionCall } from "../statements/action/FunctionCall";
-import { Getter } from "../statements/action/Getter";
-import { MethodCall } from "../statements/action/MethodCall";
-import { ObjectFunctionCall } from "../statements/action/ObjectFunctionCall";
-import { Setter } from "../statements/action/Setter";
+import { ImportStatement } from "../statements/action/ImportStatement";
+import { MemberStatement } from "../statements/action/MemberStatement";
 import { ArrayStatement } from "../statements/complex/ArrayStatement";
 import { ArrowFunctionStatement } from "../statements/complex/ArrowFunctionStatement";
 import { ObjectStatement } from "../statements/complex/ObjectStatement";
-import { BoolStatement } from "../statements/primitive/BoolStatement";
-import { IntegerStatement } from "../statements/primitive/IntegerStatement";
-import { NullStatement } from "../statements/primitive/NullStatement";
-import { NumericStatement } from "../statements/primitive/NumericStatement";
-import { StringStatement } from "../statements/primitive/StringStatement";
-import { UndefinedStatement } from "../statements/primitive/UndefinedStatement";
+import { BoolStatement } from "../statements/literal/BoolStatement";
+import { IntegerStatement } from "../statements/literal/IntegerStatement";
+import { NullStatement } from "../statements/literal/NullStatement";
+import { NumericStatement } from "../statements/literal/NumericStatement";
+import { StringStatement } from "../statements/literal/StringStatement";
+import { UndefinedStatement } from "../statements/literal/UndefinedStatement";
 import { Statement } from "../statements/Statement";
-
-import { ConstantObjectGenerator } from "./generators/action/ConstantObjectGenerator";
-import { ConstructorCallGenerator } from "./generators/action/ConstructorCallGenerator";
-import { FunctionCallGenerator } from "./generators/action/FunctionCallGenerator";
-import { GetterGenerator } from "./generators/action/GetterGenerator";
-import { MethodCallGenerator } from "./generators/action/MethodCallGenerator";
-import { ObjectFunctionCallGenerator } from "./generators/action/ObjectFunctionCallGenerator";
-import { SetterGenerator } from "./generators/action/SetterGenerator";
 
 /**
  * JavaScriptRandomSampler class
- *
- * @author Dimitri Stallenberg
  */
 export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScriptTestCase> {
   private _rootContext: RootContext;
@@ -81,16 +69,6 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
   private _exploreIllegalValues: boolean;
 
   private _statementPool: StatementPool | null;
-
-  private _functionCallGenerator: FunctionCallGenerator;
-
-  private _constructorCallGenerator: ConstructorCallGenerator;
-  private _methodCallGenerator: MethodCallGenerator;
-  private _getterGenerator: GetterGenerator;
-  private _setterGenerator: SetterGenerator;
-
-  private _constantObjectGenerator: ConstantObjectGenerator;
-  private _objectFunctionCallGenerator: ObjectFunctionCallGenerator;
 
   constructor(
     subject: JavaScriptSubject,
@@ -137,77 +115,6 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
 
   set rootContext(rootContext: RootContext) {
     this._rootContext = rootContext;
-
-    this._functionCallGenerator = new FunctionCallGenerator(
-      this,
-      rootContext,
-      this._statementPoolEnabled,
-      this._statementPoolProbability
-    );
-    this._constructorCallGenerator = new ConstructorCallGenerator(
-      this,
-      rootContext,
-      this._statementPoolEnabled,
-      this._statementPoolProbability
-    );
-    this._methodCallGenerator = new MethodCallGenerator(
-      this,
-      rootContext,
-      this._statementPoolEnabled,
-      this._statementPoolProbability
-    );
-    this._getterGenerator = new GetterGenerator(
-      this,
-      rootContext,
-      this._statementPoolEnabled,
-      this._statementPoolProbability
-    );
-    this._setterGenerator = new SetterGenerator(
-      this,
-      rootContext,
-      this._statementPoolEnabled,
-      this._statementPoolProbability
-    );
-    this._constantObjectGenerator = new ConstantObjectGenerator(
-      this,
-      rootContext,
-      this._statementPoolEnabled,
-      this._statementPoolProbability
-    );
-    this._objectFunctionCallGenerator = new ObjectFunctionCallGenerator(
-      this,
-      rootContext,
-      this._statementPoolEnabled,
-      this._statementPoolProbability
-    );
-  }
-
-  get functionCallGenerator() {
-    return this._functionCallGenerator;
-  }
-
-  get constructorCallGenerator() {
-    return this._constructorCallGenerator;
-  }
-
-  get methodCallGenerator() {
-    return this._methodCallGenerator;
-  }
-
-  get getterGenerator() {
-    return this._getterGenerator;
-  }
-
-  get setterGenerator() {
-    return this._setterGenerator;
-  }
-
-  get constantObjectGenerator() {
-    return this._constantObjectGenerator;
-  }
-
-  get objectFunctionCallGenerator() {
-    return this._objectFunctionCallGenerator;
   }
 
   get statementPool() {
@@ -218,24 +125,45 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
     this._statementPool = statementPool;
   }
 
-  abstract sampleRoot(): ActionStatement;
+  /**
+   * Samples an action
+   * Use when 
+   * @param depth 
+   * @param action 
+   */
+  abstract sampleParentAction(
+    depth: number,
+    action: Action
+  ): ActionStatement;
 
-  abstract sampleFunctionCall(depth: number): FunctionCall;
+  abstract sampleFunctionCall(
+    depth: number
+  ): FunctionCall;
+
+  abstract sampleSpecificFunctionCall(
+    depth: number,
+    action: string | Action
+  ): FunctionCall;
 
   abstract sampleConstructorCall(
-    depth: number,
-    classId?: string
+    depth: number
   ): ConstructorCall;
-  abstract sampleClassAction(depth: number): MethodCall | Getter | Setter;
-  abstract sampleMethodCall(depth: number): MethodCall;
-  abstract sampleGetter(depth: number): Getter;
-  abstract sampleSetter(depth: number): Setter;
 
-  abstract sampleConstantObject(
+  abstract sampleSpecificConstructorCall(
     depth: number,
-    objectId?: string
-  ): ConstantObject;
-  abstract sampleObjectFunctionCall(depth: number): ObjectFunctionCall;
+    action: string | Action
+  ): ConstructorCall;
+
+  abstract sampleMemberStatement(
+    depth: number,
+    action: Action,
+    key: string
+  ): MemberStatement
+
+  abstract sampleImportStatement(
+    depth: number,
+    action: Action
+  ): ImportStatement
 
   // TODO
   // abstract sampleStaticMethodCall(depth: number): MethodCall;
@@ -255,7 +183,7 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
     id: string,
     typeId: string,
     name: string
-  ): ObjectStatement | ConstructorCall | ConstantObject | FunctionCall;
+  ): ObjectStatement | ConstructorCall | FunctionCall;
 
   abstract sampleArray(
     depth: number,
@@ -300,6 +228,40 @@ export abstract class JavaScriptTestCaseSampler extends EncodingSampler<JavaScri
     typeId: string,
     name: string
   ): UndefinedStatement;
+
+  sampleArguments(depth: number, type_: ObjectType): Statement[] {
+    const arguments_: Statement[] = [];
+
+    for (const [index, parameterId] of type_.parameters.entries()) {
+      const name = type_.parameterNames.get(index);
+      arguments_[index] = this.sampleArgument(
+        depth + 1,
+        parameterId,
+        name
+      );
+    }
+
+    // if some params are missing, fill them with fake params
+    const parameterIds = [...type_.parameters.values()];
+    for (let index = 0; index < arguments_.length; index++) {
+      if (!arguments_[index]) {
+        arguments_[index] = this.sampleArgument(
+          depth + 1,
+          prng.pickOne(parameterIds),
+          String(index)
+        );
+      }
+    }
+
+    for (let index = 0; index < 10; index++) {
+      if (prng.nextBoolean(0.05)) {
+        // TODO make this a config parameter
+        arguments_.push(this.sampleArgument(depth + 1, "anon", "anon"));
+      }
+    }
+
+    return arguments_;
+  }
 
   get constantPoolManager(): ConstantPoolManager {
     return this._constantPoolManager;

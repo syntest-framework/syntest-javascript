@@ -25,7 +25,7 @@ import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSamp
 import { Decoding, Statement } from "../Statement";
 
 /**
- * @author Dimitri Stallenberg
+ * ArrayStatement
  */
 export class ArrayStatement extends Statement {
   private _elements: Statement[];
@@ -37,7 +37,7 @@ export class ArrayStatement extends Statement {
     uniqueId: string,
     elements: Statement[]
   ) {
-    super(variableIdentifier, typeIdentifier, name, TypeEnum.ARRAY, uniqueId);
+    super(variableIdentifier, typeIdentifier, name, uniqueId);
     this._elements = elements;
 
     // check for circular
@@ -137,13 +137,14 @@ export class ArrayStatement extends Statement {
       .map((a) => context.getOrCreateVariableName(a))
       .join(", ");
 
-    const decoded = `const ${context.getOrCreateVariableName(
-      this
-    )} = [${elements}]`;
+    const decoded = `[${elements}]`;
 
     return [
       ...elementStatements,
       {
+        variableName: context.getOrCreateVariableName(
+          this
+        ),
         decoded: decoded,
         reference: this,
       },
@@ -173,4 +174,12 @@ export class ArrayStatement extends Statement {
   protected get children(): Statement[] {
     return this._elements;
   }
+
+  override get returnType(): string {
+      return TypeEnum.ARRAY
+  }
+
+  override get type(): TypeEnum {
+    return <TypeEnum>this.returnType
+}
 }

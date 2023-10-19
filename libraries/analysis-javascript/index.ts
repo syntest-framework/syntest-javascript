@@ -29,6 +29,10 @@ export * from "./lib/constant/ConstantVisitor";
 export * from "./lib/dependency/DependencyFactory";
 export * from "./lib/dependency/DependencyVisitor";
 
+export * from "./lib/dynamic/action/Action";
+export * from "./lib/dynamic/action/ActionFactory";
+export * from "./lib/dynamic/action/Executor";
+
 export * from "./lib/target/export/Export";
 export * from "./lib/target/export/ExportDefaultDeclaration";
 export * from "./lib/target/export/ExportFactory";

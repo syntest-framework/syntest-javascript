@@ -22,10 +22,7 @@ import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Decoding, Statement } from "../Statement";
 
-/**
- * @author Dimitri Stallenberg
- */
-export abstract class PrimitiveStatement<T> extends Statement {
+export abstract class LiteralStatement<T> extends Statement {
   get value(): T {
     return this._value;
   }
@@ -35,11 +32,10 @@ export abstract class PrimitiveStatement<T> extends Statement {
     variableIdentifier: string,
     typeIdentifier: string,
     name: string,
-    type: TypeEnum,
     uniqueId: string,
     value: T
   ) {
-    super(variableIdentifier, typeIdentifier, name, type, uniqueId);
+    super(variableIdentifier, typeIdentifier, name, uniqueId);
     this._value = value;
   }
 
@@ -70,11 +66,18 @@ export abstract class PrimitiveStatement<T> extends Statement {
     const asString = String(this.value);
     return [
       {
-        decoded: `const ${context.getOrCreateVariableName(
+        variableName: context.getOrCreateVariableName(
           this
-        )} = ${asString};`,
+        ),
+        decoded: `${asString};`,
         reference: this,
       },
     ];
+  }
+
+  abstract override get returnType(): TypeEnum;
+
+  override get type(): TypeEnum {
+      return this.returnType
   }
 }

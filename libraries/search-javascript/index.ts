@@ -34,24 +34,20 @@ export * from "./lib/testcase/sampling/JavaScriptRandomSampler";
 export * from "./lib/testcase/sampling/JavaScriptTestCaseSampler";
 
 export * from "./lib/testcase/statements/action/ActionStatement";
-export * from "./lib/testcase/statements/action/Getter";
-export * from "./lib/testcase/statements/action/MethodCall";
-export * from "./lib/testcase/statements/action/Setter";
 
 export * from "./lib/testcase/statements/complex/ArrayStatement";
 export * from "./lib/testcase/statements/complex/ArrowFunctionStatement";
 export * from "./lib/testcase/statements/complex/ObjectStatement";
 
-export * from "./lib/testcase/statements/primitive/BoolStatement";
-export * from "./lib/testcase/statements/primitive/NullStatement";
-export * from "./lib/testcase/statements/primitive/NumericStatement";
-export * from "./lib/testcase/statements/primitive/PrimitiveStatement";
-export * from "./lib/testcase/statements/primitive/StringStatement";
-export * from "./lib/testcase/statements/primitive/UndefinedStatement";
+export * from "./lib/testcase/statements/literal/BoolStatement";
+export * from "./lib/testcase/statements/literal/NullStatement";
+export * from "./lib/testcase/statements/literal/NumericStatement";
+export * from "./lib/testcase/statements/literal/LiteralStatement";
+export * from "./lib/testcase/statements/literal/StringStatement";
+export * from "./lib/testcase/statements/literal/UndefinedStatement";
 
 export * from "./lib/testcase/statements/action/ConstructorCall";
 export * from "./lib/testcase/statements/action/FunctionCall";
-export * from "./lib/testcase/statements/action/ConstantObject";
 
 export * from "./lib/testcase/statements/Statement";
 

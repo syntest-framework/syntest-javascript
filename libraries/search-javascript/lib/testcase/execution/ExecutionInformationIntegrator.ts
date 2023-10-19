@@ -17,6 +17,7 @@
  */
 
 import { TypeModel } from "@syntest/analysis-javascript";
+import { getLogger, Logger } from "@syntest/logging";
 import Mocha = require("mocha");
 
 import { JavaScriptTestCase } from "../JavaScriptTestCase";
@@ -25,9 +26,11 @@ import { Statement } from "../statements/Statement";
 import { Test } from "./TestExecutor";
 
 export class ExecutionInformationIntegrator {
+  protected static LOGGER: Logger
   private _typeModel: TypeModel;
 
   constructor(typeModel: TypeModel) {
+    ExecutionInformationIntegrator.LOGGER = getLogger(ExecutionInformationIntegrator.name)
     this._typeModel = typeModel;
   }
 
@@ -46,12 +49,13 @@ export class ExecutionInformationIntegrator {
         if (
           testResult.error &&
           testResult.error.message &&
-          testResult.error.message.includes(child.name)
+          testResult.error.message.includes(child.name) && (child.name !== 'constructor')
         ) {
+          ExecutionInformationIntegrator.LOGGER.info(`Adding execution score to '${child.name}' with id '${child.variableIdentifier}'`)
           this._typeModel.addExecutionScore(
             child.variableIdentifier,
             child.typeIdentifier,
-            child.ownType
+            child.type
           );
         }
         queue.push(child);

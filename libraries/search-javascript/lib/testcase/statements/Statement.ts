@@ -22,13 +22,12 @@ import { Encoding, EncodingSampler } from "@syntest/search";
 import { ContextBuilder } from "../../testbuilding/ContextBuilder";
 
 /**
- * @author Dimitri Stallenberg
+ * The abstract statement class
  */
 export abstract class Statement {
   private _variableIdentifier: string;
   private _typeIdentifier: string;
   private _name: string;
-  private _ownType: TypeEnum;
   protected _uniqueId: string;
 
   public get variableIdentifier(): string {
@@ -43,32 +42,32 @@ export abstract class Statement {
     return this._name;
   }
 
-  get ownType(): TypeEnum {
-    return this._ownType;
-  }
-
   public get uniqueId(): string {
     return this._uniqueId;
   }
 
   /**
    * Constructor
-   * @param identifierDescription
-   * @param ownType
-   * @param uniqueId
+   * @param variableIdentifier the identifier that points to the variable this statement represents
+   * @param typeIdentifier the identifier used to choose the type of this statement
+   * @param name
+   * @param uniqueId the unique id of the statement
    */
   protected constructor(
     variableIdentifier: string,
     typeIdentifier: string,
     name: string,
-    ownType: TypeEnum,
     uniqueId: string
   ) {
     this._variableIdentifier = variableIdentifier;
     this._typeIdentifier = typeIdentifier;
     this._name = name;
-    this._ownType = ownType;
     this._uniqueId = uniqueId;
+
+    if (!name) {
+      console.log(name)
+      throw new Error("Name must be given!")
+    }
   }
 
   /**
@@ -112,9 +111,20 @@ export abstract class Statement {
    * Note: when implementing this function please always decode the children of the statement before making getOrCreateVariableName on the context object.
    */
   abstract decode(context: ContextBuilder): Decoding[];
+
+  /**
+   * returns the return type of statement
+   */
+  abstract get returnType(): string;
+
+  /**
+   * returns the type of statement
+   */
+  abstract get type(): TypeEnum;
 }
 
 export interface Decoding {
+  variableName: string;
   decoded: string;
   reference: Statement;
 }

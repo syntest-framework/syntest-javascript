@@ -22,38 +22,36 @@ import { prng } from "@syntest/prng";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
 import { Statement } from "../Statement";
 
-import { PrimitiveStatement } from "./PrimitiveStatement";
+import { LiteralStatement } from "./LiteralStatement";
 
 /**
- * @author Dimitri Stallenberg
+ * Null Statement
  */
-export class BoolStatement extends PrimitiveStatement<boolean> {
+export class NullStatement extends LiteralStatement<boolean> {
   constructor(
     variableIdentifier: string,
     typeIdentifier: string,
     name: string,
-    uniqueId: string,
-    value: boolean
+    uniqueId: string
   ) {
     super(
       variableIdentifier,
       typeIdentifier,
       name,
-      TypeEnum.BOOLEAN,
       uniqueId,
-      value
+      // eslint-disable-next-line unicorn/no-null
+      null
     );
   }
 
   mutate(sampler: JavaScriptTestCaseSampler, depth: number): Statement {
     if (prng.nextBoolean(sampler.deltaMutationProbability)) {
       // 80%
-      return new BoolStatement(
+      return new NullStatement(
         this.variableIdentifier,
         this.typeIdentifier,
         this.name,
-        prng.uniqueId(),
-        !this.value
+        prng.uniqueId()
       );
     } else {
       // 20%
@@ -65,13 +63,16 @@ export class BoolStatement extends PrimitiveStatement<boolean> {
     }
   }
 
-  copy(): BoolStatement {
-    return new BoolStatement(
+  copy(): NullStatement {
+    return new NullStatement(
       this.variableIdentifier,
       this.typeIdentifier,
       this.name,
-      this.uniqueId,
-      this.value
+      this.uniqueId
     );
+  }
+
+  get returnType() {
+    return TypeEnum.NULL
   }
 }
