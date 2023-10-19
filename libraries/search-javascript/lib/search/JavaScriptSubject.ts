@@ -16,7 +16,14 @@
  * limitations under the License.
  */
 import { TargetType } from "@syntest/analysis";
-import { RootContext, SubTarget, Target } from "@syntest/analysis-javascript";
+import {
+  isExported,
+  MethodTarget,
+  ObjectFunctionTarget,
+  RootContext,
+  SubTarget,
+  Target,
+} from "@syntest/analysis-javascript";
 import { ControlFlowGraph, Edge, EdgeType } from "@syntest/cfg";
 import {
   ApproachLevel,
@@ -181,19 +188,38 @@ export class JavaScriptSubject extends SearchSubject<JavaScriptTestCase> {
     return childObjectives;
   }
 
-  getActionableTargets(): SubTarget[] {
-    return this._target.subTargets.filter((t) => {
-      return (
-        t.type === TargetType.FUNCTION ||
-        t.type === TargetType.CLASS ||
-        t.type === TargetType.METHOD ||
-        t.type === TargetType.OBJECT ||
-        t.type === TargetType.OBJECT_FUNCTION
-      );
-    });
+  private _actions: SubTarget[];
+
+  getActions(): SubTarget[] {
+    if (!this._actions) {
+      this._actions = this._target.subTargets.filter((target) => {
+        return (
+          (target.type === TargetType.FUNCTION && isExported(target)) ||
+          (target.type === TargetType.CLASS && isExported(target)) ||
+          (target.type === TargetType.OBJECT && isExported(target)) ||
+          (target.type === TargetType.METHOD &&
+            (<MethodTarget>target).methodType !== "constructor" &&
+            isExported(
+              this._target.subTargets.find(
+                (classTarget) =>
+                  classTarget.id === (<MethodTarget>target).classId
+              )
+            )) || // check whether parent class is exported
+          (target.type === TargetType.OBJECT_FUNCTION &&
+            isExported(
+              this._target.subTargets.find(
+                (objectTarget) =>
+                  objectTarget.id === (<ObjectFunctionTarget>target).objectId
+              )
+            )) // check whether parent object is exported
+        );
+      });
+    }
+
+    return this._actions;
   }
 
-  getActionableTargetsByType(type: TargetType): SubTarget[] {
-    return this.getActionableTargets().filter((t) => t.type === type);
+  getActionByType(type: TargetType): SubTarget[] {
+    return this.getActions().filter((action) => action.type === type);
   }
 }

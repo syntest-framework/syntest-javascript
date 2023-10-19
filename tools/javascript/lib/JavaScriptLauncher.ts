@@ -25,7 +25,6 @@ import {
   DependencyFactory,
   ExportFactory,
   InferenceTypeModelFactory,
-  isExported,
   RootContext,
   Target,
   TargetFactory,
@@ -740,9 +739,9 @@ export class JavaScriptLauncher extends Launcher {
       this.arguments_.stringAlphabet
     );
 
-    const rootTargets = currentSubject
-      .getActionableTargets()
-      .filter((target) => isExported(target));
+    const rootTargets = currentSubject.getActions();
+
+    console.log(rootTargets);
 
     if (rootTargets.length === 0) {
       JavaScriptLauncher.LOGGER.info(
