@@ -550,7 +550,6 @@ export class JavaScriptLauncher extends Launcher {
 
     finalEncodings = new Map<Target, JavaScriptTestCase[]>(
       [...newArchives.entries()].map(([target, archive]) => {
-        console.log("archive size", archive.size);
         return [target, archive.getEncodings()];
       })
     );
@@ -744,6 +743,7 @@ export class JavaScriptLauncher extends Launcher {
       .getActionableTargets()
       .filter((target) => isExported(target));
 
+    console.log(currentSubject.getActionableTargets());
     if (rootTargets.length === 0) {
       JavaScriptLauncher.LOGGER.info(
         `No actionable exported root targets found for ${target.name} in ${target.path}`

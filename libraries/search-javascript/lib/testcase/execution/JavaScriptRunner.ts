@@ -128,6 +128,7 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
       childProcess.send({
         message: "run",
         silent: this.silenceTestOutput,
+        esm: true,
         paths: paths,
         timeout: this.testTimeout,
       });
