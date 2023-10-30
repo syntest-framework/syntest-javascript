@@ -52,8 +52,7 @@
     "@syntest/ast-visitor-javascript": "^0.2.0-beta.1",
     "@syntest/cfg": "^0.4.0",
     "@syntest/logging": "^0.1.1",
-    "@syntest/prng": "^0.1.1",
-    "@syntest/search": "^0.5.0-beta.3"
+    "@syntest/prng": "^0.1.1"
   },
   "engines": {
     "node": ">=10.24.0"
