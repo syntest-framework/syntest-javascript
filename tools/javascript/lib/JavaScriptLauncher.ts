@@ -68,7 +68,7 @@ import {
   TotalTimeBudget,
 } from "@syntest/search";
 import {
-  ExecutionInformationIntegrator,
+  ExecutionInformationProcessor,
   JavaScriptDecoder,
   JavaScriptRandomSampler,
   JavaScriptRunner,
@@ -438,13 +438,14 @@ export class JavaScriptLauncher extends Launcher {
     );
 
     this.decoder = new JavaScriptDecoder(this.arguments_.targetRootDirectory);
-    const executionInformationIntegrator = new ExecutionInformationIntegrator(
-      this.rootContext.getTypeModel()
+    const executionInformationProcessor = new ExecutionInformationProcessor(
+      this.rootContext.getTypeModel(),
+      (<JavaScriptArguments>this.arguments_).incorporateExecutionInformation
     );
     this.runner = new JavaScriptRunner(
       this.storageManager,
       this.decoder,
-      executionInformationIntegrator,
+      executionInformationProcessor,
       this.arguments_.testDirectory,
       (<JavaScriptArguments>this.arguments_).executionTimeout,
       (<JavaScriptArguments>this.arguments_).testTimeout,
