@@ -54,7 +54,7 @@
     "@syntest/metric": "*",
     "@syntest/module": "*",
     "@syntest/search": "*",
-    "@syntest/storage": "*"
+    "@syntest/storage": "0.3.0-beta.0"
   },
   "engines": {
     "node": ">=16"
