@@ -53,8 +53,7 @@
     "@syntest/logging": "*",
     "@syntest/metric": "*",
     "@syntest/module": "*",
-    "@syntest/search": "*",
-    "@syntest/storage": "0.3.0-beta.0"
+    "@syntest/search": "*"
   },
   "engines": {
     "node": ">=16"
