@@ -27,8 +27,8 @@ jobs:
           node-version: lts/*
 
           # NPM Cache using all package-lock files as hash
-          cache: 'npm'
-          cache-dependency-path: '**/package-lock.json'
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
 
       # Dependencies
       - name: Core - Install Dependencies
@@ -67,7 +67,7 @@ jobs:
           - libraries/search-javascript
           - plugins/plugin-javascript-event-listener-state-storage
           - tools/javascript
-          
+
     steps:
       # Cloning
       - uses: actions/checkout@v3
