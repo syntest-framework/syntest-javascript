@@ -1,6 +1,6 @@
 {
   "name": "@syntest/plugin-javascript-event-listener-state-storage",
-  "version": "0.1.1-beta.3",
+  "version": "0.2.0-beta.0",
   "description": "A listener plugin for SynTest JavaScript containing state storage functionalities",
   "keywords": [
     "syntest",
@@ -8,7 +8,7 @@
   ],
   "homepage": "https://www.syntest.org",
   "bugs": {
-    "url": "https://github.com/syntest-framework/syntest-core/issues"
+    "url": "https://github.com/syntest-framework/syntest-javascript/issues"
   },
   "license": "Apache-2.0",
   "contributors": [
@@ -29,7 +29,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/syntest-framework/syntest-core.git"
+    "url": "git+https://github.com/syntest-framework/syntest-javascript.git"
   },
   "scripts": {
     "build": "tsc --build",
@@ -47,7 +47,7 @@
   },
   "dependencies": {
     "@syntest/analysis": "*",
-    "@syntest/analysis-javascript": "^0.2.0-beta.3",
+    "@syntest/analysis-javascript": "^0.2.0-beta.4",
     "@syntest/base-language": "*",
     "@syntest/cfg": "*",
     "@syntest/logging": "*",
