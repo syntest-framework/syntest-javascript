@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest Javascript.
  *
@@ -23,8 +23,6 @@ import { TypeModel } from "./TypeModel";
 
 /**
  * Abstract TypeResolver class
- *
- * @author Dimitri Stallenberg
  */
 export abstract class TypeModelFactory {
   /**
