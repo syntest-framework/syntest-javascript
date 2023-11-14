@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest Javascript.
  *
@@ -20,7 +20,7 @@ import * as path from "node:path";
 
 import { traverse } from "@babel/core";
 import * as t from "@babel/types";
-import { TargetFactory as CoreTargetFactory } from "@syntest/analysis";
+import { TargetFactory as FrameworkTargetFactory } from "@syntest/analysis";
 
 import { Factory } from "../Factory";
 
@@ -30,12 +30,10 @@ import { TargetVisitor } from "./TargetVisitor";
 
 /**
  * TargetFactory for Javascript.
- *
- * @author Dimitri Stallenberg
  */
 export class TargetFactory
   extends Factory
-  implements CoreTargetFactory<t.Node>
+  implements FrameworkTargetFactory<t.Node>
 {
   /**
    * Generate function map for specified target.

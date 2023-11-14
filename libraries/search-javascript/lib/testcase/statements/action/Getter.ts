@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest Javascript.
  *
@@ -26,9 +26,6 @@ import { Decoding } from "../Statement";
 import { ClassActionStatement } from "./ClassActionStatement";
 import { ConstructorCall } from "./ConstructorCall";
 
-/**
- * @author Dimitri Stallenberg
- */
 export class Getter extends ClassActionStatement {
   /**
    * Constructor

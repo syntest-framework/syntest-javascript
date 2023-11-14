@@ -1,7 +1,7 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
- * This file is part of SynTest Framework - SynTest Core.
+ * This file is part of SynTest Framework - SynTest JavaScript.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,6 @@ export type StateStorageOptions = {
 
 /**
  * This graphing plugin creates a listener that creates an SVG based on the generated CFG.
- *
- * @author Dimitri Stallenberg
  */
 export class StateStorageEventListenerPlugin extends EventListenerPlugin {
   private storageManager: StorageManager;

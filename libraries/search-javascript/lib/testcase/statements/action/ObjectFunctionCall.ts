@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest Javascript.
  *
@@ -27,9 +27,6 @@ import { Decoding, Statement } from "../Statement";
 import { ActionStatement } from "./ActionStatement";
 import { ConstantObject } from "./ConstantObject";
 
-/**
- * @author Dimitri Stallenberg
- */
 export class ObjectFunctionCall extends ActionStatement {
   private _object: ConstantObject;
 
