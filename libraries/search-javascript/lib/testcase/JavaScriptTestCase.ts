@@ -16,9 +16,7 @@
  * limitations under the License.
  */
 
-import {
-  IllegalArgumentError,
-} from "@syntest/diagnostics";
+import { IllegalArgumentError } from "@syntest/diagnostics";
 import { getLogger, Logger } from "@syntest/logging";
 import { prng } from "@syntest/prng";
 import { Decoder, Encoding } from "@syntest/search";
