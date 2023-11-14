@@ -51,7 +51,7 @@ import {
   TableObject,
   UserInterface,
 } from "@syntest/cli-graphics";
-import { isFailure, unwrap } from "@syntest/diagnostics";
+import { IllegalArgumentError, isFailure, unwrap } from "@syntest/diagnostics";
 import { Instrumenter } from "@syntest/instrumentation-javascript";
 import { getLogger, Logger } from "@syntest/logging";
 import { MetricManager } from "@syntest/metric";
@@ -188,8 +188,9 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
 
     for (const target of targetFiles) {
       if (this.arguments_.analysisExclude.includes(target)) {
-        throw new Error(
-          `Target files cannot be excluded from analysis. Target file: ${target}`
+        throw new IllegalArgumentError(
+          "Target files cannot be excluded from analysis",
+          { context: { targetFile: target } }
         );
       }
     }

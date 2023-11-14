@@ -52,7 +52,7 @@ export abstract class ActionStatement extends Statement {
 
   setChild(index: number, newChild: Statement) {
     if (!newChild) {
-      throw new Error("Invalid new child!");
+      throw new IllegalArgumentError("Invalid new child!");
     }
 
     if (index < 0 || index >= this.args.length) {

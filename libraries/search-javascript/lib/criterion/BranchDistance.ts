@@ -61,7 +61,7 @@ export class BranchDistanceCalculator extends AbstractBranchDistanceCalculator {
       const variables_ = Object.entries(variables)
         .map(([key, value]) => `${key}=${String(value)}`)
         .join(", ");
-      throw new Error(
+      throw new ImplementationError(
         `Invalid distance: ${distance} for ${condition} -> ${String(
           trueOrFalse
         )}. Variables: ${variables_}`

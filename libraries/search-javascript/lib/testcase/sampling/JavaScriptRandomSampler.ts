@@ -27,7 +27,7 @@ import {
   ObjectFunctionTarget,
   ObjectTarget,
 } from "@syntest/analysis-javascript";
-import { isFailure, unwrap } from "@syntest/diagnostics";
+import { ImplementationError, isFailure, unwrap } from "@syntest/diagnostics";
 import { prng } from "@syntest/prng";
 
 import { JavaScriptSubject } from "../../search/JavaScriptSubject";
@@ -226,9 +226,11 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
           .find((target) => (<ClassTarget>target).id === id)
       );
       if (!result) {
-        throw new Error("missing class with id: " + id);
+        throw new ImplementationError("missing class with id: " + id);
       } else if (!isExported(result)) {
-        throw new Error("class with id: " + id + "is not exported");
+        throw new ImplementationError(
+          "class with id: " + id + "is not exported"
+        );
       }
       return result;
     }
@@ -257,7 +259,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       );
 
     if (constructor_.length > 1) {
-      throw new Error("Multiple constructors found for class");
+      throw new ImplementationError("Multiple constructors found for class");
     }
 
     if (constructor_.length === 0) {
@@ -315,7 +317,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
         return this.sampleSetter(depth);
       }
       case "constructor": {
-        throw new Error("invalid path");
+        throw new ImplementationError("invalid path");
       }
       // No default
     }
@@ -410,9 +412,11 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
           .find((target) => (<ObjectTarget>target).id === id)
       );
       if (!result) {
-        throw new Error("missing object with id: " + id);
+        throw new ImplementationError("missing object with id: " + id);
       } else if (!isExported(result)) {
-        throw new Error("object with id: " + id + " is not exported");
+        throw new ImplementationError(
+          "object with id: " + id + " is not exported"
+        );
       }
       return result;
     }
@@ -498,7 +502,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
     const value = objectType.properties.get(property);
     if (!value) {
-      throw new Error(
+      throw new ImplementationError(
         `Property ${property} not found in object ${objectTypeId}`
       );
     }
@@ -546,7 +550,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
         break;
       }
       default: {
-        throw new Error(
+        throw new ImplementationError(
           "Invalid identifierDescription inference mode selected"
         );
       }
@@ -604,7 +608,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       }
     }
 
-    throw new Error(`unknown type: ${chosenType}`);
+    throw new ImplementationError(`unknown type: ${chosenType}`);
   }
 
   sampleObject(depth: number, id: string, typeId: string, name: string) {
