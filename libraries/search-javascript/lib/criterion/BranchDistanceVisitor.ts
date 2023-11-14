@@ -23,8 +23,8 @@
 import { NodePath } from "@babel/core";
 import * as t from "@babel/types";
 import { AbstractSyntaxTreeVisitor } from "@syntest/ast-visitor-javascript";
+import { IllegalArgumentError } from "@syntest/diagnostics";
 import { getLogger, Logger } from "@syntest/logging";
-import { shouldNeverHappen } from "@syntest/search";
 
 const invalidOperator = "Invalid operator!";
 export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
@@ -66,7 +66,10 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
   _getDistance(condition: string): number {
     if (!this._valueMap.has(condition) || !this._isDistanceMap.get(condition)) {
       // the value does not exist or is not a distance
-      throw new Error(shouldNeverHappen("BranchDistanceVisitor"));
+      throw new IllegalArgumentError(
+        "Cannot get distance from unknown condition",
+        { context: { condition: condition } }
+      );
     }
 
     return <number>this._valueMap.get(condition);

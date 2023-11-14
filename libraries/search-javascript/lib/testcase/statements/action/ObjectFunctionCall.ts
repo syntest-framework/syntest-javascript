@@ -17,8 +17,8 @@
  */
 
 import { TypeEnum } from "@syntest/analysis-javascript";
+import { IllegalArgumentError } from "@syntest/diagnostics";
 import { prng } from "@syntest/prng";
-import { shouldNeverHappen } from "@syntest/search";
 
 import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
@@ -91,12 +91,17 @@ export class ObjectFunctionCall extends ActionStatement {
     }
 
     if (index < 0 || index > this.args.length) {
-      throw new Error(shouldNeverHappen(`Invalid index used index: ${index}`));
+      throw new IllegalArgumentError("Child index is not within range", {
+        context: { index: index, range: `0 >= index <= ${this.args.length}` },
+      });
     }
 
     if (index === this.args.length) {
       if (!(newChild instanceof ConstantObject)) {
-        throw new TypeError(shouldNeverHappen("should be a constant object"));
+        throw new IllegalArgumentError(
+          "Last child should always be of type ConstantObject",
+          { context: { index: index } }
+        );
       }
       this._object = newChild;
     } else {

@@ -8,20 +8,20 @@
 rm -rf node_modules/@syntest/analysis
 rm -rf node_modules/@syntest/cfg
 rm -rf node_modules/@syntest/cli-graphics
+rm -rf node_modules/@syntest/diagnostics
 rm -rf node_modules/@syntest/logging
 rm -rf node_modules/@syntest/metric
 rm -rf node_modules/@syntest/module
+rm -rf node_modules/@syntest/prng
 rm -rf node_modules/@syntest/search
 rm -rf node_modules/@syntest/storage
-rm -rf node_modules/@syntest/prng
 
 # core plugins
-rm -rf node_modules/@syntest/plugin-core-event-listener-graphing
-rm -rf node_modules/@syntest/plugin-core-event-listener-state-storage
-rm -rf node_modules/@syntest/plugin-core-event-listener-websocket
-rm -rf node_modules/@syntest/plugin-core-metric-middleware-file-writer
-rm -rf node_modules/@syntest/plugin-core-metric-middleware-statistics
-rm -rf node_modules/@syntest/plugin-core-search-algorithm-experimental
+rm -rf node_modules/@syntest/plugin-event-listener-state-storage
+rm -rf node_modules/@syntest/plugin-event-listener-websocket
+rm -rf node_modules/@syntest/plugin-metric-middleware-file-writer
+rm -rf node_modules/@syntest/plugin-metric-middleware-statistics
+rm -rf node_modules/@syntest/plugin-search-algorithm-experimental
 
 # core tools
 rm -rf node_modules/@syntest/base-language
@@ -35,20 +35,20 @@ cd node_modules/@syntest
 ln -s ../../../syntest-core/libraries/analysis analysis
 ln -s ../../../syntest-core/libraries/cfg cfg
 ln -s ../../../syntest-core/libraries/cli-graphics cli-graphics
+ln -s ../../../syntest-core/libraries/diagnostics diagnostics
 ln -s ../../../syntest-core/libraries/logging logging
 ln -s ../../../syntest-core/libraries/metric metric
 ln -s ../../../syntest-core/libraries/module module
+ln -s ../../../syntest-core/libraries/prng prng
 ln -s ../../../syntest-core/libraries/search search
 ln -s ../../../syntest-core/libraries/storage storage
-ln -s ../../../syntest-core/libraries/prng prng
 
 # core plugins
-ln -s ../../../syntest-core/plugins/plugin-core-event-listener-graphing plugin-core-event-listener-graphing
-ln -s ../../../syntest-core/plugins/plugin-core-event-listener-state-storage plugin-core-event-listener-state-storage
-ln -s ../../../syntest-core/plugins/plugin-core-event-listener-websocket plugin-core-event-listener-websocket
-ln -s ../../../syntest-core/plugins/plugin-core-metric-middleware-file-writer plugin-core-metric-middleware-file-writer
-ln -s ../../../syntest-core/plugins/plugin-core-metric-middleware-statistics plugin-core-metric-middleware-statistics
-ln -s ../../../syntest-core/plugins/plugin-core-search-algorithm-experimental plugin-core-search-algorithm-experimental
+ln -s ../../../syntest-core/plugins/plugin-event-listener-state-storage plugin-event-listener-state-storage
+ln -s ../../../syntest-core/plugins/plugin-event-listener-websocket plugin-event-listener-websocket
+ln -s ../../../syntest-core/plugins/plugin-metric-middleware-file-writer plugin-metric-middleware-file-writer
+ln -s ../../../syntest-core/plugins/plugin-metric-middleware-statistics plugin-metric-middleware-statistics
+ln -s ../../../syntest-core/plugins/plugin-search-algorithm-experimental plugin-search-algorithm-experimental
 
 # core tools
 ln -s ../../../syntest-core/tools/cli cli

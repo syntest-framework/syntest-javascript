@@ -27,6 +27,7 @@ import {
   ObjectFunctionTarget,
   ObjectTarget,
 } from "@syntest/analysis-javascript";
+import { isFailure, unwrap } from "@syntest/diagnostics";
 import { prng } from "@syntest/prng";
 
 import { JavaScriptSubject } from "../../search/JavaScriptSubject";
@@ -116,9 +117,14 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
       if (constructor_ && prng.nextBoolean(this.statementPoolProbability)) {
         // TODO ignoring getters and setters for now
-        const targets = this.rootContext.getSubTargets(
+        const result = this.rootContext.getSubTargets(
           constructor_.typeIdentifier.split(":")[0]
         );
+
+        if (isFailure(result)) throw result.error;
+
+        const targets = unwrap(result);
+
         const methods = <MethodTarget[]>(
           targets.filter(
             (target) =>
@@ -622,9 +628,13 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
         switch (typeFromTypePool.kind) {
           case DiscoveredObjectKind.CLASS: {
             // find constructor of class
-            const targets = this.rootContext.getSubTargets(
+            const result = this.rootContext.getSubTargets(
               typeFromTypePool.id.split(":")[0]
             );
+
+            if (isFailure(result)) throw result.error;
+
+            const targets = unwrap(result);
             const constructor_ = <MethodTarget>(
               targets.find(
                 (target) =>

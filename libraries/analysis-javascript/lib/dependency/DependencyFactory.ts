@@ -19,6 +19,7 @@
 import { traverse } from "@babel/core";
 import * as t from "@babel/types";
 import { DependencyFactory as CoreDependencyFactory } from "@syntest/analysis";
+import { Result, success } from "@syntest/diagnostics";
 
 import { Factory } from "../Factory";
 
@@ -38,11 +39,11 @@ export class DependencyFactory
    *
    * @param AST The AST of the target
    */
-  extract(filePath: string, AST: t.Node): string[] {
+  extract(filePath: string, AST: t.Node): Result<string[]> {
     const visitor = new DependencyVisitor(filePath, this.syntaxForgiving);
 
     traverse(AST, visitor);
 
-    return [...visitor.imports];
+    return success([...visitor.imports]);
   }
 }
