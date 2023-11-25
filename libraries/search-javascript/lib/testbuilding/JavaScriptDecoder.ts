@@ -77,15 +77,15 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
         // delete statements after
         errorDecoding = decodings[index];
         decodings = decodings.slice(0, index);
-      }
 
-      if (decodings.length === 0) {
-        JavaScriptDecoder.LOGGER.warn(
-          "No statements in test case after error reduction"
-        );
-        continue;
-        // throw new ImplementationError(
-        // );
+        if (decodings.length === 0) {
+          JavaScriptDecoder.LOGGER.warn(
+            "No statements in test case after error reduction"
+          );
+          continue;
+          // throw new ImplementationError(
+          // );
+        }
       }
 
       const metaCommentBlock = this.generateMetaComments(testCase);
