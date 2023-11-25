@@ -170,7 +170,8 @@ export class RootContext extends FrameworkRootContext<t.Node> {
     (<TypedEmitter<Events>>process).emit(
       "exportExtractionComplete",
       this,
-      filePath
+      filePath,
+      unwrap(exportResult)
     );
 
     return exportResult;
@@ -198,7 +199,8 @@ export class RootContext extends FrameworkRootContext<t.Node> {
     (<TypedEmitter<Events>>process).emit(
       "elementExtractionComplete",
       this,
-      filePath
+      filePath,
+      unwrap(elementsResult)
     );
 
     return elementsResult;
@@ -227,7 +229,8 @@ export class RootContext extends FrameworkRootContext<t.Node> {
     (<TypedEmitter<Events>>process).emit(
       "relationExtractionComplete",
       this,
-      filePath
+      filePath,
+      unwrap(relationsResult)
     );
 
     return relationsResult;
@@ -256,7 +259,8 @@ export class RootContext extends FrameworkRootContext<t.Node> {
     (<TypedEmitter<Events>>process).emit(
       "objectTypeExtractionComplete",
       this,
-      filePath
+      filePath,
+      unwrap(objectsResult)
     );
 
     return objectsResult;
