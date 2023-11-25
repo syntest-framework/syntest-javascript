@@ -17,6 +17,7 @@
  */
 
 import { ImplementationError } from "@syntest/diagnostics";
+import { getLogger, Logger } from "@syntest/logging";
 import { Decoder } from "@syntest/search";
 
 import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
@@ -30,10 +31,13 @@ import { assertionFunction } from "./assertionFunctionTemplate";
 import { ContextBuilder } from "./ContextBuilder";
 
 export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
+  protected static LOGGER: Logger;
   private targetRootDirectory: string;
 
   constructor(targetRootDirectory: string) {
     this.targetRootDirectory = targetRootDirectory;
+
+    JavaScriptDecoder.LOGGER = getLogger(JavaScriptDecoder.name);
   }
 
   decode(
@@ -76,9 +80,12 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
       }
 
       if (decodings.length === 0) {
-        throw new ImplementationError(
+        JavaScriptDecoder.LOGGER.warn(
           "No statements in test case after error reduction"
         );
+        continue;
+        // throw new ImplementationError(
+        // );
       }
 
       const metaCommentBlock = this.generateMetaComments(testCase);
