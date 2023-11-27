@@ -128,9 +128,9 @@ async function runMocha(silent: boolean, paths: string[], timeout: number) {
           error:
             status === JavaScriptExecutionStatus.FAILED
               ? {
-                  name: test.err.name,
-                  message: test.err.message,
-                  stack: test.err.stack,
+                  name: test.err?.name,
+                  message: test.err?.message,
+                  stack: test.err?.stack,
                 }
               : undefined,
           duration: test.duration,
