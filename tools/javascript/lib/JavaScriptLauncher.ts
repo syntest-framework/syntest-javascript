@@ -241,6 +241,17 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
       `${timeInMs}`
     );
 
+    const selectionSettings: TableObject = {
+      headers: ["Setting", "Value"],
+      rows: [
+        ["Target Root Directory", this.arguments_.targetRootDirectory],
+        ["Target Include", `${this.arguments_.targetInclude.join(", ")}`],
+        ["Target Exclude", `${this.arguments_.targetExclude.join(", ")}`],
+        ["Analysis Include", `${this.arguments_.analysisInclude.join(", ")}`],
+        ["Analysis Exclude", `${this.arguments_.analysisExclude.join(", ")}`],
+      ],
+    };
+
     if (this.targets.length === 0) {
       // Shut server down
       this.userInterface.printError(
@@ -266,16 +277,6 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
 
     this.userInterface.printItemization("TARGETS", itemization);
 
-    const selectionSettings: TableObject = {
-      headers: ["Setting", "Value"],
-      rows: [
-        ["Target Root Directory", this.arguments_.targetRootDirectory],
-        ["Target Include", `${this.arguments_.targetInclude.join(", ")}`],
-        ["Target Exclude", `${this.arguments_.targetExclude.join(", ")}`],
-        ["Analysis Include", `${this.arguments_.analysisInclude.join(", ")}`],
-        ["Analysis Exclude", `${this.arguments_.analysisExclude.join(", ")}`],
-      ],
-    };
     this.userInterface.printTable("SELECTION SETTINGS", selectionSettings);
 
     const settings: TableObject = {
