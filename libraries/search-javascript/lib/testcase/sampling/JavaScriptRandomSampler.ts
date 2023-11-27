@@ -270,10 +270,15 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     if (constructor_.length === 0) {
       // default constructor no args
       // TODO bad splitting of ids (we should add paths to targets)
-      const filePath = class_.id.split(":::")[0];
+      const filePath = class_.id.split(":")[0];
       const export_ = unwrapOr(this.rootContext.getExports(filePath), []).find(
         (export_) => export_.id === class_.id
       );
+
+      if (!export_) {
+        console.log(filePath);
+        console.log(this.rootContext.getExports(filePath));
+      }
 
       return new ConstructorCall(
         class_.id,
