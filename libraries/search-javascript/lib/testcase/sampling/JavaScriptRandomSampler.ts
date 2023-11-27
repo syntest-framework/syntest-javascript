@@ -275,11 +275,6 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
         (export_) => export_.id === class_.id
       );
 
-      if (!export_) {
-        console.log(filePath);
-        console.log(this.rootContext.getExports(filePath));
-      }
-
       return new ConstructorCall(
         class_.id,
         class_.typeId,

@@ -747,7 +747,7 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
     const currentSubject = new JavaScriptSubject(target, [
       ...branchObjectives,
       ...functionObjectives,
-      ...pathObjectives,
+      // ...pathObjectives,
     ]);
 
     const rootTargets = currentSubject
