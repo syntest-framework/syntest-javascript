@@ -252,15 +252,7 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
       ],
     };
 
-    if (this.targets.length === 0) {
-      // Shut server down
-      this.userInterface.printError(
-        `No targets where selected! Try changing the 'target-include' parameter`
-      );
-      await this.exit();
-      // eslint-disable-next-line unicorn/no-process-exit
-      process.exit();
-    }
+    this.userInterface.printTable("SELECTION SETTINGS", selectionSettings);
 
     const itemization: ItemizationItem[] = [];
 
@@ -274,10 +266,17 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
         }),
       });
     }
-
     this.userInterface.printItemization("TARGETS", itemization);
 
-    this.userInterface.printTable("SELECTION SETTINGS", selectionSettings);
+    if (this.targets.length === 0) {
+      // Shut server down
+      this.userInterface.printError(
+        `No targets where selected! Try changing the 'target-include' parameter`
+      );
+      await this.exit();
+      // eslint-disable-next-line unicorn/no-process-exit
+      process.exit();
+    }
 
     const settings: TableObject = {
       headers: ["Setting", "Value"],
