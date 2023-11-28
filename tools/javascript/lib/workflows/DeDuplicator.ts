@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 import { Target } from "@syntest/analysis-javascript";
+import { UserInterface } from "@syntest/cli-graphics";
 import { IllegalStateError } from "@syntest/diagnostics";
 import { getLogger, Logger } from "@syntest/logging";
 import {
@@ -27,8 +28,11 @@ import { JavaScriptTestCase } from "@syntest/search-javascript";
 
 export class DeDuplicator {
   protected static LOGGER: Logger;
-  constructor() {
+  protected userInterface: UserInterface;
+
+  constructor(userInterface: UserInterface) {
     DeDuplicator.LOGGER = getLogger("DeDuplicator");
+    this.userInterface = userInterface;
   }
 
   deDuplicate(
@@ -36,6 +40,20 @@ export class DeDuplicator {
     objectivesMap: Map<Target, ObjectiveFunction<JavaScriptTestCase>[]>,
     encodingsMap: Map<Target, JavaScriptTestCase[]>
   ): Map<Target, Archive<JavaScriptTestCase>> {
+    const totalEncodings = [...encodingsMap.values()].reduce(
+      (counter, value) => counter + value.length,
+      0
+    );
+    this.userInterface.startProgressBars([
+      {
+        name: `De-Duplication`,
+        value: 0,
+        maxValue: totalEncodings,
+        meta: "",
+      },
+    ]);
+
+    let count = 0;
     const archives = new Map<Target, Archive<JavaScriptTestCase>>();
     for (const [target, encodings] of encodingsMap.entries()) {
       const objectives = objectivesMap.get(target);
@@ -44,6 +62,13 @@ export class DeDuplicator {
       archives.set(target, archive);
 
       for (const encoding of encodings) {
+        this.userInterface.updateProgressBar({
+          name: `De-Duplication`,
+          value: count++,
+          maxValue: totalEncodings,
+          meta: "",
+        });
+
         if (!encoding.getExecutionResult()) {
           throw new IllegalStateError(
             "Invalid encoding without executionResult"
@@ -85,6 +110,8 @@ export class DeDuplicator {
         }
       }
     }
+
+    this.userInterface.stopProgressBars();
 
     return archives;
   }

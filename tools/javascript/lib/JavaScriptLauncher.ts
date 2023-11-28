@@ -440,7 +440,7 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
     this.userInterface.printHeader("Postprocessing started");
     JavaScriptLauncher.LOGGER.info("Postprocessing started");
     const start = Date.now();
-    const testSplitter = new TestSplitting(this.runner);
+    const testSplitter = new TestSplitting(this.runner, this.userInterface);
     const objectives = new Map<Target, ObjectiveFunction<JavaScriptTestCase>[]>(
       [...this.archives.entries()].map(([target, archive]) => [
         target,
@@ -456,16 +456,19 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
 
     if (this.arguments_.testSplitting) {
       const start = Date.now();
-      const before = [...finalEncodings.values()]
-        .map((x) => x.length)
-        .reduce((p, c) => p + c);
+      const before = [...finalEncodings.values()].reduce(
+        (p, c) => p + c.length,
+        0
+      );
+
       JavaScriptLauncher.LOGGER.info("Splitting started");
       finalEncodings = await testSplitter.testSplitting(finalEncodings);
 
       const timeInMs = (Date.now() - start) / 1000;
-      const after = [...finalEncodings.values()]
-        .map((x) => x.length)
-        .reduce((p, c) => p + c);
+      const after = [...finalEncodings.values()].reduce(
+        (p, c) => p + c.length,
+        0
+      );
 
       JavaScriptLauncher.LOGGER.info(
         `Splitting done took: ${timeInMs}, went from ${before} to ${after} test cases`
@@ -496,12 +499,13 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
     );
 
     const startDeduplication = Date.now();
-    const before = [...finalEncodings.values()]
-      .map((x) => x.length)
-      .reduce((p, c) => p + c);
+    const before = [...finalEncodings.values()].reduce(
+      (p, c) => p + c.length,
+      0
+    );
     JavaScriptLauncher.LOGGER.info("De-Duplication started");
 
-    const deDuplicator = new DeDuplicator();
+    const deDuplicator = new DeDuplicator(this.userInterface);
     const newArchives = deDuplicator.deDuplicate(
       secondaryObjectives,
       objectives,
@@ -509,9 +513,7 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
     );
 
     const timeInMsDeDuplication = (Date.now() - startDeduplication) / 1000;
-    const after = [...newArchives.values()]
-      .map((x) => x.size)
-      .reduce((p, c) => p + c);
+    const after = [...newArchives.values()].reduce((p, c) => p + c.size, 0);
 
     JavaScriptLauncher.LOGGER.info(
       `De-Duplication done took: ${timeInMsDeDuplication}, went from ${before} to ${after} test cases`
