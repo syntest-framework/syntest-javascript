@@ -744,7 +744,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       .getTypeModel()
       .getObjectDescription(typeId);
 
-    const parameters: string[] = [];
+    let parameters: string[] = [];
 
     for (const [index, name] of typeObject.parameterNames.entries()) {
       parameters[index] = name;
@@ -756,6 +756,11 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
         parameters[index] = `param${index}`;
       }
     }
+
+    // filter duplicates
+    parameters = parameters.filter(
+      (item, index) => parameters.indexOf(item) === index
+    );
 
     if (typeObject.return.size === 0) {
       return new ArrowFunctionStatement(
