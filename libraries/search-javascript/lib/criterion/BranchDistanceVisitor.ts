@@ -71,7 +71,18 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
       // the value does not exist or is not a distance
       throw new IllegalArgumentError(
         "Cannot get distance from unknown condition",
-        { context: { condition: condition } }
+        {
+          context: {
+            condition: condition,
+            inValueMap: this._valueMap.has(condition),
+            isDistance:
+              this._isDistanceMap.has(condition) &&
+              this._isDistanceMap.get(condition),
+            availableValues: [...this._valueMap.entries()].map(
+              (value) => `${value[0]} -> ${String(value[1])}`
+            ),
+          },
+        }
       );
     }
 

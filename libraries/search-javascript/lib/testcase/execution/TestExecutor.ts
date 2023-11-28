@@ -153,7 +153,23 @@ async function runMocha(silent: boolean, paths: string[], timeout: number) {
   resetInstrumentationData();
   (<GlobalType>(<unknown>global)).__meta__ = undefined;
   (<GlobalType>(<unknown>global)).__assertion__ = undefined;
-  process.send(result);
+
+  const cache = new Set();
+
+  // this actually removes all repeating values which is not good
+  process.send(
+    JSON.parse(
+      JSON.stringify(result, (_, value) => {
+        if (typeof value === "object" && value !== null) {
+          if (cache.has(value)) return;
+
+          cache.add(value);
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        return value;
+      })
+    )
+  );
 
   mocha.dispose();
 }
