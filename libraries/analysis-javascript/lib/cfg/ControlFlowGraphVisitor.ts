@@ -332,8 +332,8 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
       this._edges.push(
         this._createEdge(this._nodes.get(parent), node, this._edgeType)
       );
-      this._edgeType = EdgeType.NORMAL;
     }
+    this._edgeType = EdgeType.NORMAL;
   }
 
   public Block: (path: NodePath<t.Block>) => void = (path) => {
@@ -988,8 +988,8 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
 
         // alternate
         // placeholder
-        this._edgeType = EdgeType.CONDITIONAL_FALSE;
         this._currentParents = [caseTestNode.id];
+        this._edgeType = EdgeType.CONDITIONAL_FALSE;
         const alternateNode = this._createPlaceholderNode(caseNode);
         this._connectToParents(alternateNode);
         this._currentParents = [alternateNode.id]; // normal

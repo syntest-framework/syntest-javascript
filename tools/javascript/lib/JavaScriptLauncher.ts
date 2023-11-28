@@ -269,7 +269,7 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
     this.userInterface.printItemization("TARGETS", itemization);
 
     if (this.targets.length === 0) {
-      // Shut server down
+      // Shut down
       this.userInterface.printError(
         `No targets where selected! Try changing the 'target-include' parameter`
       );
