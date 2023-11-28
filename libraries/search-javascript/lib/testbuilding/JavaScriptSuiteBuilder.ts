@@ -95,7 +95,7 @@ export class JavaScriptSuiteBuilder {
 
     const { stats, instrumentationData, assertionData } = await this.runner.run(
       paths,
-      totalAmount * 2
+      totalAmount * 5
     );
     if (assertionData) {
       // put assertion data on testCases
