@@ -239,8 +239,15 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
 
         // TODO dirty hack because json.parse does not allow undefined/NaN
         // TODO undefined/NaN can happen in arrays
-        stringified = stringified.replace("undefined", "null");
-        stringified = stringified.replace("NaN", "null");
+        // TODO should not be within quotes
+        stringified = stringified.replaceAll(
+          /undefined(?=[^"]*(?:"[^"]*"[^"]*)*$)/g,
+          "null"
+        );
+        stringified = stringified.replaceAll(
+          /NaN(?=[^"]*(?:"[^"]*"[^"]*)*$)/g,
+          "null"
+        );
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const value = JSON.parse(stringified);
