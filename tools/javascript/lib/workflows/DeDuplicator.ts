@@ -53,7 +53,7 @@ export class DeDuplicator {
       },
     ]);
 
-    let count = 0;
+    let count = 1;
     const archives = new Map<Target, Archive<JavaScriptTestCase>>();
     for (const [target, encodings] of encodingsMap.entries()) {
       const objectives = objectivesMap.get(target);
