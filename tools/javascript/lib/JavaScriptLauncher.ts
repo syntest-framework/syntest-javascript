@@ -717,6 +717,9 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
 
     const cfp = unwrap(result);
 
+    const functionObjectives =
+      extractFunctionObjectivesFromProgram<JavaScriptTestCase>(cfp);
+
     const branchObjectives =
       extractBranchObjectivesFromProgram<JavaScriptTestCase>(
         cfp,
@@ -724,7 +727,8 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
         new BranchDistanceCalculator(
           this.arguments_.syntaxForgiving,
           this.arguments_.stringAlphabet
-        )
+        ),
+        functionObjectives
       );
     const pathObjectives = extractPathObjectivesFromProgram<JavaScriptTestCase>(
       cfp,
@@ -732,23 +736,22 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
       new BranchDistanceCalculator(
         this.arguments_.syntaxForgiving,
         this.arguments_.stringAlphabet
-      )
+      ),
+      functionObjectives
     );
-    const functionObjectives =
-      extractFunctionObjectivesFromProgram<JavaScriptTestCase>(cfp);
 
     this.userInterface.printTable("Objective Counts", {
       headers: ["Type", "Count"],
       rows: [
+        ["function", `${functionObjectives.length}`],
         ["branch", `${branchObjectives.length}`],
         ["path", `${pathObjectives.length}`],
-        ["function", `${functionObjectives.length}`],
       ],
     });
 
     const currentSubject = new JavaScriptSubject(target, [
-      ...branchObjectives,
       ...functionObjectives,
+      ...branchObjectives,
       // ...pathObjectives,
     ]);
 
