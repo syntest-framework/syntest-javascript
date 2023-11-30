@@ -27,18 +27,23 @@ import {
   JavaScriptTestCase,
 } from "@syntest/search-javascript";
 
-export class TestSplitting {
-  protected static LOGGER: Logger;
-  protected runner: JavaScriptRunner;
-  protected userInterface: UserInterface;
+import { Workflow } from "./Workflow";
 
-  constructor(runner: JavaScriptRunner, userInterface: UserInterface) {
+export class TestSplitting extends Workflow {
+  protected static LOGGER: Logger;
+  protected userInterface: UserInterface;
+  protected runner: JavaScriptRunner;
+
+  constructor(userInterface: UserInterface, runner: JavaScriptRunner) {
+    super();
     TestSplitting.LOGGER = getLogger("TestSplitting");
     this.runner = runner;
     this.userInterface = userInterface;
   }
 
-  public async testSplitting(encodingMap: Map<Target, JavaScriptTestCase[]>) {
+  public async execute(
+    encodingMap: Map<Target, JavaScriptTestCase[]>
+  ): Promise<Map<Target, JavaScriptTestCase[]>> {
     const finalEncodings = new Map<Target, JavaScriptTestCase[]>();
     let total = 0;
 

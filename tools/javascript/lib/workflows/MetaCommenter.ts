@@ -15,12 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import { Target } from "@syntest/analysis-javascript";
 import { UserInterface } from "@syntest/cli-graphics";
 import { IllegalStateError } from "@syntest/diagnostics";
 import { getLogger, Logger } from "@syntest/logging";
 import {
   Archive,
+  ExceptionObjectiveFunction,
   ObjectiveFunction,
   SecondaryObjectiveComparator,
 } from "@syntest/search";
@@ -28,7 +30,7 @@ import { JavaScriptTestCase } from "@syntest/search-javascript";
 
 import { Workflow } from "./Workflow";
 
-export class DeDuplicator extends Workflow {
+export class MetaCommenter extends Workflow {
   protected static LOGGER: Logger;
   protected userInterface: UserInterface;
   protected secondaryObjectives: SecondaryObjectiveComparator<JavaScriptTestCase>[];
@@ -40,13 +42,13 @@ export class DeDuplicator extends Workflow {
     objectivesMap: Map<Target, ObjectiveFunction<JavaScriptTestCase>[]>
   ) {
     super();
-    DeDuplicator.LOGGER = getLogger(DeDuplicator.name);
+    MetaCommenter.LOGGER = getLogger(MetaCommenter.name);
     this.userInterface = userInterface;
     this.secondaryObjectives = secondaryObjectives;
     this.objectivesMap = objectivesMap;
   }
 
-  execute(
+  override execute(
     encodingsMap: Map<Target, JavaScriptTestCase[]>
   ): Promise<Map<Target, JavaScriptTestCase[]>> {
     const totalEncodings = [...encodingsMap.values()].reduce(
@@ -55,14 +57,14 @@ export class DeDuplicator extends Workflow {
     );
     this.userInterface.startProgressBars([
       {
-        name: `De-Duplication`,
+        name: `Meta-Commenting`,
         value: 0,
         maxValue: totalEncodings,
         meta: "",
       },
     ]);
-
     let count = 1;
+
     const archives = new Map<Target, Archive<JavaScriptTestCase>>();
     for (const [target, encodings] of encodingsMap.entries()) {
       const objectives = this.objectivesMap.get(target);
@@ -72,7 +74,7 @@ export class DeDuplicator extends Workflow {
 
       for (const encoding of encodings) {
         this.userInterface.updateProgressBar({
-          name: `De-Duplication`,
+          name: `Meta-Commenting`,
           value: count++,
           maxValue: totalEncodings,
           meta: "",
@@ -87,7 +89,7 @@ export class DeDuplicator extends Workflow {
         for (const objective of objectives) {
           if (objective.calculateDistance(encoding) === 0) {
             if (!archive.hasObjective(objective)) {
-              DeDuplicator.LOGGER.debug("Adding new encoding to archive");
+              MetaCommenter.LOGGER.debug("Adding new encoding to archive");
               archive.update(objective, encoding, false);
               continue;
             }
@@ -106,7 +108,7 @@ export class DeDuplicator extends Workflow {
               if (comparison != 0) {
                 // Override the encoding if the current one is better
                 if (comparison > 0) {
-                  DeDuplicator.LOGGER.debug(
+                  MetaCommenter.LOGGER.debug(
                     "Overwriting archive with better encoding"
                   );
 
@@ -120,17 +122,39 @@ export class DeDuplicator extends Workflow {
       }
     }
 
+    for (const [, archive] of archives) {
+      const encodings = archive.getEncodings();
+      for (const encoding of encodings) {
+        const uses = archive.getUses(encoding);
+        for (const use of uses) {
+          if (use instanceof ExceptionObjectiveFunction) {
+            encoding.addMetaComment(`Selected for:`);
+            for (const line of use.error.stack.split("\n")) {
+              encoding.addMetaComment(`\t${line}`);
+            }
+            encoding.addMetaComment("");
+          } else {
+            encoding.addMetaComment(
+              `Selected for objective: ${use.getIdentifier()}`
+            );
+          }
+        }
+
+        const executionResult = encoding.getExecutionResult();
+        if (executionResult) {
+          for (const objective of archive.getObjectives()) {
+            if (objective.calculateDistance(encoding) === 0) {
+              encoding.addMetaComment(
+                `Covers objective: ${objective.getIdentifier()}`
+              );
+            }
+          }
+        }
+      }
+    }
+
     this.userInterface.stopProgressBars();
 
-    return new Promise((resolve) =>
-      resolve(
-        new Map<Target, JavaScriptTestCase[]>(
-          [...archives.entries()].map(([target, archive]) => [
-            target,
-            archive.getEncodings(),
-          ])
-        )
-      )
-    );
+    return new Promise((resolve) => resolve(encodingsMap));
   }
 }
