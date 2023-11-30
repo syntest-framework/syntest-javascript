@@ -62,6 +62,7 @@ export class DeDuplicator {
       archives.set(target, archive);
 
       for (const encoding of encodings) {
+        console.log(count, totalEncodings);
         this.userInterface.updateProgressBar({
           name: `De-Duplication`,
           value: count++,

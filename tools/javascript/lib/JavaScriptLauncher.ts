@@ -482,6 +482,7 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
     if (this.arguments_.testMinimization) {
       const start = Date.now();
       JavaScriptLauncher.LOGGER.info("Minimization started");
+      // TODO
       const timeInMs = (Date.now() - start) / 1000;
       JavaScriptLauncher.LOGGER.info(`Minimization done, took: ${timeInMs}`);
       // this.metricManager.recordProperty(PropertyName., `${timeInMs}`); // TODO new metric
