@@ -46,10 +46,25 @@ export abstract class CallGenerator<S extends Statement> extends Generator<S> {
       }
     }
 
-    for (let index = 0; index < 10; index++) {
-      if (prng.nextBoolean(0.05)) {
-        // TODO make this a config parameter
-        arguments_.push(this.sampler.sampleArgument(depth + 1, "anon", "anon"));
+    // 50/50 to either maybe remove or add an argument
+    if (prng.nextBoolean(0.5)) {
+      // remove args
+      arguments_.pop();
+      for (let index = 0; index < arguments_.length; index++) {
+        if (prng.nextBoolean(0.05)) {
+          // TODO make this a config parameter
+          arguments_.pop();
+        }
+      }
+    } else {
+      // add args
+      for (let index = 0; index < 10; index++) {
+        if (prng.nextBoolean(0.05)) {
+          // TODO make this a config parameter
+          arguments_.push(
+            this.sampler.sampleArgument(depth + 1, "anon", "anon")
+          );
+        }
       }
     }
 

@@ -26,6 +26,7 @@ import {
   globalVariables,
   reservedKeywords,
 } from "@syntest/ast-visitor-javascript";
+import { ImplementationError } from "@syntest/diagnostics";
 
 const name = "syntest";
 
@@ -189,9 +190,34 @@ function coverExpression(path: NodePath<t.Expression>) {
 }
 
 /* istanbul ignore next: no node.js support */
-function coverAssignmentPattern(path) {
+function coverAssignmentPattern(path: NodePath<t.AssignmentPattern>) {
+  const index = this.cov.newStatement(path.node.loc);
+  const statementIncrement = this.increase("s", index, null);
+
   const n = path.node;
   const b = this.cov.newBranch("default-arg", n.loc);
+
+  const increment = this.getBranchIncrement(path, b, undefined);
+
+  const parent = path.parentPath;
+
+  if (!parent.isFunction()) {
+    throw new ImplementationError(
+      "Assignment pattern should always be in a function"
+    );
+  }
+
+  const body = parent.get("body");
+
+  if (body.isBlockStatement()) {
+    body.node.body.unshift(
+      t.expressionStatement(statementIncrement),
+      t.expressionStatement(increment)
+    );
+  } else {
+    console.error("Unable to process function body node:", path.node.type);
+  }
+
   this.insertBranchCounter(path, path.get("right"), b);
 }
 
