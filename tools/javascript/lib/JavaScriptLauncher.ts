@@ -537,25 +537,12 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
       );
 
       const start = Date.now();
-      const before = [...finalEncodings.values()].reduce(
-        (p, c) => p + c.length,
-        0
-      );
       JavaScriptLauncher.LOGGER.info("Meta-Commenting started");
       finalEncodings = await metaCommenter.execute(finalEncodings);
-
       const timeInMs = (Date.now() - start) / 1000;
-      const after = [...finalEncodings.values()].reduce(
-        (p, c) => p + c.length,
-        0
-      );
 
-      JavaScriptLauncher.LOGGER.info(
-        `Meta-Commenting done took: ${timeInMs}, went from ${before} to ${after} test cases`
-      );
-      this.userInterface.printSuccess(
-        `Meta-Commenting done took: ${timeInMs}, went from ${before} to ${after} test cases`
-      );
+      JavaScriptLauncher.LOGGER.info(`Meta-Commenting done took: ${timeInMs}`);
+      this.userInterface.printSuccess(`Meta-Commenting done took: ${timeInMs}`);
     }
 
     const suiteBuilder = new JavaScriptSuiteBuilder(
