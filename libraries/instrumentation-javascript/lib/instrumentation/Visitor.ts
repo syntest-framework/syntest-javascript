@@ -177,8 +177,15 @@ function entries(...enter) {
   };
 }
 
-function coverStatement(path) {
+function coverStatement(path: NodePath<t.Statement>) {
   this.insertStatementCounter(path);
+}
+
+function coverExpression(path: NodePath<t.Expression>) {
+  if (path.isBinaryExpression()) {
+    this.insertStatementCounter(path.get("left"));
+    this.insertStatementCounter(path.get("right"));
+  }
 }
 
 /* istanbul ignore next: no node.js support */
@@ -667,6 +674,7 @@ const codeVisitor = {
   BlockStatement: entries(), // ignore processing only
   ExportDefaultDeclaration: entries(), // ignore processing only
   ExportNamedDeclaration: entries(), // ignore processing only
+  Expression: entries(coverExpression),
   ClassMethod: entries(coverFunction),
   ClassDeclaration: entries(parenthesizedExpressionProp("superClass")),
   ClassProperty: entries(coverClassPropDeclarator),
