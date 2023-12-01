@@ -551,113 +551,123 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
       this.runner
     );
 
-    // gather assertions
-    let paths = suiteBuilder.createSuite(
-      finalEncodings,
-      "../instrumented", // TODO fix hardcoded paths
-      this.arguments_.testDirectory,
-      true,
-      false,
-      false
-    );
-    await suiteBuilder.runSuite(finalEncodings, paths, true);
-
-    // reset states
-    this.storageManager.clearTemporaryDirectory([
-      this.arguments_.testDirectory,
-    ]);
-
-    // get final results
-    paths = suiteBuilder.createSuite(
-      finalEncodings,
-      "../instrumented", // TODO fix hardcoded paths
-      this.arguments_.testDirectory,
-      false,
-      false,
-      false
-    );
-    const results = await suiteBuilder.runSuite(finalEncodings, paths, false);
-    const summaryTotal = suiteBuilder.summariseResults(results, this.targets);
-    if (summaryTotal.failures > 0) {
-      this.userInterface.printError(
-        `${summaryTotal.failures} test case(s) have failed!`
+    try {
+      // gather assertions
+      let paths = suiteBuilder.createSuite(
+        finalEncodings,
+        "../instrumented", // TODO fix hardcoded paths
+        this.arguments_.testDirectory,
+        true,
+        false,
+        false
       );
-    }
+      await suiteBuilder.runSuite(finalEncodings, paths, true);
 
-    const table: TableObject = {
-      headers: ["Target", "Statement", "Branch", "Function", "File"],
-      rows: [],
-      footers: ["Average"],
-    };
-
-    let coveredStatements = 0;
-    let coveredBranches = 0;
-    let coveredFunctions = 0;
-    let totalStatements = 0;
-    let totalBranches = 0;
-    let totalFunctions = 0;
-
-    for (const [target, summary] of summaryTotal.data.entries()) {
-      table.rows.push([
-        `${path.basename(target.path)}: ${target.name}`,
-        `${summary["statement"].covered.size} / ${summary["statement"].total.size}`,
-        `${summary["branch"].covered.size} / ${summary["branch"].total.size}`,
-        `${summary["function"].covered.size} / ${summary["function"].total.size}`,
-        target.path,
+      // reset states
+      this.storageManager.clearTemporaryDirectory([
+        this.arguments_.testDirectory,
       ]);
 
-      coveredStatements += summary["statement"].covered.size;
-      coveredBranches += summary["branch"].covered.size;
-      coveredFunctions += summary["function"].covered.size;
+      // get final results
+      paths = suiteBuilder.createSuite(
+        finalEncodings,
+        "../instrumented", // TODO fix hardcoded paths
+        this.arguments_.testDirectory,
+        false,
+        false,
+        false
+      );
+      const results = await suiteBuilder.runSuite(finalEncodings, paths, false);
+      const summaryTotal = suiteBuilder.summariseResults(results, this.targets);
+      if (summaryTotal.failures > 0) {
+        this.userInterface.printError(
+          `${summaryTotal.failures} test case(s) have failed!`
+        );
+      }
 
-      totalStatements += summary["statement"].total.size;
-      totalBranches += summary["branch"].total.size;
-      totalFunctions += summary["function"].total.size;
+      const table: TableObject = {
+        headers: ["Target", "Statement", "Branch", "Function", "File"],
+        rows: [],
+        footers: ["Average"],
+      };
+
+      let coveredStatements = 0;
+      let coveredBranches = 0;
+      let coveredFunctions = 0;
+      let totalStatements = 0;
+      let totalBranches = 0;
+      let totalFunctions = 0;
+
+      for (const [target, summary] of summaryTotal.data.entries()) {
+        table.rows.push([
+          `${path.basename(target.path)}: ${target.name}`,
+          `${summary["statement"].covered.size} / ${summary["statement"].total.size}`,
+          `${summary["branch"].covered.size} / ${summary["branch"].total.size}`,
+          `${summary["function"].covered.size} / ${summary["function"].total.size}`,
+          target.path,
+        ]);
+
+        coveredStatements += summary["statement"].covered.size;
+        coveredBranches += summary["branch"].covered.size;
+        coveredFunctions += summary["function"].covered.size;
+
+        totalStatements += summary["statement"].total.size;
+        totalBranches += summary["branch"].total.size;
+        totalFunctions += summary["function"].total.size;
+      }
+
+      this.userInterface.printHeader("SEARCH RESULTS");
+
+      let statementPercentage = coveredStatements / totalStatements;
+      if (totalStatements === 0) statementPercentage = 1;
+
+      let branchPercentage = coveredBranches / totalBranches;
+      if (totalBranches === 0) branchPercentage = 1;
+
+      let functionPercentage = coveredFunctions / totalFunctions;
+      if (totalFunctions === 0) functionPercentage = 1;
+
+      table.footers.push(
+        `${statementPercentage * 100} %`,
+        `${branchPercentage * 100} %`,
+        `${functionPercentage * 100} %`,
+        ""
+      );
+      this.userInterface.printTable("Coverage", table);
+
+      this.metricManager.recordProperty(
+        PropertyName.STATEMENTS_COVERED,
+        `${coveredStatements}`
+      );
+      this.metricManager.recordProperty(
+        PropertyName.BRANCHES_COVERED,
+        `${coveredBranches}`
+      );
+      this.metricManager.recordProperty(
+        PropertyName.FUNCTIONS_COVERED,
+        `${coveredFunctions}`
+      );
+      this.metricManager.recordProperty(
+        PropertyName.BRANCHES_TOTAL,
+        `${totalBranches}`
+      );
+      this.metricManager.recordProperty(
+        PropertyName.STATEMENTS_TOTAL,
+        `${totalStatements}`
+      );
+      this.metricManager.recordProperty(
+        PropertyName.FUNCTIONS_TOTAL,
+        `${totalFunctions}`
+      );
+    } catch (error) {
+      if (error === "timeout") {
+        JavaScriptLauncher.LOGGER.error(
+          "A timeout error occured during assertion gathering or final results processing, cannot calculate the final results unfortunately"
+        );
+      } else {
+        throw error;
+      }
     }
-
-    this.userInterface.printHeader("SEARCH RESULTS");
-
-    let statementPercentage = coveredStatements / totalStatements;
-    if (totalStatements === 0) statementPercentage = 1;
-
-    let branchPercentage = coveredBranches / totalBranches;
-    if (totalBranches === 0) branchPercentage = 1;
-
-    let functionPercentage = coveredFunctions / totalFunctions;
-    if (totalFunctions === 0) functionPercentage = 1;
-
-    table.footers.push(
-      `${statementPercentage * 100} %`,
-      `${branchPercentage * 100} %`,
-      `${functionPercentage * 100} %`,
-      ""
-    );
-    this.userInterface.printTable("Coverage", table);
-
-    this.metricManager.recordProperty(
-      PropertyName.STATEMENTS_COVERED,
-      `${coveredStatements}`
-    );
-    this.metricManager.recordProperty(
-      PropertyName.BRANCHES_COVERED,
-      `${coveredBranches}`
-    );
-    this.metricManager.recordProperty(
-      PropertyName.FUNCTIONS_COVERED,
-      `${coveredFunctions}`
-    );
-    this.metricManager.recordProperty(
-      PropertyName.BRANCHES_TOTAL,
-      `${totalBranches}`
-    );
-    this.metricManager.recordProperty(
-      PropertyName.STATEMENTS_TOTAL,
-      `${totalStatements}`
-    );
-    this.metricManager.recordProperty(
-      PropertyName.FUNCTIONS_TOTAL,
-      `${totalFunctions}`
-    );
 
     // other results
     const archiveSizeBefore = [...this.archives.values()].reduce(
