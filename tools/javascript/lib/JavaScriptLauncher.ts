@@ -551,33 +551,38 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
       this.runner
     );
 
-    // TODO fix hardcoded paths
-    await suiteBuilder.runSuite(
+    // gather assertions
+    let paths = suiteBuilder.createSuite(
       finalEncodings,
-      "../instrumented",
+      "../instrumented", // TODO fix hardcoded paths
       this.arguments_.testDirectory,
       true,
+      false,
       false
     );
+    await suiteBuilder.runSuite(finalEncodings, paths, true);
 
     // reset states
     this.storageManager.clearTemporaryDirectory([
       this.arguments_.testDirectory,
     ]);
 
-    const { stats, instrumentationData } = await suiteBuilder.runSuite(
+    // get final results
+    paths = suiteBuilder.createSuite(
       finalEncodings,
-      "../instrumented",
+      "../instrumented", // TODO fix hardcoded paths
       this.arguments_.testDirectory,
       false,
-      true
+      false,
+      false
     );
-
-    if (stats.failures > 0) {
-      this.userInterface.printError("Test case has failed!");
+    const results = await suiteBuilder.runSuite(finalEncodings, paths, false);
+    const summaryTotal = suiteBuilder.summariseResults(results, this.targets);
+    if (summaryTotal.failures > 0) {
+      this.userInterface.printError(
+        `${summaryTotal.failures} test case(s) have failed!`
+      );
     }
-
-    this.userInterface.printHeader("SEARCH RESULTS");
 
     const table: TableObject = {
       headers: ["Target", "Statement", "Branch", "Function", "File"],
@@ -585,71 +590,61 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
       footers: ["Average"],
     };
 
-    const overall = {
-      branch: 0,
-      statement: 0,
-      function: 0,
-    };
-    let totalBranches = 0;
+    let coveredStatements = 0;
+    let coveredBranches = 0;
+    let coveredFunctions = 0;
     let totalStatements = 0;
+    let totalBranches = 0;
     let totalFunctions = 0;
-    for (const file of Object.keys(instrumentationData)) {
-      const target = this.targets.find(
-        (target: Target) => target.path === file
-      );
-      if (!target) {
-        continue;
-      }
 
-      const data = instrumentationData[file];
-
-      const summary = {
-        branch: 0,
-        statement: 0,
-        function: 0,
-      };
-
-      for (const statementKey of Object.keys(data.s)) {
-        summary["statement"] += data.s[statementKey] ? 1 : 0;
-        overall["statement"] += data.s[statementKey] ? 1 : 0;
-      }
-
-      for (const branchKey of Object.keys(data.b)) {
-        summary["branch"] += data.b[branchKey][0] ? 1 : 0;
-        overall["branch"] += data.b[branchKey][0] ? 1 : 0;
-        summary["branch"] += data.b[branchKey][1] ? 1 : 0;
-        overall["branch"] += data.b[branchKey][1] ? 1 : 0;
-      }
-
-      for (const functionKey of Object.keys(data.f)) {
-        summary["function"] += data.f[functionKey] ? 1 : 0;
-        overall["function"] += data.f[functionKey] ? 1 : 0;
-      }
-
-      totalStatements += Object.keys(data.s).length;
-      totalBranches += Object.keys(data.b).length * 2;
-      totalFunctions += Object.keys(data.f).length;
-
+    for (const [target, summary] of summaryTotal.data.entries()) {
       table.rows.push([
         `${path.basename(target.path)}: ${target.name}`,
-        `${summary["statement"]} / ${Object.keys(data.s).length}`,
-        `${summary["branch"]} / ${Object.keys(data.b).length * 2}`,
-        `${summary["function"]} / ${Object.keys(data.f).length}`,
+        `${summary["statement"].covered.size} / ${summary["statement"].total.size}`,
+        `${summary["branch"].covered.size} / ${summary["branch"].total.size}`,
+        `${summary["function"].covered.size} / ${summary["function"].total.size}`,
         target.path,
       ]);
+
+      coveredStatements += summary["statement"].covered.size;
+      coveredBranches += summary["branch"].covered.size;
+      coveredFunctions += summary["function"].covered.size;
+
+      totalStatements += summary["statement"].total.size;
+      totalBranches += summary["branch"].total.size;
+      totalFunctions += summary["function"].total.size;
     }
 
-    this.metricManager.recordProperty(
-      PropertyName.BRANCHES_COVERED,
-      `${overall["branch"]}`
+    this.userInterface.printHeader("SEARCH RESULTS");
+
+    let statementPercentage = coveredStatements / totalStatements;
+    if (totalStatements === 0) statementPercentage = 1;
+
+    let branchPercentage = coveredBranches / totalBranches;
+    if (totalBranches === 0) branchPercentage = 1;
+
+    let functionPercentage = coveredFunctions / totalFunctions;
+    if (totalFunctions === 0) functionPercentage = 1;
+
+    table.footers.push(
+      `${statementPercentage * 100} %`,
+      `${branchPercentage * 100} %`,
+      `${functionPercentage * 100} %`,
+      ""
     );
+    this.userInterface.printTable("Coverage", table);
+
     this.metricManager.recordProperty(
       PropertyName.STATEMENTS_COVERED,
-      `${overall["statement"]}`
+      `${coveredStatements}`
+    );
+    this.metricManager.recordProperty(
+      PropertyName.BRANCHES_COVERED,
+      `${coveredBranches}`
     );
     this.metricManager.recordProperty(
       PropertyName.FUNCTIONS_COVERED,
-      `${overall["function"]}`
+      `${coveredFunctions}`
     );
     this.metricManager.recordProperty(
       PropertyName.BRANCHES_TOTAL,
@@ -665,29 +660,21 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
     );
 
     // other results
+    const archiveSizeBefore = [...this.archives.values()].reduce(
+      (p, c) => p + c.size,
+      0
+    );
     this.metricManager.recordProperty(
       PropertyName.ARCHIVE_SIZE,
-      `${this.archives.size}`
+      `${archiveSizeBefore}`
+    );
+    const archiveSizeAfter = [...finalEncodings.values()].reduce(
+      (p, c) => p + c.length,
+      0
     );
     this.metricManager.recordProperty(
       PropertyName.MINIMIZED_ARCHIVE_SIZE,
-      `${this.archives.size}`
-    );
-
-    overall["statement"] /= totalStatements;
-    if (totalStatements === 0) overall["statement"] = 1;
-
-    overall["branch"] /= totalBranches;
-    if (totalBranches === 0) overall["branch"] = 1;
-
-    overall["function"] /= totalFunctions;
-    if (totalFunctions === 0) overall["function"] = 1;
-
-    table.footers.push(
-      `${overall["statement"] * 100} %`,
-      `${overall["branch"] * 100} %`,
-      `${overall["function"] * 100} %`,
-      ""
+      `${archiveSizeAfter}`
     );
 
     const originalSourceDirectory = path
@@ -697,10 +684,8 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
       )
       .replace(path.basename(this.arguments_.targetRootDirectory), "");
 
-    this.userInterface.printTable("Coverage", table);
-
     // create final suite
-    await suiteBuilder.runSuite(
+    suiteBuilder.createSuite(
       finalEncodings,
       originalSourceDirectory,
       this.arguments_.testDirectory,

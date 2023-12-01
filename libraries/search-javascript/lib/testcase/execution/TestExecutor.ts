@@ -156,7 +156,7 @@ async function runMocha(silent: boolean, paths: string[], timeout: number) {
 
   const cache = new Set();
 
-  // this actually removes all repeating values which is not good
+  // TODO this actually removes all repeating values which is not good
   process.send(
     JSON.parse(
       JSON.stringify(result, (_, value) => {
