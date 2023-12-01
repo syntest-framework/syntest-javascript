@@ -26,7 +26,6 @@ import {
   globalVariables,
   reservedKeywords,
 } from "@syntest/ast-visitor-javascript";
-import { ImplementationError } from "@syntest/diagnostics";
 
 const name = "syntest";
 
@@ -199,13 +198,7 @@ function coverAssignmentPattern(path: NodePath<t.AssignmentPattern>) {
 
   const increment = this.getBranchIncrement(path, b, undefined);
 
-  const parent = path.parentPath;
-
-  if (!parent.isFunction()) {
-    throw new ImplementationError(
-      "Assignment pattern should always be in a function"
-    );
-  }
+  const parent = path.getFunctionParent();
 
   const body = parent.get("body");
 
