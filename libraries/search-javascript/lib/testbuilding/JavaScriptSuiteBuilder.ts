@@ -121,7 +121,7 @@ export class JavaScriptSuiteBuilder {
 
     for (const [filePath, amount] of Object.entries(paths)) {
       const { stats, instrumentationData, assertionData } =
-        await this.runner.run([filePath], amount);
+        await this.runner.run([filePath], amount * 2);
 
       if (gatherAssertionData && assertionData) {
         // put assertion data on testCases
