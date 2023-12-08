@@ -210,7 +210,7 @@ function coverAssignmentPattern(path: NodePath<t.AssignmentPattern>) {
   } else {
     console.error("Unable to process function body node:", path.node.type);
   }
-  
+
   this.insertBranchCounter(path, path.get("right"), b);
 }
 

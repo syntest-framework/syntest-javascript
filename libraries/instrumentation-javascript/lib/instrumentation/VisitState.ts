@@ -271,10 +271,7 @@ export class VisitState {
     } /* istanbul ignore else: not expected */ else if (path.isExpression()) {
       path.replaceWith(T.sequenceExpression([increment, path.node]));
     } else {
-      console.error(
-        "Unable to insert counter for node:",
-        path.node.type
-      );
+      console.error("Unable to insert counter for node:", path.node.type);
     }
   }
 
