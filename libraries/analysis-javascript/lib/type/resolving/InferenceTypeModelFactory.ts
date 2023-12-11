@@ -928,7 +928,11 @@ export class InferenceTypeModelFactory extends TypeModelFactory {
           // add array type to object
           this._typeModel.addElementType(objectId, relation.id);
 
-          if (objectElement && objectElement.type === ElementType.Identifier && objectElement.name === 'arguments') {
+          if (
+            objectElement &&
+            objectElement.type === ElementType.Identifier &&
+            objectElement.name === "arguments"
+          ) {
             // e.g. arguments[0]
             // TODO get function parent and add the argument (impossible right now)
           }
