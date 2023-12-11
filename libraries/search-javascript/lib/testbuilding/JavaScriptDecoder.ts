@@ -17,6 +17,7 @@
  */
 
 import { ImplementationError } from "@syntest/diagnostics";
+import { getLogger, Logger } from "@syntest/logging";
 import { Decoder } from "@syntest/search";
 
 import { JavaScriptTestCase } from "../testcase/JavaScriptTestCase";
@@ -30,9 +31,11 @@ import { assertionFunction } from "./assertionFunctionTemplate";
 import { ContextBuilder } from "./ContextBuilder";
 
 export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
+  protected static LOGGER: Logger;
   private targetRootDirectory: string;
 
   constructor(targetRootDirectory: string) {
+    JavaScriptDecoder.LOGGER = getLogger(JavaScriptDecoder.name);
     this.targetRootDirectory = targetRootDirectory;
   }
 
@@ -76,9 +79,10 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
       }
 
       if (decodings.length === 0) {
-        throw new ImplementationError(
+        JavaScriptDecoder.LOGGER.warn(
           "No statements in test case after error reduction"
         );
+        continue;
       }
 
       const metaCommentBlock = this.generateMetaComments(testCase);
@@ -232,8 +236,15 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
 
         // TODO dirty hack because json.parse does not allow undefined/NaN
         // TODO undefined/NaN can happen in arrays
-        stringified = stringified.replace("undefined", "null");
-        stringified = stringified.replace("NaN", "null");
+        // TODO should not be within quotes
+        stringified = stringified.replaceAll(
+          /undefined(?=[^"]*(?:"[^"]*"[^"]*)*$)/g,
+          "null"
+        );
+        stringified = stringified.replaceAll(
+          /NaN(?=[^"]*(?:"[^"]*"[^"]*)*$)/g,
+          "null"
+        );
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const value = JSON.parse(stringified);
