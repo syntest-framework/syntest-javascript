@@ -541,7 +541,6 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
         break;
       }
       case "proportional": {
-        const start = process.hrtime.bigint();
         chosenType = this.rootContext
           .getTypeModel()
           .getRandomType(
@@ -549,7 +548,6 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
             this.randomTypeProbability,
             id
           );
-        console.log("timing", process.hrtime.bigint() - start);
         break;
       }
       case "ranked": {
