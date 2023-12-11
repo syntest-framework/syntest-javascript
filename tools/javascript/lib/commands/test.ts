@@ -217,6 +217,11 @@ export type TestCommandOptions = {
   typePoolProbability: number;
   statementPool: boolean;
   statementPoolProbability: number;
+
+  addRemoveArgumentProbability: number;
+  addArgumentProbability: number;
+  removeArgumentProbability: number;
+
   executionTimeout: number;
   testTimeout: number;
 
