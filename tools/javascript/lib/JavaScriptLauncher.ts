@@ -737,7 +737,9 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
           this.arguments_.syntaxForgiving,
           this.arguments_.stringAlphabet
         ),
-        functionObjectives
+        this.arguments_.functionObjectivesEnabled
+          ? functionObjectives
+          : undefined
       );
     const pathObjectives = extractPathObjectivesFromProgram<JavaScriptTestCase>(
       cfp,
@@ -746,23 +748,51 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
         this.arguments_.syntaxForgiving,
         this.arguments_.stringAlphabet
       ),
-      functionObjectives
+      this.arguments_.functionObjectivesEnabled ? functionObjectives : undefined
     );
 
     this.userInterface.printTable("Objective Counts", {
-      headers: ["Type", "Count"],
+      headers: ["Type", "Count", "Enabled"],
       rows: [
-        ["function", `${functionObjectives.length}`],
-        ["branch", `${branchObjectives.length}`],
-        ["path", `${pathObjectives.length}`],
+        [
+          "function",
+          `${functionObjectives.length}`,
+          String(this.arguments_.functionObjectivesEnabled),
+        ],
+        [
+          "branch",
+          `${branchObjectives.length}`,
+          String(this.arguments_.branchObjectivesEnabled),
+        ],
+        [
+          "path",
+          `${pathObjectives.length}`,
+          String(this.arguments_.pathObjectivesEnabled),
+        ],
       ],
     });
 
-    const currentSubject = new JavaScriptSubject(target, [
-      ...functionObjectives,
-      ...branchObjectives,
-      // ...pathObjectives,
-    ]);
+    if (
+      !this.arguments_.functionObjectivesEnabled &&
+      !this.arguments_.branchObjectivesEnabled &&
+      !this.arguments_.pathObjectivesEnabled
+    ) {
+      JavaScriptLauncher.LOGGER.warn("All objectives are disabled!");
+    }
+
+    const objectives: ObjectiveFunction<JavaScriptTestCase>[] = [];
+
+    if (this.arguments_.functionObjectivesEnabled) {
+      objectives.push(...functionObjectives);
+    }
+    if (this.arguments_.branchObjectivesEnabled) {
+      objectives.push(...branchObjectives);
+    }
+    if (this.arguments_.pathObjectivesEnabled) {
+      objectives.push(...pathObjectives);
+    }
+
+    const currentSubject = new JavaScriptSubject(target, objectives);
 
     const rootTargets = currentSubject
       .getActionableTargets()
