@@ -153,7 +153,7 @@ async function runMocha(silent: boolean, paths: string[], timeout: number) {
   resetInstrumentationData();
   (<GlobalType>(<unknown>global)).__meta__ = undefined;
   (<GlobalType>(<unknown>global)).__assertion__ = undefined;
-  
+
   const cache = new Set();
 
   // This is to prevent circular references
