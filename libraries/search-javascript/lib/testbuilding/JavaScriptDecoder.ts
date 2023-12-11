@@ -234,9 +234,7 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
           continue;
         }
 
-        // TODO dirty hack because json.parse does not allow undefined/NaN
-        // TODO undefined/NaN can happen in arrays
-        // TODO should not be within quotes
+        // Dirty hack because json.parse does not allow undefined/NaN
         stringified = stringified.replaceAll(
           /undefined(?=[^"]*(?:"[^"]*"[^"]*)*$)/g,
           "null"
