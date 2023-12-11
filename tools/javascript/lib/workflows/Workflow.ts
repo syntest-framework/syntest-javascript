@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-<%= YEAR %> Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest JavaScript.
  *
@@ -15,3 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import { Target } from "@syntest/analysis-javascript";
+import { JavaScriptTestCase } from "@syntest/search-javascript";
+
+export interface Workflow {
+  execute(
+    encodingMap: Map<Target, JavaScriptTestCase[]>
+  ): Promise<Map<Target, JavaScriptTestCase[]>>;
+}

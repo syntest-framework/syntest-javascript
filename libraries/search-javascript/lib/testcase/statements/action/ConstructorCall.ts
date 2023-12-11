@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest Javascript.
  *
@@ -17,6 +17,7 @@
  */
 
 import { Export, TypeEnum } from "@syntest/analysis-javascript";
+import { ImplementationError } from "@syntest/diagnostics";
 import { prng } from "@syntest/prng";
 
 import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
@@ -59,6 +60,11 @@ export class ConstructorCall extends ActionStatement {
       arguments_,
       export_
     );
+    if (!export_) {
+      throw new ImplementationError(
+        "Export of constructor call cannot be undefined"
+      );
+    }
     this._classIdentifier = classIdentifier;
   }
 

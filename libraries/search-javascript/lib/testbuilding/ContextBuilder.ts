@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest Javascript.
  *
@@ -23,6 +23,7 @@ import {
   globalVariables,
   reservedKeywords,
 } from "@syntest/ast-visitor-javascript";
+import { ImplementationError } from "@syntest/diagnostics";
 import { getLogger, Logger } from "@syntest/logging";
 
 import { ClassActionStatement } from "../testcase/statements/action/ClassActionStatement";
@@ -214,7 +215,9 @@ export class ContextBuilder {
   // TODO we could gather all the imports of a certain path together into one import
   private _getImportString(_path: string, import_: Import): string {
     if (import_.module) {
-      throw new Error("Only non module imports can use import statements");
+      throw new ImplementationError(
+        "Only non module imports can use import statements"
+      );
     }
 
     // if (import_.renamed) {
@@ -240,7 +243,9 @@ export class ContextBuilder {
 
   private _getRequireString(_path: string, import_: Import): Require {
     if (!import_.module) {
-      throw new Error("Only module imports can use require statements");
+      throw new ImplementationError(
+        "Only module imports can use require statements"
+      );
     }
 
     const require: Require = {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest JavaScript.
  *
@@ -72,7 +72,7 @@ export class TypeModel {
     if (id1 === id2) {
       // no self loops
       return;
-      // throw new Error(`ids should not be equal to add a relation id: ${id1}`);
+      // throw new ImplementationError(`ids should not be equal to add a relation id: ${id1}`);
     }
     const node1 = this.getTypeNode(id1);
     const node2 = this.getTypeNode(id2);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest Javascript.
  *
@@ -21,9 +21,6 @@ import { Encoding, EncodingSampler } from "@syntest/search";
 
 import { ContextBuilder } from "../../testbuilding/ContextBuilder";
 
-/**
- * @author Dimitri Stallenberg
- */
 export abstract class Statement {
   private _variableIdentifier: string;
   private _typeIdentifier: string;

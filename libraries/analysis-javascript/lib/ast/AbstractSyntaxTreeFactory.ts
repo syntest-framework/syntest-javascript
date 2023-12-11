@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest Javascript.
  *
@@ -18,18 +18,19 @@
 
 import { transformSync } from "@babel/core";
 import * as t from "@babel/types";
-import { AbstractSyntaxTreeFactory as CoreAbstractSyntaxTreeFactory } from "@syntest/analysis";
+import { AbstractSyntaxTreeFactory as FrameworkAbstractSyntaxTreeFactory } from "@syntest/analysis";
+import { Result, success } from "@syntest/diagnostics";
 
 import { defaultBabelOptions } from "./defaultBabelConfig";
 
 export class AbstractSyntaxTreeFactory
-  implements CoreAbstractSyntaxTreeFactory<t.Node>
+  implements FrameworkAbstractSyntaxTreeFactory<t.Node>
 {
-  convert(filepath: string, source: string): t.Node {
+  convert(filepath: string, source: string): Result<t.Node> {
     const options: unknown = JSON.parse(JSON.stringify(defaultBabelOptions));
 
     const codeMap = transformSync(source, options);
 
-    return codeMap.ast;
+    return success(codeMap.ast);
   }
 }

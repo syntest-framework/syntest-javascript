@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest Javascript.
  *
@@ -17,8 +17,8 @@
  */
 
 import { TypeEnum } from "@syntest/analysis-javascript";
+import { IllegalArgumentError } from "@syntest/diagnostics";
 import { prng } from "@syntest/prng";
-import { shouldNeverHappen } from "@syntest/search";
 
 import { ContextBuilder } from "../../../testbuilding/ContextBuilder";
 import { JavaScriptTestCaseSampler } from "../../sampling/JavaScriptTestCaseSampler";
@@ -27,9 +27,6 @@ import { Decoding, Statement } from "../Statement";
 import { ActionStatement } from "./ActionStatement";
 import { ConstantObject } from "./ConstantObject";
 
-/**
- * @author Dimitri Stallenberg
- */
 export class ObjectFunctionCall extends ActionStatement {
   private _object: ConstantObject;
 
@@ -87,16 +84,21 @@ export class ObjectFunctionCall extends ActionStatement {
 
   override setChild(index: number, newChild: Statement) {
     if (!newChild) {
-      throw new Error("Invalid new child!");
+      throw new IllegalArgumentError("Invalid new child!");
     }
 
     if (index < 0 || index > this.args.length) {
-      throw new Error(shouldNeverHappen(`Invalid index used index: ${index}`));
+      throw new IllegalArgumentError("Child index is not within range", {
+        context: { index: index, range: `0 >= index <= ${this.args.length}` },
+      });
     }
 
     if (index === this.args.length) {
       if (!(newChild instanceof ConstantObject)) {
-        throw new TypeError(shouldNeverHappen("should be a constant object"));
+        throw new IllegalArgumentError(
+          "Last child should always be of type ConstantObject",
+          { context: { index: index } }
+        );
       }
       this._object = newChild;
     } else {

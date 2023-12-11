@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest Javascript.
  *
@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+import { ImplementationError } from "@syntest/diagnostics";
 import { prng } from "@syntest/prng";
 import { Crossover } from "@syntest/search";
 
@@ -50,7 +51,9 @@ type MatchingPair = {
 export class TreeCrossover extends Crossover<JavaScriptTestCase> {
   public crossOver(parents: JavaScriptTestCase[]): JavaScriptTestCase[] {
     if (parents.length !== 2) {
-      throw new Error(`Expected exactly 2 parents, got: ${parents.length}`);
+      throw new ImplementationError(
+        `Expected exactly 2 parents, got: ${parents.length}`
+      );
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion

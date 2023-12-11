@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest Javascript.
  *
@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+import { IllegalArgumentError } from "@syntest/diagnostics";
 import { getLogger, Logger } from "@syntest/logging";
 import { prng } from "@syntest/prng";
 import { Decoder, Encoding } from "@syntest/search";
@@ -48,7 +49,9 @@ export class JavaScriptTestCase extends Encoding {
     this._roots = roots.map((value) => value.copy());
 
     if (roots.length === 0) {
-      throw new Error("Requires atleast one root action statement");
+      throw new IllegalArgumentError(
+        "Requires atleast one root action statement"
+      );
     }
 
     this._statementPool = new StatementPool(roots);

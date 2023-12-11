@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest JavaScript.
  *
@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 import traverse from "@babel/traverse";
+import { isFailure, unwrap } from "@syntest/diagnostics";
 
 import { AbstractSyntaxTreeFactory } from "../../lib/ast/AbstractSyntaxTreeFactory";
 import { ElementVisitor } from "../../lib/type/discovery/element/ElementVisitor";
@@ -25,7 +26,9 @@ import { InferenceTypeModelFactory } from "../../lib/type/resolving/InferenceTyp
 
 function helper(source: string) {
   const generator = new AbstractSyntaxTreeFactory();
-  const ast = generator.convert("", source);
+  const result = generator.convert("", source);
+  if (isFailure(result)) throw result.error;
+  const ast = unwrap(result);
 
   const elementVisitor = new ElementVisitor("", false);
   traverse(ast, elementVisitor);
@@ -35,8 +38,8 @@ function helper(source: string) {
 
   const factory = new InferenceTypeModelFactory();
   const model = factory.resolveTypes(
-    new Map([["", elementVisitor.elementMap]]),
-    new Map([["", relationVisitor.relationMap]])
+    elementVisitor.elementMap,
+    relationVisitor.relationMap
   );
 
   return {

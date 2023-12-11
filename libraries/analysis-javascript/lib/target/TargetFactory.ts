@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest Javascript.
  *
@@ -20,7 +20,8 @@ import * as path from "node:path";
 
 import { traverse } from "@babel/core";
 import * as t from "@babel/types";
-import { TargetFactory as CoreTargetFactory } from "@syntest/analysis";
+import { TargetFactory as FrameworkTargetFactory } from "@syntest/analysis";
+import { Result, success } from "@syntest/diagnostics";
 
 import { Factory } from "../Factory";
 
@@ -30,12 +31,10 @@ import { TargetVisitor } from "./TargetVisitor";
 
 /**
  * TargetFactory for Javascript.
- *
- * @author Dimitri Stallenberg
  */
 export class TargetFactory
   extends Factory
-  implements CoreTargetFactory<t.Node>
+  implements FrameworkTargetFactory<t.Node>
 {
   /**
    * Generate function map for specified target.
@@ -43,7 +42,7 @@ export class TargetFactory
    * @param filePath The filePath of the target
    * @param AST The AST of the target
    */
-  extract(filePath: string, AST: t.Node): Target {
+  extract(filePath: string, AST: t.Node): Result<Target> {
     // bit sad that we have to do this twice, but we need to know the exports
     const exportVisitor = new ExportVisitor(filePath, this.syntaxForgiving);
 
@@ -57,10 +56,10 @@ export class TargetFactory
     // we should check wether every export is actually used
     // TODO
 
-    return {
+    return success({
       path: filePath,
       name: path.basename(filePath),
       subTargets: visitor.subTargets,
-    };
+    });
   }
 }

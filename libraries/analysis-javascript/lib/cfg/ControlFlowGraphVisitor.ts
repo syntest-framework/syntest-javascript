@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest JavaScript.
  *
@@ -28,6 +28,7 @@ import {
   Node,
   NodeType,
 } from "@syntest/cfg";
+import { ImplementationError } from "@syntest/diagnostics";
 import { getLogger, Logger } from "@syntest/logging";
 
 export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
@@ -52,17 +53,17 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
 
   get cfg(): ControlFlowProgram {
     if (!this._nodes.has("ENTRY")) {
-      throw new Error("No entry node found");
+      throw new ImplementationError("No entry node found");
     }
     if (!this._nodes.has("SUCCESS_EXIT")) {
-      throw new Error("No success exit node found");
+      throw new ImplementationError("No success exit node found");
     }
     if (!this._nodes.has("ERROR_EXIT")) {
-      throw new Error("No error exit node found");
+      throw new ImplementationError("No error exit node found");
     }
 
     if (this._nodesList.length !== this._nodes.size) {
-      throw new Error("Number of nodes dont match");
+      throw new ImplementationError("Number of nodes dont match");
     }
 
     const entryNode = this._nodes.get("ENTRY");
@@ -176,7 +177,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
 
   private _getBreakNodes(): Set<string> {
     if (this._regularBreakNodesStack.length === 0) {
-      throw new Error("No break nodes found");
+      throw new ImplementationError("No break nodes found");
     }
     return this._regularBreakNodesStack[
       this._regularBreakNodesStack.length - 1
@@ -185,7 +186,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
 
   private _getContinueNodes(): Set<string> {
     if (this._regularContinueNodesStack.length === 0) {
-      throw new Error("No continue nodes found");
+      throw new ImplementationError("No continue nodes found");
     }
     return this._regularContinueNodesStack[
       this._regularContinueNodesStack.length - 1
@@ -225,7 +226,9 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     );
 
     if (this._nodes.has(id)) {
-      throw new Error(`Node already registered ${id}`);
+      throw new ImplementationError("Node already registered", {
+        context: { nodeId: id },
+      });
     }
     this._nodes.set(id, node);
     this._nodesList.push(node);
@@ -235,7 +238,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
 
   public _getPlaceholderNodeId(path: NodePath<t.Node>): string {
     if (path.node.loc === undefined) {
-      throw new Error(
+      throw new ImplementationError(
         `Node ${path.type} in file '${this._filePath}' does not have a location`
       );
     }
@@ -291,7 +294,9 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     );
 
     if (this._nodes.has(id)) {
-      throw new Error(`Node already registered ${id}`);
+      throw new ImplementationError("Node already registered", {
+        context: { nodeId: id },
+      });
     }
     this._nodes.set(id, node);
     this._nodesList.push(node);
@@ -327,8 +332,9 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
       this._edges.push(
         this._createEdge(this._nodes.get(parent), node, this._edgeType)
       );
-      this._edgeType = EdgeType.NORMAL;
     }
+
+    this._edgeType = EdgeType.NORMAL;
   }
 
   public Block: (path: NodePath<t.Block>) => void = (path) => {
@@ -370,7 +376,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     path.traverse(subVisitor);
 
     if (!subVisitor._nodes.has("ENTRY")) {
-      throw new Error("Should not be possible");
+      throw new ImplementationError("No entry node found");
     }
 
     const name = path.has("id")
@@ -401,7 +407,9 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
     );
 
     if (this._nodes.has(this._getNodeId(path))) {
-      throw new Error(`Id already used id: ${this._getNodeId(path)}`);
+      throw new ImplementationError("Id already used", {
+        context: { nodeId: this._getNodeId(path) },
+      });
     } else {
       const node = this._createNode(path);
 
@@ -423,6 +431,59 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
       this._connectToParents(node);
       this._currentParents = [node.id];
     }
+  };
+
+  public AssignmentPattern: (path: NodePath<t.AssignmentPattern>) => void = (
+    path
+  ) => {
+    ControlFlowGraphVisitor.LOGGER.debug(
+      `Entering AssignmentPattern at ${this._getNodeId(path)}`
+    );
+
+    const branchNode = this._createNode(path);
+    this._connectToParents(branchNode);
+    this._currentParents = [branchNode.id];
+
+    const testNode = this._createNode(path.get("left")); // bit odd because the test is essentially if the argument is given or not
+    this._connectToParents(testNode);
+    this._currentParents = [testNode.id];
+
+    // consequent
+    this._edgeType = EdgeType.CONDITIONAL_TRUE;
+    // there is no consequent since that is the usual case when an argument is give
+    const consequent = this._createPlaceholderNode(path);
+    this._connectToParents(consequent);
+    this._currentParents = [consequent.id];
+
+    const consequentNodes = this._currentParents;
+
+    // alternate (the default argument)
+    this._currentParents = [testNode.id];
+    this._edgeType = EdgeType.CONDITIONAL_FALSE;
+
+    const sizeBefore = this._nodesList.length;
+    path.get("right").visit();
+
+    // there either is no alternate or it is a literal
+    if (sizeBefore === this._nodesList.length) {
+      if (path.has("right")) {
+        // this probably means the "right"/default value is a literal (or something else this visitor does not pick up on)
+        const alternate = this._createNode(path.get("right"));
+        this._connectToParents(alternate);
+        this._currentParents = [alternate.id];
+      } else {
+        // there is no default value specified?? (should not be possible)
+        throw new ImplementationError(
+          "AssignmentPattern does not have a default value"
+        );
+      }
+    }
+
+    const alternateNodes = this._currentParents;
+
+    this._currentParents = [...alternateNodes, ...consequentNodes];
+
+    path.skip();
   };
 
   public Conditional: (path: NodePath<t.Conditional>) => void = (path) => {
@@ -730,8 +791,8 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
       path.get("update").visit();
 
       if (beforeSize === this._nodesList.length) {
-        throw new Error(
-          `No node was added for the update part of the for loop,`
+        throw new ImplementationError(
+          `No node was added for the update part of the for loop`
         );
       }
     }
@@ -789,15 +850,15 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
 
     if (!path.has("left")) {
       // unsupported
-      throw new Error(
-        `ForInStatement left not implemented at ${this._getNodeId(path)}`
-      );
+      throw new ImplementationError("ForInStatement left not implemented", {
+        context: { nodeId: this._getNodeId(path) },
+      });
     }
     if (!path.has("right")) {
       // unsupported
-      throw new Error(
-        `ForInStatement right not implemented at ${this._getNodeId(path)}`
-      );
+      throw new ImplementationError("ForInStatement right not implemented", {
+        context: { nodeId: this._getNodeId(path) },
+      });
     }
 
     // left
@@ -872,15 +933,15 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
 
     if (!path.has("left")) {
       // unsupported
-      throw new Error(
-        `ForOfStatement left not implemented at ${this._getNodeId(path)}`
-      );
+      throw new ImplementationError("ForInStatement left not implemented", {
+        context: { nodeId: this._getNodeId(path) },
+      });
     }
     if (!path.has("right")) {
       // unsupported
-      throw new Error(
-        `ForOfStatement right not implemented at ${this._getNodeId(path)}`
-      );
+      throw new ImplementationError("ForInStatement right not implemented", {
+        context: { nodeId: this._getNodeId(path) },
+      });
     }
 
     // left
@@ -981,8 +1042,8 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
 
         // alternate
         // placeholder
-        this._edgeType = EdgeType.CONDITIONAL_FALSE;
         this._currentParents = [caseTestNode.id];
+        this._edgeType = EdgeType.CONDITIONAL_FALSE;
         const alternateNode = this._createPlaceholderNode(caseNode);
         this._connectToParents(alternateNode);
         this._currentParents = [alternateNode.id]; // normal
@@ -1034,11 +1095,9 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
       // labeled break node
       const label = path.get("label").node.name;
       if (!this._labeledBreakNodes.has(label)) {
-        throw new Error(
-          `Label ${label} does not exist for break node at ${this._getNodeId(
-            path
-          )}`
-        );
+        throw new ImplementationError("Label does not exist for break node", {
+          context: { label: label, id: this._getNodeId(path) },
+        });
       }
       this._labeledBreakNodes.get(label).add(node.id);
     } else {
@@ -1063,11 +1122,9 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
       // labeled continue node
       const label = path.get("label").node.name;
       if (!this._labeledContinueNodes.has(label)) {
-        throw new Error(
-          `Label ${label} does not exist for continue node at ${this._getNodeId(
-            path
-          )}`
-        );
+        throw new ImplementationError("Label does not exist for break node", {
+          context: { label: label, id: this._getNodeId(path) },
+        });
       }
       this._labeledContinueNodes.get(label).add(node.id);
     } else {

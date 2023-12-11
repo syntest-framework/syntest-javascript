@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest Javascript.
  *
@@ -25,6 +25,7 @@ import {
 } from "@syntest/analysis-javascript";
 import * as path from "node:path";
 import { StorageManager } from "@syntest/storage";
+import { isFailure, unwrap } from "@syntest/diagnostics";
 export interface OutputObject {
   fileCoverage?: any;
   sourceMappingURL?: any;
@@ -50,12 +51,16 @@ export class Instrumenter {
     );
 
     // overwrite the stuff that needs instrumentation
-
     const targetPaths = [...targets.values()].map((target) => target.path);
 
     for (const targetPath of targetPaths) {
-      const source = rootContext.getSource(targetPath);
-      const instrumentedSource = await this.instrument(source, targetPath);
+      const result = rootContext.getSource(targetPath);
+      if (isFailure(result)) continue; // TODO skip failed target?
+
+      const instrumentedSource = await this.instrument(
+        unwrap(result),
+        targetPath
+      );
 
       const _path = path
         .normalize(targetPath)

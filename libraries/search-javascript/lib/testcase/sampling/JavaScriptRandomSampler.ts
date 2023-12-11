@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest Javascript.
  *
@@ -27,6 +27,12 @@ import {
   ObjectFunctionTarget,
   ObjectTarget,
 } from "@syntest/analysis-javascript";
+import {
+  ImplementationError,
+  isFailure,
+  unwrap,
+  unwrapOr,
+} from "@syntest/diagnostics";
 import { prng } from "@syntest/prng";
 
 import { JavaScriptSubject } from "../../search/JavaScriptSubject";
@@ -70,7 +76,10 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     stringAlphabet: string,
     stringMaxLength: number,
     deltaMutationProbability: number,
-    exploreIllegalValues: boolean
+    exploreIllegalValues: boolean,
+    addRemoveArgumentProbability: number,
+    addArgumentProbability: number,
+    removeArgumentProbability: number
   ) {
     super(
       subject,
@@ -88,7 +97,10 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       stringAlphabet,
       stringMaxLength,
       deltaMutationProbability,
-      exploreIllegalValues
+      exploreIllegalValues,
+      addRemoveArgumentProbability,
+      addArgumentProbability,
+      removeArgumentProbability
     );
   }
 
@@ -116,9 +128,14 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
       if (constructor_ && prng.nextBoolean(this.statementPoolProbability)) {
         // TODO ignoring getters and setters for now
-        const targets = this.rootContext.getSubTargets(
+        const result = this.rootContext.getSubTargets(
           constructor_.typeIdentifier.split(":")[0]
         );
+
+        if (isFailure(result)) throw result.error;
+
+        const targets = unwrap(result);
+
         const methods = <MethodTarget[]>(
           targets.filter(
             (target) =>
@@ -220,9 +237,11 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
           .find((target) => (<ClassTarget>target).id === id)
       );
       if (!result) {
-        throw new Error("missing class with id: " + id);
+        throw new ImplementationError("missing class with id: " + id);
       } else if (!isExported(result)) {
-        throw new Error("class with id: " + id + "is not exported");
+        throw new ImplementationError(
+          "class with id: " + id + "is not exported"
+        );
       }
       return result;
     }
@@ -251,14 +270,16 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       );
 
     if (constructor_.length > 1) {
-      throw new Error("Multiple constructors found for class");
+      throw new ImplementationError("Multiple constructors found for class");
     }
 
     if (constructor_.length === 0) {
       // default constructor no args
-      const export_ = [...this.rootContext.getAllExports().values()]
-        .flat()
-        .find((export_) => export_.id === class_.id);
+      // TODO bad splitting of ids (we should add paths to targets)
+      const filePath = class_.id.split(":")[0];
+      const export_ = unwrapOr(this.rootContext.getExports(filePath), []).find(
+        (export_) => export_.id === class_.id
+      );
 
       return new ConstructorCall(
         class_.id,
@@ -309,7 +330,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
         return this.sampleSetter(depth);
       }
       case "constructor": {
-        throw new Error("invalid path");
+        throw new ImplementationError("invalid path");
       }
       // No default
     }
@@ -404,9 +425,11 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
           .find((target) => (<ObjectTarget>target).id === id)
       );
       if (!result) {
-        throw new Error("missing object with id: " + id);
+        throw new ImplementationError("missing object with id: " + id);
       } else if (!isExported(result)) {
-        throw new Error("object with id: " + id + " is not exported");
+        throw new ImplementationError(
+          "object with id: " + id + " is not exported"
+        );
       }
       return result;
     }
@@ -492,7 +515,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
 
     const value = objectType.properties.get(property);
     if (!value) {
-      throw new Error(
+      throw new ImplementationError(
         `Property ${property} not found in object ${objectTypeId}`
       );
     }
@@ -532,7 +555,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
         break;
       }
       default: {
-        throw new Error(
+        throw new ImplementationError(
           "Invalid identifierDescription inference mode selected"
         );
       }
@@ -590,7 +613,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       }
     }
 
-    throw new Error(`unknown type: ${chosenType}`);
+    throw new ImplementationError(`unknown type: ${chosenType}`);
   }
 
   sampleObject(depth: number, id: string, typeId: string, name: string) {
@@ -614,9 +637,13 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
         switch (typeFromTypePool.kind) {
           case DiscoveredObjectKind.CLASS: {
             // find constructor of class
-            const targets = this.rootContext.getSubTargets(
+            const result = this.rootContext.getSubTargets(
               typeFromTypePool.id.split(":")[0]
             );
+
+            if (isFailure(result)) throw result.error;
+
+            const targets = unwrap(result);
             const constructor_ = <MethodTarget>(
               targets.find(
                 (target) =>
@@ -715,7 +742,7 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       .getTypeModel()
       .getObjectDescription(typeId);
 
-    const parameters: string[] = [];
+    let parameters: string[] = [];
 
     for (const [index, name] of typeObject.parameterNames.entries()) {
       parameters[index] = name;
@@ -727,6 +754,11 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
         parameters[index] = `param${index}`;
       }
     }
+
+    // filter duplicates
+    parameters = parameters.filter(
+      (item, index) => parameters.indexOf(item) === index
+    );
 
     if (typeObject.return.size === 0) {
       return new ArrowFunctionStatement(

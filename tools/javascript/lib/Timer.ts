@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-<%= YEAR %> Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest JavaScript.
  *
@@ -15,3 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+export async function timer<T>(
+  function_: () => T | Promise<T>
+): Promise<TimedResult<T>> {
+  const start = performance.now();
+
+  const result = await function_();
+  const timeInMs = performance.now() - start;
+
+  return {
+    time: timeInMs,
+    result: result,
+  };
+}
+
+export type TimedResult<R> = {
+  result: R;
+  time: number;
+};

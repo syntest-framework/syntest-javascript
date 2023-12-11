@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest Javascript.
  *
@@ -177,14 +177,40 @@ function entries(...enter) {
   };
 }
 
-function coverStatement(path) {
+function coverStatement(path: NodePath<t.Statement>) {
   this.insertStatementCounter(path);
 }
 
+function coverExpression(path: NodePath<t.Expression>) {
+  if (path.isBinaryExpression()) {
+    this.insertStatementCounter(path.get("left"));
+    this.insertStatementCounter(path.get("right"));
+  }
+}
+
 /* istanbul ignore next: no node.js support */
-function coverAssignmentPattern(path) {
+function coverAssignmentPattern(path: NodePath<t.AssignmentPattern>) {
+  const index = this.cov.newStatement(path.node.loc);
+  const statementIncrement = this.increase("s", index, null);
+
   const n = path.node;
   const b = this.cov.newBranch("default-arg", n.loc);
+
+  const increment = this.getBranchIncrement(path, b, undefined);
+
+  const parent = path.getFunctionParent();
+
+  const body = parent.get("body");
+
+  if (body.isBlockStatement()) {
+    body.node.body.unshift(
+      t.expressionStatement(statementIncrement),
+      t.expressionStatement(increment)
+    );
+  } else {
+    console.error("Unable to process function body node:", path.node.type);
+  }
+
   this.insertBranchCounter(path, path.get("right"), b);
 }
 
@@ -455,6 +481,10 @@ function coverLoopBranch(path: NodePath<t.Loop>) {
     });
   }
 
+  if (path.has("update")) {
+    this.insertStatementCounter(path.get("update"));
+  }
+
   if (path.has("test")) {
     const test = (<
       NodePath<t.ForStatement | t.WhileStatement | t.DoWhileStatement>
@@ -663,6 +693,7 @@ const codeVisitor = {
   BlockStatement: entries(), // ignore processing only
   ExportDefaultDeclaration: entries(), // ignore processing only
   ExportNamedDeclaration: entries(), // ignore processing only
+  Expression: entries(coverExpression),
   ClassMethod: entries(coverFunction),
   ClassDeclaration: entries(parenthesizedExpressionProp("superClass")),
   ClassProperty: entries(coverClassPropDeclarator),

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest Javascript.
  *
@@ -15,6 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import { ImplementationError } from "@syntest/diagnostics";
 
 import { ElementType } from "../discovery/element/Element";
 
@@ -71,5 +73,5 @@ export function elementTypeToTypingType(
     }
   }
 
-  throw new Error("Unknown element type");
+  throw new ImplementationError("Unknown element type");
 }
