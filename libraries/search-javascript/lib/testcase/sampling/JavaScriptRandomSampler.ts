@@ -71,7 +71,10 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
     stringAlphabet: string,
     stringMaxLength: number,
     deltaMutationProbability: number,
-    exploreIllegalValues: boolean
+    exploreIllegalValues: boolean,
+    addRemoveArgumentProbability: number,
+    addArgumentProbability: number,
+    removeArgumentProbability: number
   ) {
     super(
       subject,
@@ -89,7 +92,10 @@ export class JavaScriptRandomSampler extends JavaScriptTestCaseSampler {
       stringAlphabet,
       stringMaxLength,
       deltaMutationProbability,
-      exploreIllegalValues
+      exploreIllegalValues,
+      addRemoveArgumentProbability,
+      addArgumentProbability,
+      removeArgumentProbability
     );
   }
 
