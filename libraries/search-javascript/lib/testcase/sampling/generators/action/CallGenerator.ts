@@ -51,7 +51,7 @@ export abstract class CallGenerator<S extends Statement> extends Generator<S> {
       // remove args
       for (let index = 0; index < arguments_.length; index++) {
         if (!prng.nextBoolean(this._removeArgumentProbability)) {
-          break
+          break;
         }
         arguments_.pop();
       }
@@ -59,11 +59,9 @@ export abstract class CallGenerator<S extends Statement> extends Generator<S> {
       // add args
       for (let index = 0; index < 10; index++) {
         if (!prng.nextBoolean(this._addArgumentProbability)) {
-          break
+          break;
         }
-        arguments_.push(
-          this.sampler.sampleArgument(depth + 1, "anon", "anon")
-        );
+        arguments_.push(this.sampler.sampleArgument(depth + 1, "anon", "anon"));
       }
     }
 
