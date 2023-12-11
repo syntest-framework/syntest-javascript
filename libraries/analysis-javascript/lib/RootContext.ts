@@ -110,8 +110,6 @@ export class RootContext extends FrameworkRootContext<t.Node> {
   get rootPath(): string {
     return this._rootPath;
   }
-
-  // eslint-disable-next-line sonarjs/cognitive-complexity
   @cache("source")
   @resolvePath()
   override getSource(filePath: string): Result<string> {

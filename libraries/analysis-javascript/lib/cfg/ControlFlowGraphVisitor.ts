@@ -333,6 +333,7 @@ export class ControlFlowGraphVisitor extends AbstractSyntaxTreeVisitor {
         this._createEdge(this._nodes.get(parent), node, this._edgeType)
       );
     }
+
     this._edgeType = EdgeType.NORMAL;
   }
 

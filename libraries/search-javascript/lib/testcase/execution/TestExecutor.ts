@@ -156,6 +156,7 @@ async function runMocha(silent: boolean, paths: string[], timeout: number) {
 
   const cache = new Set();
 
+  // This is to prevent circular references
   // TODO this actually removes all repeating values which is not good
   process.send(
     JSON.parse(

@@ -314,48 +314,6 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
     this._isDistanceMap.set(path.toString(), false);
   };
 
-  // public ObjectExpression: (path: NodePath<t.ObjectExpression>) => void = (path) => {
-  //   this._valueMap.set(this._getNodeId(path), )
-  //   this._isDistanceMap.set(this._getNodeId(path), false);
-  // }
-
-  // public Identifier: (path: NodePath<t.Identifier>) => void = (path) => {
-  //   if (this._variables[path.node.name] === undefined) {
-  //     // we dont know what this variable is...
-  //     this._valueMap.set(this._getNodeId(path), undefined);
-  //   } else {
-  //     this._valueMap.set(
-  //       this._getNodeId(path),
-  //       this._variables[path.node.name]
-  //     );
-  //   }
-  //   this._isDistanceMap.set(this._getNodeId(path), false);
-  // };
-
-  // public MemberExpression: (path: NodePath<t.MemberExpression>) => void = (
-  //   path
-  // ) => {
-  //   const result = generate(path.node);
-  //   const value = this._variables[result.code];
-  //   // might be undefined
-  //   this._valueMap.set(this._getNodeId(path), value);
-  //   this._isDistanceMap.set(this._getNodeId(path), false);
-  // };
-  // public Identifier: (path: NodePath<t.Identifier>) => void = (path) => {
-  //   if (this._variables[path.node.name] === undefined) {
-  //     // we dont know what this variable is...
-  //     // should never happen??
-  //     this._valueMap.set(path.toString(), undefined);
-  //     throw new ImplementationError(shouldNeverHappen('BranchDistanceVisitor'))
-  //   } else {
-  //     this._valueMap.set(
-  //       path.toString(),
-  //       this._variables[path.node.name]
-  //     );
-  //   }
-  //   this._isDistanceMap.set(path.toString(), false);
-  // };
-
   public UpdateExpression: (path: NodePath<t.UpdateExpression>) => void = (
     path
   ) => {

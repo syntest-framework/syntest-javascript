@@ -35,6 +35,7 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
   private targetRootDirectory: string;
 
   constructor(targetRootDirectory: string) {
+    JavaScriptDecoder.LOGGER = getLogger(JavaScriptDecoder.name);
     this.targetRootDirectory = targetRootDirectory;
 
     JavaScriptDecoder.LOGGER = getLogger(JavaScriptDecoder.name);
@@ -77,15 +78,13 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
         // delete statements after
         errorDecoding = decodings[index];
         decodings = decodings.slice(0, index);
+      }
 
-        if (decodings.length === 0) {
-          JavaScriptDecoder.LOGGER.warn(
-            "No statements in test case after error reduction"
-          );
-          continue;
-          // throw new ImplementationError(
-          // );
-        }
+      if (decodings.length === 0) {
+        JavaScriptDecoder.LOGGER.warn(
+          "No statements in test case after error reduction"
+        );
+        continue;
       }
 
       const metaCommentBlock = this.generateMetaComments(testCase);
@@ -237,9 +236,7 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
           continue;
         }
 
-        // TODO dirty hack because json.parse does not allow undefined/NaN
-        // TODO undefined/NaN can happen in arrays
-        // TODO should not be within quotes
+        // Dirty hack because json.parse does not allow undefined/NaN
         stringified = stringified.replaceAll(
           /undefined(?=[^"]*(?:"[^"]*"[^"]*)*$)/g,
           "null"
