@@ -38,7 +38,6 @@ export class TestSplitting implements Workflow {
     TestSplitting.LOGGER = getLogger(TestSplitting.name);
     this.userInterface = userInterface;
     this.runner = runner;
-    this.userInterface = userInterface;
   }
 
   public async execute(
@@ -63,7 +62,7 @@ export class TestSplitting implements Workflow {
 
         round += 1;
 
-        TestSplitting.LOGGER.info("Split found, repeating");
+        TestSplitting.LOGGER.info("Split found, repeating.");
       }
       finalEncodings.set(target, encodings);
       total += finalEncodings.size;
