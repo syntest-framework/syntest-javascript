@@ -112,7 +112,14 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
       childProcess.on("message", (data: Message) => {
         if (typeof data !== "object") {
           return reject(
-            new TypeError("Invalid data received from child process")
+            new ImplementationError(
+              "Invalid data received from child process",
+              {
+                context: {
+                  data: data,
+                },
+              }
+            )
           );
         }
 
@@ -267,7 +274,7 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     const traces: Trace[] = [];
     for (const branchKey of Object.keys(instrumentationData.branchMap)) {
       const branch = instrumentationData.branchMap[branchKey];
-      const hits = <number[]>instrumentationData.b[branchKey];
+      const hits = instrumentationData.b[branchKey];
       let meta;
 
       if (metaData !== undefined) {
