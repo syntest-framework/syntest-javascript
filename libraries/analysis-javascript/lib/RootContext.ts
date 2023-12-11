@@ -19,7 +19,11 @@
 import { existsSync, lstatSync } from "node:fs";
 
 import * as t from "@babel/types";
-import { cache, RootContext as FrameworkRootContext, resolvePath } from "@syntest/analysis";
+import {
+  cache,
+  RootContext as FrameworkRootContext,
+  resolvePath,
+} from "@syntest/analysis";
 import {
   failure,
   IllegalArgumentError,
@@ -76,11 +80,11 @@ export class RootContext extends FrameworkRootContext<t.Node> {
   protected _exportMap: Map<string, Export[]>;
 
   get targetFiles() {
-    return this._targetFiles
+    return this._targetFiles;
   }
 
   get analysisFiles() {
-    return this._analysisFiles
+    return this._analysisFiles;
   }
 
   constructor(
@@ -299,7 +303,7 @@ export class RootContext extends FrameworkRootContext<t.Node> {
   }
 
   resolveTypes(): void {
-    this._typePool = new TypePool()
+    this._typePool = new TypePool();
 
     // TODO allow sub selections of files (do not consider entire context)
     if (!this._typeModel) {
@@ -334,7 +338,7 @@ export class RootContext extends FrameworkRootContext<t.Node> {
 
         this._typePool.extractExportedTypes(exports.result, objects.result);
       }
-      
+
       (<TypedEmitter<Events>>process).emit("typeResolvingComplete", this);
     }
   }
