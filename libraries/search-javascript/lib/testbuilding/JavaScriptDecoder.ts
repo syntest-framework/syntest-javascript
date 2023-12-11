@@ -37,8 +37,6 @@ export class JavaScriptDecoder implements Decoder<JavaScriptTestCase, string> {
   constructor(targetRootDirectory: string) {
     JavaScriptDecoder.LOGGER = getLogger(JavaScriptDecoder.name);
     this.targetRootDirectory = targetRootDirectory;
-
-    JavaScriptDecoder.LOGGER = getLogger(JavaScriptDecoder.name);
   }
 
   decode(
