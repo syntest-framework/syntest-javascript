@@ -30,7 +30,7 @@ import { JavaScriptTestCase } from "@syntest/search-javascript";
 
 import { Workflow } from "./Workflow";
 
-export class MetaCommenter extends Workflow {
+export class MetaCommenter implements Workflow {
   protected static LOGGER: Logger;
   protected userInterface: UserInterface;
   protected secondaryObjectives: SecondaryObjectiveComparator<JavaScriptTestCase>[];
@@ -41,14 +41,14 @@ export class MetaCommenter extends Workflow {
     secondaryObjectives: SecondaryObjectiveComparator<JavaScriptTestCase>[],
     objectivesMap: Map<Target, ObjectiveFunction<JavaScriptTestCase>[]>
   ) {
-    super();
     MetaCommenter.LOGGER = getLogger(MetaCommenter.name);
     this.userInterface = userInterface;
     this.secondaryObjectives = secondaryObjectives;
     this.objectivesMap = objectivesMap;
   }
 
-  override execute(
+  // eslint-disable-next-line sonarjs/cognitive-complexity
+  execute(
     encodingsMap: Map<Target, JavaScriptTestCase[]>
   ): Promise<Map<Target, JavaScriptTestCase[]>> {
     const totalEncodings = [...encodingsMap.values()].reduce(

@@ -29,14 +29,14 @@ import {
 
 import { Workflow } from "./Workflow";
 
-export class TestSplitting extends Workflow {
+export class TestSplitting implements Workflow {
   protected static LOGGER: Logger;
   protected userInterface: UserInterface;
   protected runner: JavaScriptRunner;
 
   constructor(userInterface: UserInterface, runner: JavaScriptRunner) {
-    super();
-    TestSplitting.LOGGER = getLogger("TestSplitting");
+    TestSplitting.LOGGER = getLogger(TestSplitting.name);
+    this.userInterface = userInterface;
     this.runner = runner;
     this.userInterface = userInterface;
   }

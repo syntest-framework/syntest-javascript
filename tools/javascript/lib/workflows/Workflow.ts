@@ -19,8 +19,8 @@
 import { Target } from "@syntest/analysis-javascript";
 import { JavaScriptTestCase } from "@syntest/search-javascript";
 
-export abstract class Workflow {
-  abstract execute(
+export interface Workflow {
+  execute(
     encodingMap: Map<Target, JavaScriptTestCase[]>
   ): Promise<Map<Target, JavaScriptTestCase[]>>;
 }

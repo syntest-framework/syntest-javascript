@@ -480,6 +480,7 @@ export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
 
       // this.metricManager.recordProperty(PropertyName., `${timeInMs}`); // TODO new metric
     }
+
     if (this.arguments_.testMinimization) {
       const start = Date.now();
       JavaScriptLauncher.LOGGER.info("Minimization started");

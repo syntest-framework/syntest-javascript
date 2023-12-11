@@ -28,8 +28,9 @@ import { JavaScriptTestCase } from "@syntest/search-javascript";
 
 import { Workflow } from "./Workflow";
 
-export class DeDuplicator extends Workflow {
+export class DeDuplicator implements Workflow {
   protected static LOGGER: Logger;
+
   protected userInterface: UserInterface;
   protected secondaryObjectives: SecondaryObjectiveComparator<JavaScriptTestCase>[];
   protected objectivesMap: Map<Target, ObjectiveFunction<JavaScriptTestCase>[]>;
@@ -39,13 +40,13 @@ export class DeDuplicator extends Workflow {
     secondaryObjectives: SecondaryObjectiveComparator<JavaScriptTestCase>[],
     objectivesMap: Map<Target, ObjectiveFunction<JavaScriptTestCase>[]>
   ) {
-    super();
     DeDuplicator.LOGGER = getLogger(DeDuplicator.name);
     this.userInterface = userInterface;
     this.secondaryObjectives = secondaryObjectives;
     this.objectivesMap = objectivesMap;
   }
 
+  // eslint-disable-next-line sonarjs/cognitive-complexity
   execute(
     encodingsMap: Map<Target, JavaScriptTestCase[]>
   ): Promise<Map<Target, JavaScriptTestCase[]>> {
