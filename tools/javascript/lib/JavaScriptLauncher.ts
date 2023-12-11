@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest Javascript.
  *
@@ -51,16 +51,21 @@ import {
   TableObject,
   UserInterface,
 } from "@syntest/cli-graphics";
+import { IllegalArgumentError, isFailure, unwrap } from "@syntest/diagnostics";
 import { Instrumenter } from "@syntest/instrumentation-javascript";
 import { getLogger, Logger } from "@syntest/logging";
 import { MetricManager } from "@syntest/metric";
 import { ModuleManager } from "@syntest/module";
 import {
+  ApproachLevelCalculator,
   Archive,
   BudgetManager,
   BudgetType,
   EncodingSampler,
   EvaluationBudget,
+  extractBranchObjectivesFromProgram,
+  extractFunctionObjectivesFromProgram,
+  extractPathObjectivesFromProgram,
   IterationBudget,
   ObjectiveFunction,
   SearchTimeBudget,
@@ -68,6 +73,7 @@ import {
   TotalTimeBudget,
 } from "@syntest/search";
 import {
+  BranchDistanceCalculator,
   ExecutionInformationIntegrator,
   JavaScriptDecoder,
   JavaScriptRandomSampler,
@@ -80,13 +86,14 @@ import {
 import { StorageManager } from "@syntest/storage";
 
 import { TestCommandOptions } from "./commands/test";
+import { timer } from "./Timer";
 import { DeDuplicator } from "./workflows/DeDuplicator";
-import { addMetaComments } from "./workflows/MetaComment";
-import { TestSplitting } from "./workflows/TestSplitter";
+import { MetaCommenter } from "./workflows/MetaCommenter";
+import { TestSplitter } from "./workflows/TestSplitter";
 
 export type JavaScriptArguments = ArgumentsObject & TestCommandOptions;
-export class JavaScriptLauncher extends Launcher {
-  private static LOGGER: Logger;
+export class JavaScriptLauncher extends Launcher<JavaScriptArguments> {
+  protected static override LOGGER: Logger;
 
   private targets: Target[];
 
@@ -112,7 +119,7 @@ export class JavaScriptLauncher extends Launcher {
       storageManager,
       userInterface
     );
-    JavaScriptLauncher.LOGGER = getLogger("JavaScriptLauncher");
+    JavaScriptLauncher.LOGGER = getLogger(JavaScriptLauncher.name);
     this.archives = new Map();
   }
 
@@ -123,13 +130,11 @@ export class JavaScriptLauncher extends Launcher {
 
     this.metricManager.recordProperty(
       PropertyName.CONSTANT_POOL_ENABLED,
-      `${(<JavaScriptArguments>this.arguments_).constantPool.toString()}`
+      `${this.arguments_.constantPool.toString()}`
     );
     this.metricManager.recordProperty(
       PropertyName.CONSTANT_POOL_PROBABILITY,
-      `${(<JavaScriptArguments>(
-        this.arguments_
-      )).constantPoolProbability.toString()}`
+      `${this.arguments_.constantPoolProbability.toString()}`
     );
 
     this.storageManager.deleteTemporaryDirectories([
@@ -156,24 +161,18 @@ export class JavaScriptLauncher extends Launcher {
     );
 
     const abstractSyntaxTreeFactory = new AbstractSyntaxTreeFactory();
-    const targetFactory = new TargetFactory(
-      (<JavaScriptArguments>this.arguments_).syntaxForgiving
-    );
+    const targetFactory = new TargetFactory(this.arguments_.syntaxForgiving);
     const controlFlowGraphFactory = new ControlFlowGraphFactory(
-      (<JavaScriptArguments>this.arguments_).syntaxForgiving
+      this.arguments_.syntaxForgiving
     );
     const dependencyFactory = new DependencyFactory(
-      (<JavaScriptArguments>this.arguments_).syntaxForgiving
+      this.arguments_.syntaxForgiving
     );
-    const exportFactory = new ExportFactory(
-      (<JavaScriptArguments>this.arguments_).syntaxForgiving
-    );
-    const typeExtractor = new TypeExtractor(
-      (<JavaScriptArguments>this.arguments_).syntaxForgiving
-    );
+    const exportFactory = new ExportFactory(this.arguments_.syntaxForgiving);
+    const typeExtractor = new TypeExtractor(this.arguments_.syntaxForgiving);
     const typeResolver: TypeModelFactory = new InferenceTypeModelFactory();
     const constantPoolFactory = new ConstantPoolFactory(
-      (<JavaScriptArguments>this.arguments_).syntaxForgiving
+      this.arguments_.syntaxForgiving
     );
 
     const fileSelector = new FileSelector();
@@ -190,8 +189,9 @@ export class JavaScriptLauncher extends Launcher {
 
     for (const target of targetFiles) {
       if (this.arguments_.analysisExclude.includes(target)) {
-        throw new Error(
-          `Target files cannot be excluded from analysis. Target file: ${target}`
+        throw new IllegalArgumentError(
+          "Target files cannot be excluded from analysis",
+          { context: { targetFile: target } }
         );
       }
     }
@@ -242,15 +242,18 @@ export class JavaScriptLauncher extends Launcher {
       `${timeInMs}`
     );
 
-    if (this.targets.length === 0) {
-      // Shut server down
-      this.userInterface.printError(
-        `No targets where selected! Try changing the 'target-include' parameter`
-      );
-      await this.exit();
-      // eslint-disable-next-line unicorn/no-process-exit
-      process.exit();
-    }
+    const selectionSettings: TableObject = {
+      headers: ["Setting", "Value"],
+      rows: [
+        ["Target Root Directory", this.arguments_.targetRootDirectory],
+        ["Target Include", `${this.arguments_.targetInclude.join(", ")}`],
+        ["Target Exclude", `${this.arguments_.targetExclude.join(", ")}`],
+        ["Analysis Include", `${this.arguments_.analysisInclude.join(", ")}`],
+        ["Analysis Exclude", `${this.arguments_.analysisExclude.join(", ")}`],
+      ],
+    };
+
+    this.userInterface.printTable("SELECTION SETTINGS", selectionSettings);
 
     const itemization: ItemizationItem[] = [];
 
@@ -264,21 +267,17 @@ export class JavaScriptLauncher extends Launcher {
         }),
       });
     }
-
     this.userInterface.printItemization("TARGETS", itemization);
 
-    const selectionSettings: TableObject = {
-      headers: ["Setting", "Value"],
-      rows: [
-        ["Target Root Directory", this.arguments_.targetRootDirectory],
-        ["Target Include", `${this.arguments_.targetInclude.join(", ")}`],
-        ["Target Exclude", `${this.arguments_.targetExclude.join(", ")}`],
-        ["Analysis Include", `${this.arguments_.analysisInclude.join(", ")}`],
-        ["Analysis Exclude", `${this.arguments_.analysisExclude.join(", ")}`],
-      ],
-      footers: ["", ""],
-    };
-    this.userInterface.printTable("SELECTION SETTINGS", selectionSettings);
+    if (this.targets.length === 0) {
+      // Shut down
+      this.userInterface.printError(
+        `No targets where selected! Try changing the 'target-include' parameter`
+      );
+      await this.exit();
+      // eslint-disable-next-line unicorn/no-process-exit
+      process.exit();
+    }
 
     const settings: TableObject = {
       headers: ["Setting", "Value"],
@@ -302,7 +301,6 @@ export class JavaScriptLauncher extends Launcher {
 
         ["Seed", `${this.arguments_.randomSeed.toString()}`],
       ],
-      footers: ["", ""],
     };
 
     this.userInterface.printTable("SETTINGS", settings);
@@ -315,7 +313,6 @@ export class JavaScriptLauncher extends Launcher {
         ["Search Time Budget", `${this.arguments_.searchTime} seconds`],
         ["Total Time Budget", `${this.arguments_.totalTime} seconds`],
       ],
-      footers: ["", ""],
     };
 
     this.userInterface.printTable("BUDGET SETTINGS", budgetSettings);
@@ -339,55 +336,32 @@ export class JavaScriptLauncher extends Launcher {
           "Explore Illegal Values",
           String(this.arguments_.exploreIllegalValues),
         ],
-        [
-          "Use Constant Pool Values",
-          String((<JavaScriptArguments>this.arguments_).constantPool),
-        ],
+        ["Use Constant Pool Values", String(this.arguments_.constantPool)],
         [
           "Use Constant Pool Probability",
-          `${(<JavaScriptArguments>this.arguments_).constantPoolProbability}`,
+          `${this.arguments_.constantPoolProbability}`,
         ],
-        [
-          "Use Type Pool Values",
-          String((<JavaScriptArguments>this.arguments_).typePool),
-        ],
-        [
-          "Use Type Pool Probability",
-          `${(<JavaScriptArguments>this.arguments_).typePoolProbability}`,
-        ],
-        [
-          "Use Statement Pool Values",
-          String((<JavaScriptArguments>this.arguments_).statementPool),
-        ],
+        ["Use Type Pool Values", String(this.arguments_.typePool)],
+        ["Use Type Pool Probability", `${this.arguments_.typePoolProbability}`],
+        ["Use Statement Pool Values", String(this.arguments_.statementPool)],
         [
           "Use Statement Pool Probability",
-          `${(<JavaScriptArguments>this.arguments_).statementPoolProbability}`,
+          `${this.arguments_.statementPoolProbability}`,
         ],
       ],
-      footers: ["", ""],
     };
     this.userInterface.printTable("MUTATION SETTINGS", mutationSettings);
 
     const typeSettings: TableObject = {
       headers: ["Setting", "Value"],
       rows: [
-        [
-          "Type Inference Mode",
-          `${(<JavaScriptArguments>this.arguments_).typeInferenceMode}`,
-        ],
+        ["Type Inference Mode", `${this.arguments_.typeInferenceMode}`],
         [
           "Incorporate Execution Information",
-          String(
-            (<JavaScriptArguments>this.arguments_)
-              .incorporateExecutionInformation
-          ),
+          String(this.arguments_.incorporateExecutionInformation),
         ],
-        [
-          "Random Type Probability",
-          `${(<JavaScriptArguments>this.arguments_).randomTypeProbability}`,
-        ],
+        ["Random Type Probability", `${this.arguments_.randomTypeProbability}`],
       ],
-      footers: ["", ""],
     };
     this.userInterface.printTable("Type SETTINGS", typeSettings);
 
@@ -398,7 +372,6 @@ export class JavaScriptLauncher extends Launcher {
         ["Temporary Directory", `${this.arguments_.tempSyntestDirectory}`],
         ["Target Root Directory", `${this.arguments_.targetRootDirectory}`],
       ],
-      footers: ["", ""],
     };
 
     this.userInterface.printTable("DIRECTORY SETTINGS", directorySettings);
@@ -419,11 +392,7 @@ export class JavaScriptLauncher extends Launcher {
     );
 
     const startTypeResolving = Date.now();
-    JavaScriptLauncher.LOGGER.info("Extracting types");
-    this.rootContext.getAllElements();
-    this.rootContext.getAllRelations();
-    this.rootContext.getAllObjectTypes();
-    JavaScriptLauncher.LOGGER.info("Resolving types");
+    JavaScriptLauncher.LOGGER.info("Extracting & Resolving types");
     this.rootContext.resolveTypes();
     timeInMs = (Date.now() - startTypeResolving) / 1000;
     this.metricManager.recordProperty(
@@ -446,9 +415,9 @@ export class JavaScriptLauncher extends Launcher {
       this.decoder,
       executionInformationIntegrator,
       this.arguments_.testDirectory,
-      (<JavaScriptArguments>this.arguments_).executionTimeout,
-      (<JavaScriptArguments>this.arguments_).testTimeout,
-      (<JavaScriptArguments>this.arguments_).silenceTestOutput
+      this.arguments_.executionTimeout,
+      this.arguments_.testTimeout,
+      this.arguments_.silenceTestOutput
     );
 
     JavaScriptLauncher.LOGGER.info("Preprocessing done");
@@ -469,9 +438,9 @@ export class JavaScriptLauncher extends Launcher {
   }
 
   async postprocess(): Promise<void> {
+    this.userInterface.printHeader("Postprocessing started");
     JavaScriptLauncher.LOGGER.info("Postprocessing started");
     const start = Date.now();
-    const testSplitter = new TestSplitting(this.runner);
     const objectives = new Map<Target, ObjectiveFunction<JavaScriptTestCase>[]>(
       [...this.archives.entries()].map(([target, archive]) => [
         target,
@@ -486,29 +455,21 @@ export class JavaScriptLauncher extends Launcher {
     );
 
     if (this.arguments_.testSplitting) {
-      const start = Date.now();
-      const before = [...finalEncodings.values()]
-        .map((x) => x.length)
-        .reduce((p, c) => p + c);
-      JavaScriptLauncher.LOGGER.info("Splitting started");
-      finalEncodings = await testSplitter.testSplitting(finalEncodings);
-
-      const timeInMs = (Date.now() - start) / 1000;
-      const after = [...finalEncodings.values()]
-        .map((x) => x.length)
-        .reduce((p, c) => p + c);
-
-      JavaScriptLauncher.LOGGER.info(
-        `Splitting done took: ${timeInMs}, went from ${before} to ${after} test cases`
+      const testSplitter = new TestSplitter(this.userInterface, this.runner);
+      const timedResult = await timer(() =>
+        testSplitter.execute(finalEncodings)
       );
-      // this.metricManager.recordProperty(PropertyName., `${timeInMs}`); // TODO new metric
+      finalEncodings = timedResult.result;
+
+      JavaScriptLauncher.LOGGER.info(`Splitting took: ${timedResult.time}`);
+      this.userInterface.printSuccess(`Splitting took: ${timedResult.time}`);
+
+      // TODO
+      // this.metricManager.recordProperty(PropertyName., `${timeInMs}`);
     }
+
     if (this.arguments_.testMinimization) {
-      const start = Date.now();
-      JavaScriptLauncher.LOGGER.info("Minimization started");
-      const timeInMs = (Date.now() - start) / 1000;
-      JavaScriptLauncher.LOGGER.info(`Minimization done, took: ${timeInMs}`);
-      // this.metricManager.recordProperty(PropertyName., `${timeInMs}`); // TODO new metric
+      // TODO
     }
 
     const secondaryObjectives = this.arguments_.secondaryObjectives.map(
@@ -522,38 +483,50 @@ export class JavaScriptLauncher extends Launcher {
       }
     );
 
-    const startDeduplication = Date.now();
-    const before = [...finalEncodings.values()]
-      .map((x) => x.length)
-      .reduce((p, c) => p + c);
-    JavaScriptLauncher.LOGGER.info("De-Duplication started");
+    if (this.arguments_.testDeDuplication) {
+      const deDuplicator = new DeDuplicator(
+        this.userInterface,
+        secondaryObjectives,
+        objectives
+      );
+      const timedResult = await timer(() =>
+        deDuplicator.execute(finalEncodings)
+      );
+      finalEncodings = timedResult.result;
 
-    const deDuplicator = new DeDuplicator();
-    const newArchives = deDuplicator.deDuplicate(
-      secondaryObjectives,
-      objectives,
-      finalEncodings
-    );
+      JavaScriptLauncher.LOGGER.info(
+        `De-Duplication took: ${timedResult.time}`
+      );
+      this.userInterface.printSuccess(
+        `De-Duplication took: ${timedResult.time}`
+      );
 
-    const timeInMsDeDuplication = (Date.now() - startDeduplication) / 1000;
-    const after = [...newArchives.values()]
-      .map((x) => x.size)
-      .reduce((p, c) => p + c);
-
-    JavaScriptLauncher.LOGGER.info(
-      `De-Duplication done took: ${timeInMsDeDuplication}, went from ${before} to ${after} test cases`
-    );
-
-    if (this.arguments_.metaComments) {
-      addMetaComments(newArchives);
+      // TODO
+      // this.metricManager.recordProperty(PropertyName., `${timeInMs}`);
     }
 
-    finalEncodings = new Map<Target, JavaScriptTestCase[]>(
-      [...newArchives.entries()].map(([target, archive]) => {
-        console.log("archive size", archive.size);
-        return [target, archive.getEncodings()];
-      })
-    );
+    if (this.arguments_.metaComments) {
+      const metaCommenter = new MetaCommenter(
+        this.userInterface,
+        secondaryObjectives,
+        objectives
+      );
+
+      const timedResult = await timer(() =>
+        metaCommenter.execute(finalEncodings)
+      );
+      finalEncodings = timedResult.result;
+
+      JavaScriptLauncher.LOGGER.info(
+        `Meta-Commenting done took: ${timedResult.time}`
+      );
+      this.userInterface.printSuccess(
+        `Meta-Commenting done took: ${timedResult.time}`
+      );
+
+      // TODO
+      // this.metricManager.recordProperty(PropertyName., `${timeInMs}`);
+    }
 
     const suiteBuilder = new JavaScriptSuiteBuilder(
       this.storageManager,
@@ -561,143 +534,140 @@ export class JavaScriptLauncher extends Launcher {
       this.runner
     );
 
-    // TODO fix hardcoded paths
-    await suiteBuilder.runSuite(
-      finalEncodings,
-      "../instrumented",
-      this.arguments_.testDirectory,
-      true,
-      false
-    );
-
-    // reset states
-    this.storageManager.clearTemporaryDirectory([
-      this.arguments_.testDirectory,
-    ]);
-
-    const { stats, instrumentationData } = await suiteBuilder.runSuite(
-      finalEncodings,
-      "../instrumented",
-      this.arguments_.testDirectory,
-      false,
-      true
-    );
-
-    if (stats.failures > 0) {
-      this.userInterface.printError("Test case has failed!");
-    }
-
-    this.userInterface.printHeader("SEARCH RESULTS");
-
-    const table: TableObject = {
-      headers: ["Target", "Statement", "Branch", "Function", "File"],
-      rows: [],
-      footers: ["Average"],
-    };
-
-    const overall = {
-      branch: 0,
-      statement: 0,
-      function: 0,
-    };
-    let totalBranches = 0;
-    let totalStatements = 0;
-    let totalFunctions = 0;
-    for (const file of Object.keys(instrumentationData)) {
-      const target = this.targets.find(
-        (target: Target) => target.path === file
+    try {
+      // gather assertions
+      let paths = suiteBuilder.createSuite(
+        finalEncodings,
+        "../instrumented", // TODO fix hardcoded paths
+        this.arguments_.testDirectory,
+        true,
+        false,
+        false
       );
-      if (!target) {
-        continue;
+      await suiteBuilder.runSuite(finalEncodings, paths, true);
+
+      // reset states
+      this.storageManager.clearTemporaryDirectory([
+        this.arguments_.testDirectory,
+      ]);
+
+      // get final results
+      paths = suiteBuilder.createSuite(
+        finalEncodings,
+        "../instrumented", // TODO fix hardcoded paths
+        this.arguments_.testDirectory,
+        false,
+        false,
+        false
+      );
+      const results = await suiteBuilder.runSuite(finalEncodings, paths, false);
+      const summaryTotal = suiteBuilder.summariseResults(results, this.targets);
+      if (summaryTotal.failures > 0) {
+        this.userInterface.printError(
+          `${summaryTotal.failures} test case(s) have failed!`
+        );
       }
 
-      const data = instrumentationData[file];
-
-      const summary = {
-        branch: 0,
-        statement: 0,
-        function: 0,
+      const table: TableObject = {
+        headers: ["Target", "Statement", "Branch", "Function", "File"],
+        rows: [],
+        footers: ["Average"],
       };
 
-      for (const statementKey of Object.keys(data.s)) {
-        summary["statement"] += data.s[statementKey] ? 1 : 0;
-        overall["statement"] += data.s[statementKey] ? 1 : 0;
+      let coveredStatements = 0;
+      let coveredBranches = 0;
+      let coveredFunctions = 0;
+      let totalStatements = 0;
+      let totalBranches = 0;
+      let totalFunctions = 0;
+
+      for (const [target, summary] of summaryTotal.data.entries()) {
+        table.rows.push([
+          `${path.basename(target.path)}: ${target.name}`,
+          `${summary["statement"].covered.size} / ${summary["statement"].total.size}`,
+          `${summary["branch"].covered.size} / ${summary["branch"].total.size}`,
+          `${summary["function"].covered.size} / ${summary["function"].total.size}`,
+          target.path,
+        ]);
+
+        coveredStatements += summary["statement"].covered.size;
+        coveredBranches += summary["branch"].covered.size;
+        coveredFunctions += summary["function"].covered.size;
+
+        totalStatements += summary["statement"].total.size;
+        totalBranches += summary["branch"].total.size;
+        totalFunctions += summary["function"].total.size;
       }
 
-      for (const branchKey of Object.keys(data.b)) {
-        summary["branch"] += data.b[branchKey][0] ? 1 : 0;
-        overall["branch"] += data.b[branchKey][0] ? 1 : 0;
-        summary["branch"] += data.b[branchKey][1] ? 1 : 0;
-        overall["branch"] += data.b[branchKey][1] ? 1 : 0;
+      this.userInterface.printHeader("SEARCH RESULTS");
+
+      let statementPercentage = coveredStatements / totalStatements;
+      if (totalStatements === 0) statementPercentage = 1;
+
+      let branchPercentage = coveredBranches / totalBranches;
+      if (totalBranches === 0) branchPercentage = 1;
+
+      let functionPercentage = coveredFunctions / totalFunctions;
+      if (totalFunctions === 0) functionPercentage = 1;
+
+      table.footers.push(
+        `${statementPercentage * 100} %`,
+        `${branchPercentage * 100} %`,
+        `${functionPercentage * 100} %`,
+        ""
+      );
+      this.userInterface.printTable("Coverage", table);
+
+      this.metricManager.recordProperty(
+        PropertyName.STATEMENTS_COVERED,
+        `${coveredStatements}`
+      );
+      this.metricManager.recordProperty(
+        PropertyName.BRANCHES_COVERED,
+        `${coveredBranches}`
+      );
+      this.metricManager.recordProperty(
+        PropertyName.FUNCTIONS_COVERED,
+        `${coveredFunctions}`
+      );
+      this.metricManager.recordProperty(
+        PropertyName.BRANCHES_TOTAL,
+        `${totalBranches}`
+      );
+      this.metricManager.recordProperty(
+        PropertyName.STATEMENTS_TOTAL,
+        `${totalStatements}`
+      );
+      this.metricManager.recordProperty(
+        PropertyName.FUNCTIONS_TOTAL,
+        `${totalFunctions}`
+      );
+    } catch (error) {
+      if (error === "timeout") {
+        JavaScriptLauncher.LOGGER.error(
+          "A timeout error occured during assertion gathering or final results processing, cannot calculate the final results unfortunately"
+        );
+      } else {
+        throw error;
       }
-
-      for (const functionKey of Object.keys(data.f)) {
-        summary["function"] += data.f[functionKey] ? 1 : 0;
-        overall["function"] += data.f[functionKey] ? 1 : 0;
-      }
-
-      totalStatements += Object.keys(data.s).length;
-      totalBranches += Object.keys(data.b).length * 2;
-      totalFunctions += Object.keys(data.f).length;
-
-      table.rows.push([
-        `${path.basename(target.path)}: ${target.name}`,
-        `${summary["statement"]} / ${Object.keys(data.s).length}`,
-        `${summary["branch"]} / ${Object.keys(data.b).length * 2}`,
-        `${summary["function"]} / ${Object.keys(data.f).length}`,
-        target.path,
-      ]);
     }
 
-    this.metricManager.recordProperty(
-      PropertyName.BRANCHES_COVERED,
-      `${overall["branch"]}`
-    );
-    this.metricManager.recordProperty(
-      PropertyName.STATEMENTS_COVERED,
-      `${overall["statement"]}`
-    );
-    this.metricManager.recordProperty(
-      PropertyName.FUNCTIONS_COVERED,
-      `${overall["function"]}`
-    );
-    this.metricManager.recordProperty(
-      PropertyName.BRANCHES_TOTAL,
-      `${totalBranches}`
-    );
-    this.metricManager.recordProperty(
-      PropertyName.STATEMENTS_TOTAL,
-      `${totalStatements}`
-    );
-    this.metricManager.recordProperty(
-      PropertyName.FUNCTIONS_TOTAL,
-      `${totalFunctions}`
-    );
-
     // other results
+    const archiveSizeBefore = [...this.archives.values()].reduce(
+      (p, c) => p + c.size,
+      0
+    );
     this.metricManager.recordProperty(
       PropertyName.ARCHIVE_SIZE,
-      `${this.archives.size}`
+      `${archiveSizeBefore}`
+    );
+    const archiveSizeAfter = [...finalEncodings.values()].reduce(
+      (p, c) => p + c.length,
+      0
     );
     this.metricManager.recordProperty(
       PropertyName.MINIMIZED_ARCHIVE_SIZE,
-      `${this.archives.size}`
-    );
-
-    overall["statement"] /= totalStatements;
-    if (totalStatements === 0) overall["statement"] = 1;
-
-    overall["branch"] /= totalBranches;
-    if (totalBranches === 0) overall["branch"] = 1;
-
-    overall["function"] /= totalFunctions;
-    if (totalFunctions === 0) overall["function"] = 1;
-
-    table.footers.push(
-      `${overall["statement"] * 100} %`,
-      `${overall["branch"] * 100} %`,
-      `${overall["function"] * 100} %`,
-      ""
+      `${archiveSizeAfter}`
     );
 
     const originalSourceDirectory = path
@@ -707,10 +677,8 @@ export class JavaScriptLauncher extends Launcher {
       )
       .replace(path.basename(this.arguments_.targetRootDirectory), "");
 
-    this.userInterface.printTable("Coverage", table);
-
     // create final suite
-    await suiteBuilder.runSuite(
+    suiteBuilder.createSuite(
       finalEncodings,
       originalSourceDirectory,
       this.arguments_.testDirectory,
@@ -733,12 +701,80 @@ export class JavaScriptLauncher extends Launcher {
     JavaScriptLauncher.LOGGER.info(
       `Testing target ${target.name} in ${target.path}`
     );
-    const currentSubject = new JavaScriptSubject(
-      target,
-      this.rootContext,
-      (<JavaScriptArguments>this.arguments_).syntaxForgiving,
-      this.arguments_.stringAlphabet
+
+    const result = rootContext.getControlFlowProgram(target.path);
+
+    if (isFailure(result)) throw result.error;
+
+    const cfp = unwrap(result);
+
+    const functionObjectives =
+      extractFunctionObjectivesFromProgram<JavaScriptTestCase>(cfp);
+
+    const branchObjectives =
+      extractBranchObjectivesFromProgram<JavaScriptTestCase>(
+        cfp,
+        new ApproachLevelCalculator(),
+        new BranchDistanceCalculator(
+          this.arguments_.syntaxForgiving,
+          this.arguments_.stringAlphabet
+        ),
+        this.arguments_.functionObjectivesEnabled
+          ? functionObjectives
+          : undefined
+      );
+    const pathObjectives = extractPathObjectivesFromProgram<JavaScriptTestCase>(
+      cfp,
+      new ApproachLevelCalculator(),
+      new BranchDistanceCalculator(
+        this.arguments_.syntaxForgiving,
+        this.arguments_.stringAlphabet
+      ),
+      this.arguments_.functionObjectivesEnabled ? functionObjectives : undefined
     );
+
+    this.userInterface.printTable("Objective Counts", {
+      headers: ["Type", "Count", "Enabled"],
+      rows: [
+        [
+          "function",
+          `${functionObjectives.length}`,
+          String(this.arguments_.functionObjectivesEnabled),
+        ],
+        [
+          "branch",
+          `${branchObjectives.length}`,
+          String(this.arguments_.branchObjectivesEnabled),
+        ],
+        [
+          "path",
+          `${pathObjectives.length}`,
+          String(this.arguments_.pathObjectivesEnabled),
+        ],
+      ],
+    });
+
+    if (
+      !this.arguments_.functionObjectivesEnabled &&
+      !this.arguments_.branchObjectivesEnabled &&
+      !this.arguments_.pathObjectivesEnabled
+    ) {
+      JavaScriptLauncher.LOGGER.warn("All objectives are disabled!");
+    }
+
+    const objectives: ObjectiveFunction<JavaScriptTestCase>[] = [];
+
+    if (this.arguments_.functionObjectivesEnabled) {
+      objectives.push(...functionObjectives);
+    }
+    if (this.arguments_.branchObjectivesEnabled) {
+      objectives.push(...branchObjectives);
+    }
+    if (this.arguments_.pathObjectivesEnabled) {
+      objectives.push(...pathObjectives);
+    }
+
+    const currentSubject = new JavaScriptSubject(target, objectives);
 
     const rootTargets = currentSubject
       .getActionableTargets()
@@ -752,26 +788,36 @@ export class JavaScriptLauncher extends Launcher {
       return new Archive();
     }
 
-    const constantPoolManager = rootContext.getConstantPoolManager(target.path);
+    const constantPoolManagerResult = rootContext.getConstantPoolManager(
+      target.path
+    );
+
+    if (isFailure(constantPoolManagerResult))
+      throw constantPoolManagerResult.error;
+
+    const constantPoolManager = unwrap(constantPoolManagerResult);
 
     const sampler = new JavaScriptRandomSampler(
       currentSubject,
       constantPoolManager,
-      (<JavaScriptArguments>this.arguments_).constantPool,
-      (<JavaScriptArguments>this.arguments_).constantPoolProbability,
-      (<JavaScriptArguments>this.arguments_).typePool,
-      (<JavaScriptArguments>this.arguments_).typePoolProbability,
-      (<JavaScriptArguments>this.arguments_).statementPool,
-      (<JavaScriptArguments>this.arguments_).statementPoolProbability,
+      this.arguments_.constantPool,
+      this.arguments_.constantPoolProbability,
+      this.arguments_.typePool,
+      this.arguments_.typePoolProbability,
+      this.arguments_.statementPool,
+      this.arguments_.statementPoolProbability,
 
-      (<JavaScriptArguments>this.arguments_).typeInferenceMode,
-      (<JavaScriptArguments>this.arguments_).randomTypeProbability,
-      (<JavaScriptArguments>this.arguments_).incorporateExecutionInformation,
+      this.arguments_.typeInferenceMode,
+      this.arguments_.randomTypeProbability,
+      this.arguments_.incorporateExecutionInformation,
       this.arguments_.maxActionStatements,
       this.arguments_.stringAlphabet,
       this.arguments_.stringMaxLength,
       this.arguments_.deltaMutationProbability,
-      this.arguments_.exploreIllegalValues
+      this.arguments_.exploreIllegalValues,
+      this.arguments_.addRemoveArgumentProbability,
+      this.arguments_.addArgumentProbability,
+      this.arguments_.removeArgumentProbability
     );
     sampler.rootContext = rootContext;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest Javascript.
  *
@@ -27,8 +27,6 @@ import { PrimitiveStatement } from "./PrimitiveStatement";
 
 /**
  * Generic number class
- *
- * @author Dimitri Stallenberg
  */
 export class IntegerStatement extends PrimitiveStatement<number> {
   constructor(

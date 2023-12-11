@@ -1,7 +1,7 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
- * This file is part of SynTest Framework - SynTest Core.
+ * This file is part of SynTest Framework - SynTest JavaScript.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,8 @@ export function getTestCommand(
   const commandGroup = "Type Inference Options:";
   const samplingGroup = "Sampling Options:";
   const executorGroup = "Test Execution Options:";
+  const debuggingGroup = "Debugging Options:";
+  const objectivesGroup = "Objective Options:";
 
   options.set("incorporate-execution-information", {
     alias: [],
@@ -121,6 +123,36 @@ export function getTestCommand(
     type: "number",
   });
 
+  options.set("add-remove-argument-probability", {
+    alias: [],
+    default: 0.5,
+    description:
+      "Probability to maybe add an argument as oposed to maybe remove one.",
+    group: samplingGroup,
+    hidden: false,
+    type: "number",
+  });
+
+  options.set("add-argument-probability", {
+    alias: [],
+    default: 0.1,
+    description:
+      "Probability to add one extra anonymous argument (probability to add two args is equal to probablity squared, etc.) (maximum of 10).",
+    group: samplingGroup,
+    hidden: false,
+    type: "number",
+  });
+
+  options.set("remove-argument-probability", {
+    alias: [],
+    default: 0.1,
+    description:
+      "Probability to remove an argument (probability to remove two args is equal to probablity squared, etc.).",
+    group: samplingGroup,
+    hidden: false,
+    type: "number",
+  });
+
   options.set("execution-timeout", {
     alias: [],
     default: 2000,
@@ -144,7 +176,7 @@ export function getTestCommand(
     alias: [],
     default: true,
     description: "Whether we allow 'odd' syntax or throw an error.",
-    group: "Debugging",
+    group: debuggingGroup,
     hidden: false,
     type: "boolean",
   });
@@ -153,7 +185,34 @@ export function getTestCommand(
     alias: [],
     default: true,
     description: "Whether we show the test output in the logs.",
-    group: "Debugging",
+    group: debuggingGroup,
+    hidden: false,
+    type: "boolean",
+  });
+
+  options.set("function-objectives-enabled", {
+    alias: [],
+    default: true,
+    description: "Whether we use function objectives.",
+    group: objectivesGroup,
+    hidden: false,
+    type: "boolean",
+  });
+
+  options.set("branch-objectives-enabled", {
+    alias: [],
+    default: true,
+    description: "Whether we use branch objectives.",
+    group: objectivesGroup,
+    hidden: false,
+    type: "boolean",
+  });
+
+  options.set("path-objectives-enabled", {
+    alias: [],
+    default: true,
+    description: "Whether we use path objectives.",
+    group: objectivesGroup,
     hidden: false,
     type: "boolean",
   });
@@ -187,9 +246,18 @@ export type TestCommandOptions = {
   typePoolProbability: number;
   statementPool: boolean;
   statementPoolProbability: number;
+
+  addRemoveArgumentProbability: number;
+  addArgumentProbability: number;
+  removeArgumentProbability: number;
+
   executionTimeout: number;
   testTimeout: number;
 
   syntaxForgiving: boolean;
   silenceTestOutput: boolean;
+
+  functionObjectivesEnabled: boolean;
+  branchObjectivesEnabled: boolean;
+  pathObjectivesEnabled: boolean;
 };

@@ -1,7 +1,7 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
- * This file is part of SynTest Framework - SynTest Core.
+ * This file is part of SynTest Framework - SynTest JavaScript.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,14 @@
  * limitations under the License.
  */
 
-import { Events, RootContext } from "@syntest/analysis-javascript";
+import {
+  DiscoveredObjectType,
+  Element,
+  Events,
+  Export,
+  Relation,
+  RootContext,
+} from "@syntest/analysis-javascript";
 import { EventListenerPlugin } from "@syntest/module";
 import { StorageManager } from "@syntest/storage";
 import TypedEventEmitter from "typed-emitter";
@@ -30,8 +37,6 @@ export type StateStorageOptions = {
 
 /**
  * This graphing plugin creates a listener that creates an SVG based on the generated CFG.
- *
- * @author Dimitri Stallenberg
  */
 export class StateStorageEventListenerPlugin extends EventListenerPlugin {
   private storageManager: StorageManager;
@@ -53,26 +58,46 @@ export class StateStorageEventListenerPlugin extends EventListenerPlugin {
 
     (<TypedEventEmitter<Events>>process).on(
       "exportExtractionComplete",
-      (rootContext: RootContext, filepath: string) =>
-        stateStorage.exportExtractionComplete(rootContext, filepath)
+      (rootContext: RootContext, filepath: string, exports_: Export[]) =>
+        stateStorage.exportExtractionComplete(rootContext, filepath, exports_)
     );
 
     (<TypedEventEmitter<Events>>process).on(
       "elementExtractionComplete",
-      (rootContext: RootContext, filepath: string) =>
-        stateStorage.elementExtractionComplete(rootContext, filepath)
+      (
+        rootContext: RootContext,
+        filepath: string,
+        elements: Map<string, Element>
+      ) =>
+        stateStorage.elementExtractionComplete(rootContext, filepath, elements)
     );
 
     (<TypedEventEmitter<Events>>process).on(
       "relationExtractionComplete",
-      (rootContext: RootContext, filepath: string) =>
-        stateStorage.relationExtractionComplete(rootContext, filepath)
+      (
+        rootContext: RootContext,
+        filepath: string,
+        relations: Map<string, Relation>
+      ) =>
+        stateStorage.relationExtractionComplete(
+          rootContext,
+          filepath,
+          relations
+        )
     );
 
     (<TypedEventEmitter<Events>>process).on(
       "objectTypeExtractionComplete",
-      (rootContext: RootContext, filepath: string) =>
-        stateStorage.objectTypeExtractionComplete(rootContext, filepath)
+      (
+        rootContext: RootContext,
+        filepath: string,
+        objects: Map<string, DiscoveredObjectType>
+      ) =>
+        stateStorage.objectTypeExtractionComplete(
+          rootContext,
+          filepath,
+          objects
+        )
     );
 
     (<TypedEventEmitter<Events>>process).on(

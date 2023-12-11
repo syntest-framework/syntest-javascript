@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest Javascript.
  *
@@ -23,8 +23,11 @@
 import { NodePath } from "@babel/core";
 import * as t from "@babel/types";
 import { AbstractSyntaxTreeVisitor } from "@syntest/ast-visitor-javascript";
+import {
+  IllegalArgumentError,
+  ImplementationError,
+} from "@syntest/diagnostics";
 import { getLogger, Logger } from "@syntest/logging";
-import { shouldNeverHappen } from "@syntest/search";
 
 const invalidOperator = "Invalid operator!";
 export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
@@ -66,7 +69,21 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
   _getDistance(condition: string): number {
     if (!this._valueMap.has(condition) || !this._isDistanceMap.get(condition)) {
       // the value does not exist or is not a distance
-      throw new Error(shouldNeverHappen("BranchDistanceVisitor"));
+      throw new IllegalArgumentError(
+        "Cannot get distance from unknown condition",
+        {
+          context: {
+            condition: condition,
+            inValueMap: this._valueMap.has(condition),
+            isDistance:
+              this._isDistanceMap.has(condition) &&
+              this._isDistanceMap.get(condition),
+            availableValues: [...this._valueMap.entries()].map(
+              (value) => `${value[0]} -> ${String(value[1])}`
+            ),
+          },
+        }
+      );
     }
 
     return <number>this._valueMap.get(condition);
@@ -297,48 +314,6 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
     this._isDistanceMap.set(path.toString(), false);
   };
 
-  // public ObjectExpression: (path: NodePath<t.ObjectExpression>) => void = (path) => {
-  //   this._valueMap.set(this._getNodeId(path), )
-  //   this._isDistanceMap.set(this._getNodeId(path), false);
-  // }
-
-  // public Identifier: (path: NodePath<t.Identifier>) => void = (path) => {
-  //   if (this._variables[path.node.name] === undefined) {
-  //     // we dont know what this variable is...
-  //     this._valueMap.set(this._getNodeId(path), undefined);
-  //   } else {
-  //     this._valueMap.set(
-  //       this._getNodeId(path),
-  //       this._variables[path.node.name]
-  //     );
-  //   }
-  //   this._isDistanceMap.set(this._getNodeId(path), false);
-  // };
-
-  // public MemberExpression: (path: NodePath<t.MemberExpression>) => void = (
-  //   path
-  // ) => {
-  //   const result = generate(path.node);
-  //   const value = this._variables[result.code];
-  //   // might be undefined
-  //   this._valueMap.set(this._getNodeId(path), value);
-  //   this._isDistanceMap.set(this._getNodeId(path), false);
-  // };
-  // public Identifier: (path: NodePath<t.Identifier>) => void = (path) => {
-  //   if (this._variables[path.node.name] === undefined) {
-  //     // we dont know what this variable is...
-  //     // should never happen??
-  //     this._valueMap.set(path.toString(), undefined);
-  //     throw new Error(shouldNeverHappen('BranchDistanceVisitor'))
-  //   } else {
-  //     this._valueMap.set(
-  //       path.toString(),
-  //       this._variables[path.node.name]
-  //     );
-  //   }
-  //   this._isDistanceMap.set(path.toString(), false);
-  // };
-
   public UpdateExpression: (path: NodePath<t.UpdateExpression>) => void = (
     path
   ) => {
@@ -349,7 +324,9 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
 
     // should not be distance
     if (this._isDistanceMap.get(argument.toString()) === true) {
-      throw new Error("Argument should not result in distance value!");
+      throw new ImplementationError(
+        "Argument should not result in distance value!"
+      );
     }
 
     let value: unknown;
@@ -382,7 +359,7 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
         }
         default: {
           // should be unreachable
-          throw new Error(invalidOperator);
+          throw new ImplementationError(invalidOperator);
         }
       }
     }
@@ -409,7 +386,9 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
     const argumentIsDistance = this._isDistanceMap.get(argument.toString());
 
     if (argumentIsDistance && path.node.operator !== "!") {
-      throw new Error("Argument should not result in distance value!");
+      throw new ImplementationError(
+        "Argument should not result in distance value!"
+      );
     }
 
     let value: unknown;
@@ -477,7 +456,7 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
       }
       default: {
         // should be unreachable
-        throw new Error(invalidOperator);
+        throw new ImplementationError(invalidOperator);
       }
     }
 
@@ -504,11 +483,15 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
     const rightValue = <any>this._valueMap.get(right.toString());
 
     if (this._isDistanceMap.get(left.toString())) {
-      throw new Error("Left should not result in distance value!");
+      throw new ImplementationError(
+        "Left should not result in distance value!"
+      );
     }
 
     if (this._isDistanceMap.get(right.toString())) {
-      throw new Error("Right should not result in distance value!");
+      throw new ImplementationError(
+        "Right should not result in distance value!"
+      );
     }
     let operator = path.node.operator;
 
@@ -606,7 +589,6 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
 
       // distance
       case "==":
-      // TODO
       case "===": {
         if (typeof leftValue === "number" && typeof rightValue === "number") {
           value = Math.abs(leftValue - rightValue);
@@ -633,7 +615,6 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
         break;
       }
       case "!=":
-      // TODO
       case "!==": {
         if (operator === "!==") {
           value = leftValue === rightValue ? 1 : 0;
@@ -643,8 +624,12 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
         break;
       }
       case "in": {
-        if (rightValue === undefined || rightValue === null) {
-          value = 1; // TODO should this one be inverted?
+        if (
+          rightValue === undefined ||
+          rightValue === null ||
+          typeof rightValue !== "object"
+        ) {
+          value = this._inverted ? Number.MAX_VALUE : 0;
         } else {
           if (this._inverted) {
             value = leftValue in rightValue ? Number.MAX_VALUE : 0;
@@ -715,7 +700,7 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
       }
       default: {
         // should be unreachable
-        throw new Error(invalidOperator);
+        throw new ImplementationError(invalidOperator);
       }
     }
 
@@ -827,7 +812,7 @@ export class BranchDistanceVisitor extends AbstractSyntaxTreeVisitor {
       }
       default: {
         // should be unreachable
-        throw new Error(invalidOperator);
+        throw new ImplementationError(invalidOperator);
       }
     }
 

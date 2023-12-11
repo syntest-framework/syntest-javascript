@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest JavaScript.
  *
@@ -17,6 +17,8 @@
  */
 
 import { Target } from "@syntest/analysis-javascript";
+import { UserInterface } from "@syntest/cli-graphics";
+import { IllegalStateError } from "@syntest/diagnostics";
 import { getLogger, Logger } from "@syntest/logging";
 import {
   ActionStatement,
@@ -25,16 +27,25 @@ import {
   JavaScriptTestCase,
 } from "@syntest/search-javascript";
 
-export class TestSplitting {
+import { Workflow } from "./Workflow";
+
+export class TestSplitter implements Workflow {
   protected static LOGGER: Logger;
+  protected userInterface: UserInterface;
   protected runner: JavaScriptRunner;
 
-  constructor(runner: JavaScriptRunner) {
-    TestSplitting.LOGGER = getLogger("TestSplitting");
+  constructor(userInterface: UserInterface, runner: JavaScriptRunner) {
+    TestSplitter.LOGGER = getLogger(TestSplitter.name);
+    this.userInterface = userInterface;
     this.runner = runner;
   }
 
-  public async testSplitting(encodingMap: Map<Target, JavaScriptTestCase[]>) {
+  public async execute(
+    encodingMap: Map<Target, JavaScriptTestCase[]>
+  ): Promise<Map<Target, JavaScriptTestCase[]>> {
+    const before = [...encodingMap.values()].reduce((p, c) => p + c.length, 0);
+    TestSplitter.LOGGER.info("Splitting started");
+
     const finalEncodings = new Map<Target, JavaScriptTestCase[]>();
     let total = 0;
 
@@ -42,10 +53,10 @@ export class TestSplitting {
     for (let [target, encodings] of encodingMap.entries()) {
       // TODO this can be done multiple times since the splitting function only splits an encoding in two parts
       // so an encoding of length 4 could be split into two encodings of length 2 and those 2 can be split into 4 encodings of length 1
-      let round = 0;
+      let round = 1;
       // eslint-disable-next-line no-constant-condition
       while (true) {
-        const splitEncodings = await this._testSplitting(encodings);
+        const splitEncodings = await this._testSplitting(encodings, round);
         if (encodings.length === splitEncodings.length) {
           // nothing changed
           break;
@@ -54,27 +65,57 @@ export class TestSplitting {
 
         round += 1;
 
-        TestSplitting.LOGGER.info(`Split found, repeating. Round ${round}`);
+        TestSplitter.LOGGER.info("Split found, repeating.");
       }
       finalEncodings.set(target, encodings);
       total += finalEncodings.size;
     }
 
     if (total === 0) {
-      throw new Error("Zero tests were created");
+      throw new IllegalStateError("Zero tests were created");
     }
+
+    const after = [...finalEncodings.values()].reduce(
+      (p, c) => p + c.length,
+      0
+    );
+
+    TestSplitter.LOGGER.info(
+      `Splitting done, went from ${before} to ${after} test cases`
+    );
+    this.userInterface.printSuccess(
+      `Splitting done, went from ${before} to ${after} test cases`
+    );
 
     return finalEncodings;
   }
 
-  private async _testSplitting(originalEncodings: JavaScriptTestCase[]) {
+  private async _testSplitting(
+    originalEncodings: JavaScriptTestCase[],
+    round: number
+  ) {
     const finalEncodings: JavaScriptTestCase[] = [];
 
-    for (const encoding of originalEncodings) {
+    this.userInterface.startProgressBars([
+      {
+        name: `Test Splitting round: ${round}`,
+        value: 0,
+        maxValue: originalEncodings.length,
+        meta: "",
+      },
+    ]);
+
+    for (const [index, encoding] of originalEncodings.entries()) {
+      this.userInterface.updateProgressBar({
+        name: `Test Splitting round: ${round}`,
+        value: index + 1,
+        maxValue: originalEncodings.length,
+        meta: "",
+      });
       const executionResult = encoding.getExecutionResult();
 
       if (!executionResult) {
-        throw new Error("Invalid encoding without executionResult");
+        throw new IllegalStateError("Invalid encoding without executionResult");
       }
 
       // maximum of 2^(|roots| - 1) - 1 pairs
@@ -125,12 +166,14 @@ export class TestSplitting {
       // finalEncodings.push(...bestPair));
 
       for (const pair of possiblePairs) {
-        TestSplitting.LOGGER.debug(
+        TestSplitter.LOGGER.debug(
           `Split found: ${encoding.getLength()} -> ${pair[0].getLength()} + ${pair[1].getLength()}`
         );
       }
       finalEncodings.push(...possiblePairs.flat());
     }
+
+    this.userInterface.stopProgressBars();
 
     return finalEncodings;
   }

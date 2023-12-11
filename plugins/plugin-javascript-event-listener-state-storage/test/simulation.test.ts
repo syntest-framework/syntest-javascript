@@ -1,7 +1,7 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
- * This file is part of SynTest Framework - SynTest Core.
+ * This file is part of SynTest Framework - SynTest JavaScript.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { setupLogger } from "@syntest/logging";
 import { StorageManager } from "@syntest/storage";
 import * as chai from "chai";
 
@@ -24,7 +25,8 @@ const expect = chai.expect;
 
 describe("simulationTest", () => {
   it("SimpleTest", () => {
-    new StateStorage(new StorageManager(), "");
+    setupLogger("", [""], "");
+    new StateStorage(new StorageManager("", "", ""), "");
 
     expect(true);
   });

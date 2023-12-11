@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest Javascript.
  *
@@ -19,6 +19,10 @@
 import { ChildProcess, fork } from "node:child_process";
 import * as path from "node:path";
 
+import {
+  IllegalArgumentError,
+  ImplementationError,
+} from "@syntest/diagnostics";
 import {
   InstrumentationData,
   InstrumentationDataMap,
@@ -82,7 +86,9 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     amount = 1
   ): Promise<Omit<DoneMessage, "message">> {
     if (amount < 1) {
-      throw new Error(`Amount of tests cannot be smaller than 1`);
+      throw new IllegalArgumentError(
+        `Amount of tests cannot be smaller than 1`
+      );
     }
     paths = paths.map((p) => path.resolve(p));
 
@@ -106,7 +112,14 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
       childProcess.on("message", (data: Message) => {
         if (typeof data !== "object") {
           return reject(
-            new TypeError("Invalid data received from child process")
+            new ImplementationError(
+              "Invalid data received from child process",
+              {
+                context: {
+                  data: data,
+                },
+              }
+            )
           );
         }
 
@@ -261,7 +274,7 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
     const traces: Trace[] = [];
     for (const branchKey of Object.keys(instrumentationData.branchMap)) {
       const branch = instrumentationData.branchMap[branchKey];
-      const hits = <number[]>instrumentationData.b[branchKey];
+      const hits = instrumentationData.b[branchKey];
       let meta;
 
       if (metaData !== undefined) {
@@ -291,7 +304,7 @@ export class JavaScriptRunner implements EncodingRunner<JavaScriptTestCase> {
         ) // equal to 1 means default arg
       ) {
         // otherwise something is wrong
-        throw new Error(
+        throw new ImplementationError(
           `Invalid number of locations for branch type: ${branch.type}`
         );
       }

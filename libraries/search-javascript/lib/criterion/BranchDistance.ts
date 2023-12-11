@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest Javascript.
  *
@@ -18,15 +18,13 @@
 
 import { transformSync, traverse } from "@babel/core";
 import { defaultBabelOptions } from "@syntest/analysis-javascript";
+import { ImplementationError } from "@syntest/diagnostics";
 import { getLogger, Logger } from "@syntest/logging";
-import {
-  BranchDistance as CoreBranchDistance,
-  shouldNeverHappen,
-} from "@syntest/search";
+import { BranchDistanceCalculator as AbstractBranchDistanceCalculator } from "@syntest/search";
 
 import { BranchDistanceVisitor } from "./BranchDistanceVisitor";
 
-export class BranchDistance extends CoreBranchDistance {
+export class BranchDistanceCalculator extends AbstractBranchDistanceCalculator {
   protected static LOGGER: Logger;
   protected syntaxForgiving: boolean;
   protected stringAlphabet: string;
@@ -34,7 +32,7 @@ export class BranchDistance extends CoreBranchDistance {
   constructor(syntaxForgiving: boolean, stringAlphabet: string) {
     super();
     this.syntaxForgiving = syntaxForgiving;
-    BranchDistance.LOGGER = getLogger("BranchDistance");
+    BranchDistanceCalculator.LOGGER = getLogger("BranchDistance");
     this.stringAlphabet = stringAlphabet;
   }
 
@@ -63,7 +61,7 @@ export class BranchDistance extends CoreBranchDistance {
       const variables_ = Object.entries(variables)
         .map(([key, value]) => `${key}=${String(value)}`)
         .join(", ");
-      throw new Error(
+      throw new ImplementationError(
         `Invalid distance: ${distance} for ${condition} -> ${String(
           trueOrFalse
         )}. Variables: ${variables_}`
@@ -71,7 +69,9 @@ export class BranchDistance extends CoreBranchDistance {
     }
 
     if (Number.isNaN(distance)) {
-      throw new TypeError(shouldNeverHappen("BranchDistance"));
+      throw new ImplementationError("Branch distance resulted in a NaN value", {
+        context: { condition: condition, trueOrFalse: trueOrFalse },
+      });
     }
 
     if (distance === 1) {
@@ -84,7 +84,7 @@ export class BranchDistance extends CoreBranchDistance {
       const variables_ = Object.entries(variables)
         .map(([key, value]) => `${key}=${String(value)}`)
         .join(", ");
-      BranchDistance.LOGGER.warn(
+      BranchDistanceCalculator.LOGGER.warn(
         `Calculated distance for condition '${condition}' -> ${String(
           trueOrFalse
         )}, is zero. Variables: ${variables_}`

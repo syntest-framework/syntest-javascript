@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest Javascript.
  *
@@ -19,7 +19,19 @@
 import { existsSync, lstatSync } from "node:fs";
 
 import * as t from "@babel/types";
-import { RootContext as CoreRootContext } from "@syntest/analysis";
+import {
+  cache,
+  RootContext as FrameworkRootContext,
+  resolvePath,
+} from "@syntest/analysis";
+import {
+  failure,
+  IllegalArgumentError,
+  isFailure,
+  Result,
+  success,
+  unwrap,
+} from "@syntest/diagnostics";
 import { getLogger, Logger } from "@syntest/logging";
 import TypedEmitter from "typed-emitter";
 
@@ -42,7 +54,7 @@ import { TypeModelFactory } from "./type/resolving/TypeModelFactory";
 import { TypePool } from "./type/resolving/TypePool";
 import { readFile } from "./utils/fileSystem";
 
-export class RootContext extends CoreRootContext<t.Node> {
+export class RootContext extends FrameworkRootContext<t.Node> {
   protected static LOGGER: Logger;
 
   protected _exportFactory: ExportFactory;
@@ -54,18 +66,16 @@ export class RootContext extends CoreRootContext<t.Node> {
   protected _targetFiles: Set<string>;
   protected _analysisFiles: Set<string>;
 
-  // filepath -> id -> element
-  protected _elementMap: Map<string, Map<string, Element>>;
-  // filepath -> id -> relation
-  protected _relationMap: Map<string, Map<string, Relation>>;
-  // filepath -> id -> object
-  protected _objectMap: Map<string, Map<string, DiscoveredObjectType>>;
-
   protected _typeModel: TypeModel;
   protected _typePool: TypePool;
 
-  // Mapping: filepath -> target name -> Exports
-  protected _exportMap: Map<string, Export[]>;
+  get targetFiles() {
+    return this._targetFiles;
+  }
+
+  get analysisFiles() {
+    return this._analysisFiles;
+  }
 
   constructor(
     rootPath: string,
@@ -88,7 +98,7 @@ export class RootContext extends CoreRootContext<t.Node> {
       targetFactory,
       dependencyFactory
     );
-    RootContext.LOGGER = getLogger("RootContext");
+    RootContext.LOGGER = getLogger(RootContext.name);
     this._targetFiles = targetFiles;
     this._analysisFiles = analysisFiles;
     this._exportFactory = exportFactory;
@@ -100,206 +110,225 @@ export class RootContext extends CoreRootContext<t.Node> {
   get rootPath(): string {
     return this._rootPath;
   }
-
-  override getSource(filePath: string) {
-    let absoluteTargetPath = this.resolvePath(filePath);
-
-    if (!this._sources.has(absoluteTargetPath)) {
-      if (!existsSync(absoluteTargetPath)) {
-        if (existsSync(absoluteTargetPath + ".js")) {
-          absoluteTargetPath += ".js";
-        } else if (existsSync(absoluteTargetPath + ".ts")) {
-          absoluteTargetPath += ".ts";
-        } else {
-          throw new Error("Cannot find source: " + absoluteTargetPath);
-        }
-      }
-
-      const stats = lstatSync(absoluteTargetPath);
-
-      if (stats.isDirectory()) {
-        if (existsSync(absoluteTargetPath + "/index.js")) {
-          absoluteTargetPath += "/index.js";
-        } else if (existsSync(absoluteTargetPath + "/index.ts")) {
-          absoluteTargetPath += "/index.ts";
-        } else {
-          throw new Error("Cannot find source: " + absoluteTargetPath);
-        }
-      }
-
-      this._sources.set(absoluteTargetPath, readFile(absoluteTargetPath));
-    }
-
-    return this._sources.get(absoluteTargetPath);
-  }
-
-  getExports(filePath: string): Export[] {
-    const absolutePath = this.resolvePath(filePath);
-
-    if (!this._exportMap.has(absolutePath)) {
-      (<TypedEmitter<Events>>process).emit(
-        "exportExtractionStart",
-        this,
-        absolutePath
-      );
-      this._exportMap.set(
-        absolutePath,
-        this._exportFactory.extract(
-          absolutePath,
-          this.getAbstractSyntaxTree(absolutePath)
-        )
-      );
-      (<TypedEmitter<Events>>process).emit(
-        "exportExtractionComplete",
-        this,
-        absolutePath
-      );
-    }
-
-    return this._exportMap.get(absolutePath);
-  }
-
-  getAllExports(): Map<string, Export[]> {
-    if (!this._exportMap) {
-      this._exportMap = new Map();
-
-      for (const filepath of this._analysisFiles) {
-        this._exportMap.set(filepath, this.getExports(filepath));
+  @cache("source")
+  @resolvePath()
+  override getSource(filePath: string): Result<string> {
+    if (!existsSync(filePath)) {
+      if (existsSync(filePath + ".js")) {
+        filePath += ".js";
+      } else if (existsSync(filePath + ".ts")) {
+        filePath += ".ts";
+      } else {
+        return failure(
+          new IllegalArgumentError("Cannot find source", {
+            context: { filePath: filePath },
+          })
+        );
       }
     }
-    return this._exportMap;
-  }
 
-  getElements(filepath: string) {
-    const absolutePath = this.resolvePath(filepath);
+    const stats = lstatSync(filePath);
 
-    if (!this._elementMap.has(absolutePath)) {
-      (<TypedEmitter<Events>>process).emit(
-        "elementExtractionStart",
-        this,
-        absolutePath
-      );
-      const elementMap = this._typeExtractor.extractElements(
-        absolutePath,
-        this.getAbstractSyntaxTree(absolutePath)
-      );
-
-      this._elementMap.set(absolutePath, elementMap);
-      (<TypedEmitter<Events>>process).emit(
-        "elementExtractionComplete",
-        this,
-        absolutePath
-      );
-    }
-
-    return this._elementMap.get(absolutePath);
-  }
-
-  getAllElements() {
-    if (!this._elementMap) {
-      this._elementMap = new Map();
-
-      for (const filepath of this._analysisFiles) {
-        this._elementMap.set(filepath, this.getElements(filepath));
+    if (stats.isDirectory()) {
+      if (existsSync(filePath + "/index.js")) {
+        filePath += "/index.js";
+      } else if (existsSync(filePath + "/index.ts")) {
+        filePath += "/index.ts";
+      } else {
+        return failure(
+          new IllegalArgumentError("Cannot find source", {
+            context: { filePath: filePath },
+          })
+        );
       }
     }
-    return this._elementMap;
+
+    return success(readFile(filePath));
   }
 
-  getRelations(filepath: string) {
-    const absolutePath = this.resolvePath(filepath);
+  @cache("exports")
+  @resolvePath()
+  getExports(filePath: string): Result<Export[]> {
+    (<TypedEmitter<Events>>process).emit(
+      "exportExtractionStart",
+      this,
+      filePath
+    );
+    const astResult = this.getAbstractSyntaxTree(filePath);
 
-    if (!this._relationMap.has(absolutePath)) {
-      (<TypedEmitter<Events>>process).emit(
-        "relationExtractionStart",
-        this,
-        absolutePath
-      );
-      const relationsMap = this._typeExtractor.extractRelations(
-        absolutePath,
-        this.getAbstractSyntaxTree(absolutePath)
-      );
+    if (isFailure(astResult)) return astResult;
 
-      this._relationMap.set(absolutePath, relationsMap);
-      (<TypedEmitter<Events>>process).emit(
-        "relationExtractionComplete",
-        this,
-        absolutePath
-      );
-    }
+    const exportResult = this._exportFactory.extract(
+      filePath,
+      unwrap(astResult)
+    );
 
-    return this._relationMap.get(absolutePath);
+    if (isFailure(exportResult)) return exportResult;
+
+    (<TypedEmitter<Events>>process).emit(
+      "exportExtractionComplete",
+      this,
+      filePath,
+      unwrap(exportResult)
+    );
+
+    return exportResult;
   }
 
-  getAllRelations() {
-    if (!this._relationMap) {
-      this._relationMap = new Map();
+  @cache("elements")
+  @resolvePath()
+  getElements(filePath: string): Result<Map<string, Element>> {
+    (<TypedEmitter<Events>>process).emit(
+      "elementExtractionStart",
+      this,
+      filePath
+    );
+    const astResult = this.getAbstractSyntaxTree(filePath);
 
-      for (const filepath of this._analysisFiles) {
-        this._relationMap.set(filepath, this.getRelations(filepath));
-      }
-    }
-    return this._relationMap;
+    if (isFailure(astResult)) return astResult;
+
+    const elementsResult = this._typeExtractor.extractElements(
+      filePath,
+      unwrap(astResult)
+    );
+
+    if (isFailure(elementsResult)) return elementsResult;
+
+    (<TypedEmitter<Events>>process).emit(
+      "elementExtractionComplete",
+      this,
+      filePath,
+      unwrap(elementsResult)
+    );
+
+    return elementsResult;
   }
 
-  getObjectTypes(filepath: string) {
-    const absolutePath = this.resolvePath(filepath);
+  @cache("relations")
+  @resolvePath()
+  getRelations(filePath: string): Result<Map<string, Relation>> {
+    (<TypedEmitter<Events>>process).emit(
+      "relationExtractionStart",
+      this,
+      filePath
+    );
 
-    if (!this._objectMap.has(absolutePath)) {
-      (<TypedEmitter<Events>>process).emit(
-        "objectTypeExtractionStart",
-        this,
-        absolutePath
-      );
-      const objectsMap = this._typeExtractor.extractObjectTypes(
-        absolutePath,
-        this.getAbstractSyntaxTree(absolutePath)
-      );
+    const result = this.getAbstractSyntaxTree(filePath);
 
-      this._objectMap.set(absolutePath, objectsMap);
-      (<TypedEmitter<Events>>process).emit(
-        "objectTypeExtractionComplete",
-        this,
-        absolutePath
-      );
-    }
+    if (isFailure(result)) return result;
 
-    return this._objectMap.get(absolutePath);
+    const relationsResult = this._typeExtractor.extractRelations(
+      filePath,
+      unwrap(result)
+    );
+
+    if (isFailure(relationsResult)) return relationsResult;
+
+    (<TypedEmitter<Events>>process).emit(
+      "relationExtractionComplete",
+      this,
+      filePath,
+      unwrap(relationsResult)
+    );
+
+    return relationsResult;
   }
 
-  getAllObjectTypes() {
-    if (!this._objectMap) {
-      this._objectMap = new Map();
+  @cache("objects")
+  @resolvePath()
+  getObjectTypes(filePath: string): Result<Map<string, DiscoveredObjectType>> {
+    (<TypedEmitter<Events>>process).emit(
+      "objectTypeExtractionStart",
+      this,
+      filePath
+    );
 
-      for (const filepath of this._analysisFiles) {
-        this._objectMap.set(filepath, this.getObjectTypes(filepath));
-      }
-    }
-    return this._objectMap;
+    const result = this.getAbstractSyntaxTree(filePath);
+
+    if (isFailure(result)) return result;
+
+    const objectsResult = this._typeExtractor.extractObjectTypes(
+      filePath,
+      unwrap(result)
+    );
+
+    if (isFailure(objectsResult)) return objectsResult;
+
+    (<TypedEmitter<Events>>process).emit(
+      "objectTypeExtractionComplete",
+      this,
+      filePath,
+      unwrap(objectsResult)
+    );
+
+    return objectsResult;
+  }
+
+  @cache("constantPool")
+  @resolvePath()
+  getConstantPoolManager(filePath: string): Result<ConstantPoolManager> {
+    RootContext.LOGGER.info("Extracting constants");
+    const astResult = this.getAbstractSyntaxTree(filePath);
+
+    if (isFailure(astResult)) return astResult;
+
+    const targetConstantPool = this._constantPoolFactory.extract(
+      filePath,
+      unwrap(astResult)
+    );
+    const contextConstantPoolResult = this._getContextConstantPool();
+
+    if (isFailure(contextConstantPoolResult)) return contextConstantPoolResult;
+
+    const dynamicConstantPool = new ConstantPool();
+
+    const constantPoolManager = new ConstantPoolManager(
+      targetConstantPool,
+      unwrap(contextConstantPoolResult),
+      dynamicConstantPool
+    );
+
+    RootContext.LOGGER.info("Extracting constants done");
+    return success(constantPoolManager);
   }
 
   resolveTypes(): void {
-    // TODO allow sub selections of files (do not consider entire context)
-    if (!this._elementMap) {
-      this.getAllElements();
-    }
-    if (!this._relationMap) {
-      this.getAllRelations();
-    }
-    if (!this._objectMap) {
-      this.getAllObjectTypes();
-    }
-    if (!this._exportMap) {
-      this.getAllExports();
-    }
+    this._typePool = new TypePool();
 
+    // TODO allow sub selections of files (do not consider entire context)
     if (!this._typeModel) {
       (<TypedEmitter<Events>>process).emit("typeResolvingStart", this);
-      this._typeModel = this._typeResolver.resolveTypes(
-        this._elementMap,
-        this._relationMap
-      );
-      this._typePool = new TypePool(this._objectMap, this._exportMap);
+      for (const filePath of this._analysisFiles) {
+        const elements = this.getElements(filePath);
+        const relations = this.getRelations(filePath);
+        const objects = this.getObjectTypes(filePath);
+        const exports = this.getExports(filePath);
+
+        if (isFailure(elements)) {
+          RootContext.LOGGER.warn(elements.error.message);
+          continue;
+        }
+        if (isFailure(relations)) {
+          RootContext.LOGGER.warn(relations.error.message);
+          continue;
+        }
+        if (isFailure(objects)) {
+          RootContext.LOGGER.warn(objects.error.message);
+          continue;
+        }
+        if (isFailure(exports)) {
+          RootContext.LOGGER.warn(exports.error.message);
+          continue;
+        }
+
+        this._typeModel = this._typeResolver.resolveTypes(
+          elements.result,
+          relations.result
+        );
+
+        this._typePool.extractExportedTypes(exports.result, objects.result);
+      }
+
       (<TypedEmitter<Events>>process).emit("typeResolvingComplete", this);
     }
   }
@@ -321,37 +350,16 @@ export class RootContext extends CoreRootContext<t.Node> {
   }
 
   // TODO cache
-  private _getContextConstantPool(): ConstantPool {
+  private _getContextConstantPool(): Result<ConstantPool> {
     const constantPool = new ConstantPool();
-    for (const filepath of this._analysisFiles) {
-      const ast = this.getAbstractSyntaxTree(filepath);
-      this._constantPoolFactory.extract(filepath, ast, constantPool);
+    for (const filePath of this._analysisFiles) {
+      const result = this.getAbstractSyntaxTree(filePath);
+
+      if (isFailure(result)) return result;
+
+      this._constantPoolFactory.extract(filePath, unwrap(result), constantPool);
     }
 
-    return constantPool;
-  }
-
-  // TODO cache
-  getConstantPoolManager(filepath: string): ConstantPoolManager {
-    const absolutePath = this.resolvePath(filepath);
-
-    RootContext.LOGGER.info("Extracting constants");
-    const ast = this.getAbstractSyntaxTree(absolutePath);
-
-    const targetConstantPool = this._constantPoolFactory.extract(
-      absolutePath,
-      ast
-    );
-    const contextConstantPool = this._getContextConstantPool();
-    const dynamicConstantPool = new ConstantPool();
-
-    const constantPoolManager = new ConstantPoolManager(
-      targetConstantPool,
-      contextConstantPool,
-      dynamicConstantPool
-    );
-
-    RootContext.LOGGER.info("Extracting constants done");
-    return constantPoolManager;
+    return success(constantPool);
   }
 }

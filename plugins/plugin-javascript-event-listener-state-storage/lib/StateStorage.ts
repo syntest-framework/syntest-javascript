@@ -1,7 +1,7 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
- * This file is part of SynTest Framework - SynTest Core.
+ * This file is part of SynTest Framework - SynTest JavaScript.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,14 @@
  */
 import * as path from "node:path";
 
-import { RootContext, TypeModel } from "@syntest/analysis-javascript";
+import {
+  DiscoveredObjectType,
+  Element,
+  Export,
+  Relation,
+  RootContext,
+  TypeModel,
+} from "@syntest/analysis-javascript";
 import { StorageManager } from "@syntest/storage";
 
 export class StateStorage {
@@ -29,17 +36,23 @@ export class StateStorage {
     this.storagePath = storagePath;
   }
 
-  exportExtractionComplete(rootContext: RootContext, filepath: string): void {
-    const exports = rootContext.getExports(filepath);
+  exportExtractionComplete(
+    rootContext: RootContext,
+    filepath: string,
+    exports_: Export[]
+  ): void {
     this.save(
-      JSON.stringify(Object.fromEntries(exports.entries()), undefined, 2),
+      JSON.stringify(Object.fromEntries(exports_.entries()), undefined, 2),
       filepath,
       "exports.json"
     );
   }
 
-  elementExtractionComplete(rootContext: RootContext, filepath: string): void {
-    const elements = rootContext.getElements(filepath);
+  elementExtractionComplete(
+    rootContext: RootContext,
+    filepath: string,
+    elements: Map<string, Element>
+  ): void {
     this.save(
       JSON.stringify(Object.fromEntries(elements.entries()), undefined, 2),
       filepath,
@@ -47,8 +60,11 @@ export class StateStorage {
     );
   }
 
-  relationExtractionComplete(rootContext: RootContext, filepath: string): void {
-    const relations = rootContext.getRelations(filepath);
+  relationExtractionComplete(
+    rootContext: RootContext,
+    filepath: string,
+    relations: Map<string, Relation>
+  ): void {
     this.save(
       JSON.stringify(Object.fromEntries(relations.entries()), undefined, 2),
       filepath,
@@ -58,9 +74,9 @@ export class StateStorage {
 
   objectTypeExtractionComplete(
     rootContext: RootContext,
-    filepath: string
+    filepath: string,
+    objects: Map<string, DiscoveredObjectType>
   ): void {
-    const objects = rootContext.getObjectTypes(filepath);
     this.save(
       JSON.stringify(Object.fromEntries(objects.entries()), undefined, 2),
       filepath,

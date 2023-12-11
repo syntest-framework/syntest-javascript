@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Delft University of Technology and SynTest contributors
+ * Copyright 2020-2023 SynTest contributors
  *
  * This file is part of SynTest Framework - SynTest JavaScript.
  *
@@ -18,6 +18,7 @@
 import { NodePath } from "@babel/core";
 import * as t from "@babel/types";
 import { AbstractSyntaxTreeVisitor } from "@syntest/ast-visitor-javascript";
+import { ImplementationError } from "@syntest/diagnostics";
 
 import { DiscoveredObjectKind, DiscoveredType } from "./DiscoveredType";
 
@@ -39,7 +40,7 @@ export class ObjectVisitor extends AbstractSyntaxTreeVisitor {
 
   private _getCurrentObject(path: NodePath<t.Node>): DiscoveredType {
     if (this._objectStack.length === 0) {
-      throw new Error(
+      throw new ImplementationError(
         `No current object found! Location: ${this._getNodeId(path)}`
       );
     }
@@ -51,7 +52,7 @@ export class ObjectVisitor extends AbstractSyntaxTreeVisitor {
     if (currentObject.id === this._getNodeId(path)) {
       this._objectStack.pop();
     } else {
-      throw new Error(
+      throw new ImplementationError(
         `Unexpected object stack state: ${
           currentObject.id
         } !== ${this._getNodeId(path)}`
@@ -321,7 +322,7 @@ export class ObjectVisitor extends AbstractSyntaxTreeVisitor {
       const _object = this.objectTypeMap.get(this._getNodeId(parent));
 
       if (!_object) {
-        throw new Error(
+        throw new ImplementationError(
           `Unexpected object type: ${
             path.node.object.type
           } at ${this._getNodeId(path)}`
