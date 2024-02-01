@@ -17,7 +17,7 @@
  */
 
 import { Events, RootContext } from "@syntest/analysis-javascript";
-import { EventListenerPlugin } from "@syntest/module";
+import { EventListenerPlugin, ExtensionAPI } from "@syntest/module";
 import { StorageManager } from "@syntest/storage";
 import TypedEventEmitter from "typed-emitter";
 import Yargs = require("yargs");
@@ -32,19 +32,24 @@ export type StateStorageOptions = {
  * This graphing plugin creates a listener that creates an SVG based on the generated CFG.
  */
 export class StateStorageEventListenerPlugin extends EventListenerPlugin {
+  private config: unknown;
   private storageManager: StorageManager;
 
-  constructor(storageManager: StorageManager) {
+  constructor() {
     super(
       "javascript-state-storage",
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-var-requires, unicorn/prefer-module, @typescript-eslint/no-unsafe-member-access
       require("../../package.json").description
     );
-    this.storageManager = storageManager;
+  }
+
+  override setup(extensionApi: ExtensionAPI): void | Promise<void> {
+    this.storageManager = extensionApi.storageManager;
+    this.config = extensionApi.config;
   }
 
   setupEventListener(): void {
-    const stateStore = (<StateStorageOptions>(<unknown>this.args))
+    const stateStore = (<StateStorageOptions>this.config)
       .javascriptStateStorageDirectory;
 
     const stateStorage = new StateStorage(this.storageManager, stateStore);
